@@ -126,7 +126,4 @@ dependencies {
 
     // mDNS
     implementation(libs.jmdns)
-
-    // Accompanist
-    implementation(libs.accompanist.permissions)
 }

@@ -18,7 +18,6 @@ glance = "1.1.1"
 smbj = "0.13.0"
 jcifsng = "2.1.9"
 jmDNS = "3.6.3"
-accompanist = "0.36.0"
 jaudiotagger = "3.0.1"
 
 [libraries]
@@ -91,8 +90,8 @@ jmdns = { group = "org.jmdns", name = "jmdns", version.ref = "jmDNS" }
 # Audio Tagging
 jaudiotagger = { group = "net.jthink", name = "jaudiotagger", version.ref = "jaudiotagger" }
 
-# Accompanist
-accompanist-permissions = { group = "com.google.accompanist", name = "accompanist-permissions", version.ref = "accompanist" }
+# Accompanist（已弃用且全项目无引用，T2 移除；权限申请用原生 ActivityResultContracts）
+# accompanist-permissions = { group = "com.google.accompanist", name = "accompanist-permissions", version.ref = "accompanist" }
 
 # Core
 core-ktx = { group = "androidx.core", name = "core-ktx", version = "1.15.0" }
