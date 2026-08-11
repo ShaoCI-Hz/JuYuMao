@@ -4,8 +4,9 @@
 
 Android 局域网 SMB 音乐播放器，直连 NAS 串流播放，同时支持本地音乐扫描。
 
-![Kotlin](https://img.shields.io/badge/Kotlin-2.1.0-purple)
-![Compose](https://img.shields.io/badge/Compose-BOM-2024.12-blueviolet)
+![Kotlin](https://img.shields.io/badge/Kotlin-2.4.0-purple)
+![Compose](https://img.shields.io/badge/Compose-BOM-2026.06-blueviolet)
+![Miuix](https://img.shields.io/badge/Miuix-0.9.3-ff6900)
 ![API](https://img.shields.io/badge/API-29%2B-brightgreen)
 ![License](https://img.shields.io/badge/License-MIT-blue)
 
@@ -37,7 +38,8 @@ Android 局域网 SMB 音乐播放器，直连 NAS 串流播放，同时支持�
 - 批量元数据缓存（多线程并行，可配置线程数）
 
 ### 界面
-- 深色/浅色/跟随系统主题
+- MIUI 设计语言（Miuix 0.9.3）主题 + Monet 动态取色
+- 深色/浅色/跟随系统三模式
 - 首页仪表盘（统计、每日一句、天气）
 - 浏览页（全部/本地/NAS 筛选）
 - Salt Player 风格播放页（流光背景、封面取色、上下滑歌词）
@@ -53,23 +55,23 @@ Android 局域网 SMB 音乐播放器，直连 NAS 串流播放，同时支持�
 
 | 模块 | 技术 |
 |------|------|
-| 语言 | Kotlin 2.1.0 |
-| UI | Jetpack Compose + Material3 |
+| 语言 | Kotlin 2.4.0 |
+| UI | Jetpack Compose + Material3 + Miuix 0.9.3 |
 | 音频 | Media3 ExoPlayer 1.5.1 |
 | SMB | smbj 0.13.0（播放）+ jcifs-ng 2.1.9（共享枚举） |
-| DI | Hilt 2.53.1 + KSP |
-| 存储 | Room 2.6.1 + DataStore 1.1.1 |
+| DI | Hilt 2.60.1 + KSP 2.3.11 |
+| 存储 | Room 2.8.4 + DataStore 1.1.1 |
 | 图片 | Coil 2.7.0 |
 | 元数据 | jaudiotagger 3.0.1 |
 | Widget | Glance 1.1.1 |
-| 构建 | AGP 8.7.3 + Gradle 8.9 |
+| 构建 | AGP 9.2.1 + Gradle 9.4.1 |
 
 ## 编译
 
 环境要求：
 - JDK 17
-- Android SDK 35
-- Gradle 8.9（已包含 wrapper）
+- Android SDK 37（compileSdk 37）
+- Gradle 9.4.1（已包含 wrapper）
 
 ```bash
 git clone https://github.com/ShaoCI-Hz/JuYuMao.git
