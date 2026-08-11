@@ -7,7 +7,7 @@ plugins {
 
 android {
     namespace = "com.hezi.juyumao"
-    compileSdk = 35
+    compileSdk = 37
 
     defaultConfig {
         applicationId = "com.hezi.juyumao"
@@ -126,4 +126,11 @@ dependencies {
 
     // mDNS
     implementation(libs.jmdns)
+
+    // Miuix (MIUI 设计语言 UI 库，第 2 轮迭代)
+    // miuix-blur 要求 minSdk 33，本项目 minSdk 29 → 不引入，GlassMorphism 保留自绘（T6 决策）
+    implementation(libs.miuix.ui)
+    implementation(libs.miuix.squircle)
+    implementation(libs.miuix.icons)
+    implementation(libs.miuix.preference)
 }

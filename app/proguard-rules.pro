@@ -3,6 +3,9 @@
 -keep class com.hierynomus.smbj.** { *; }
 -keep class org.bouncycastle.** { *; }
 
+# Miuix (MIUI UI 库，反射/序列化使用)
+-keep class top.yukonga.miuix.** { *; }
+
 # Room
 -keep class * extends androidx.room.RoomDatabase
 -keep @androidx.room.Entity class *
