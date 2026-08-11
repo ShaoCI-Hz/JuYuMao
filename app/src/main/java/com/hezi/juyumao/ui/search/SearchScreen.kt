@@ -11,7 +11,8 @@ import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.FavoriteBorder
 import androidx.compose.material.icons.filled.MusicNote
 import androidx.compose.material.icons.filled.Search
-import androidx.compose.material3.*
+import androidx.compose.material3.MaterialTheme
+import top.yukonga.miuix.kmp.basic.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -41,20 +42,20 @@ fun SearchScreen(
         Spacer(modifier = Modifier.height(16.dp))
 
         // Search bar
-        OutlinedTextField(
+        TextField(
             value = query,
             onValueChange = { viewModel.search(it) },
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(horizontal = 16.dp),
-            placeholder = { Text("搜索歌曲、艺术家、专辑...") },
+            label = "搜索歌曲、艺术家、专辑...",
             leadingIcon = {
                 Icon(
                     imageVector = Icons.Default.Search,
                     contentDescription = null,
                 )
             },
-            shape = RoundedCornerShape(14.dp),
+            cornerRadius = 14.dp,
             singleLine = true,
         )
 

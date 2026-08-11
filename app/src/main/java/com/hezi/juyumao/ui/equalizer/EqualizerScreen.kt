@@ -7,11 +7,10 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material3.*
+import androidx.compose.material3.FilterChip
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -22,6 +21,8 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
+import top.yukonga.miuix.kmp.basic.*
+import top.yukonga.miuix.kmp.theme.MiuixTheme
 
 @Composable
 fun EqualizerScreen(
@@ -51,7 +52,7 @@ fun EqualizerScreen(
             }
             Text(
                 text = "均衡器",
-                style = MaterialTheme.typography.titleLarge,
+                style = MiuixTheme.textStyles.title3,
             )
             Spacer(modifier = Modifier.size(48.dp))
         }
@@ -61,7 +62,7 @@ fun EqualizerScreen(
         // 频谱可视化（复用 SpectrumAnalyzer 数据）
         com.hezi.juyumao.ui.player.components.SpectrumBars(
             bars = spectrum,
-            color = MaterialTheme.colorScheme.primary,
+            color = MiuixTheme.colorScheme.primary,
             modifier = Modifier.padding(horizontal = 16.dp),
         )
 
@@ -72,10 +73,10 @@ fun EqualizerScreen(
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(horizontal = 16.dp),
-            colors = CardDefaults.cardColors(
-                containerColor = MaterialTheme.colorScheme.surfaceVariant,
+            colors = CardDefaults.defaultColors(
+                color = MiuixTheme.colorScheme.surfaceVariant,
             ),
-            shape = RoundedCornerShape(14.dp),
+            cornerRadius = 14.dp,
         ) {
             Row(
                 modifier = Modifier
@@ -86,7 +87,7 @@ fun EqualizerScreen(
             ) {
                 Text(
                     text = "均衡器",
-                    style = MaterialTheme.typography.titleMedium,
+                    style = MiuixTheme.textStyles.title4,
                 )
                 Switch(
                     checked = state.enabled,
@@ -101,8 +102,8 @@ fun EqualizerScreen(
         if (state.presets.isNotEmpty()) {
             Text(
                 text = "预设",
-                style = MaterialTheme.typography.titleSmall,
-                color = MaterialTheme.colorScheme.primary,
+                style = MiuixTheme.textStyles.subtitle,
+                color = MiuixTheme.colorScheme.primary,
                 modifier = Modifier.padding(horizontal = 16.dp),
             )
             Spacer(modifier = Modifier.height(8.dp))
@@ -135,8 +136,8 @@ fun EqualizerScreen(
         if (state.bands.isNotEmpty()) {
             Text(
                 text = "频段调节",
-                style = MaterialTheme.typography.titleSmall,
-                color = MaterialTheme.colorScheme.primary,
+                style = MiuixTheme.textStyles.subtitle,
+                color = MiuixTheme.colorScheme.primary,
                 modifier = Modifier.padding(horizontal = 16.dp),
             )
             Spacer(modifier = Modifier.height(16.dp))
@@ -162,13 +163,13 @@ fun EqualizerScreen(
                     ) {
                         Text(
                             text = formatFrequency(band.centerFreq),
-                            style = MaterialTheme.typography.labelMedium,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            style = MiuixTheme.textStyles.footnote1,
+                            color = MiuixTheme.colorScheme.onSurfaceVariantSummary,
                         )
                         Text(
                             text = "${sliderValue.toInt()} dB",
-                            style = MaterialTheme.typography.labelMedium,
-                            color = MaterialTheme.colorScheme.primary,
+                            style = MiuixTheme.textStyles.footnote1,
+                            color = MiuixTheme.colorScheme.primary,
                         )
                     }
                     Spacer(modifier = Modifier.height(4.dp))
@@ -183,10 +184,10 @@ fun EqualizerScreen(
                         },
                         valueRange = band.minLevel.toFloat()..band.maxLevel.toFloat(),
                         modifier = Modifier.fillMaxWidth(),
-                        colors = SliderDefaults.colors(
-                            thumbColor = MaterialTheme.colorScheme.primary,
-                            activeTrackColor = MaterialTheme.colorScheme.primary,
-                            inactiveTrackColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.15f),
+                        colors = SliderDefaults.sliderColors(
+                            thumbColor = MiuixTheme.colorScheme.primary,
+                            foregroundColor = MiuixTheme.colorScheme.primary,
+                            backgroundColor = MiuixTheme.colorScheme.primary.copy(alpha = 0.15f),
                         ),
                     )
                 }
@@ -198,8 +199,8 @@ fun EqualizerScreen(
         // ── 音效增强（T10.7）：低音/虚拟环绕/响度 ──
         Text(
             text = "音效增强",
-            style = MaterialTheme.typography.titleSmall,
-            color = MaterialTheme.colorScheme.primary,
+            style = MiuixTheme.textStyles.subtitle,
+            color = MiuixTheme.colorScheme.primary,
             modifier = Modifier.padding(horizontal = 16.dp),
         )
         Spacer(modifier = Modifier.height(12.dp))
@@ -219,8 +220,8 @@ fun EqualizerScreen(
                 ) {
                     Text(
                         text = "低音增强",
-                        style = MaterialTheme.typography.bodyLarge,
-                        color = MaterialTheme.colorScheme.onSurface,
+                        style = MiuixTheme.textStyles.body1,
+                        color = MiuixTheme.colorScheme.onSurface,
                         modifier = Modifier.weight(1f),
                     )
                     Switch(
@@ -234,10 +235,10 @@ fun EqualizerScreen(
                     onValueChangeFinished = { viewModel.setBassBoostStrength(bassValue.toInt().toShort()) },
                     valueRange = 0f..1000f,
                     modifier = Modifier.fillMaxWidth(),
-                    colors = SliderDefaults.colors(
-                        thumbColor = MaterialTheme.colorScheme.primary,
-                        activeTrackColor = MaterialTheme.colorScheme.primary,
-                        inactiveTrackColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.15f),
+                    colors = SliderDefaults.sliderColors(
+                        thumbColor = MiuixTheme.colorScheme.primary,
+                        foregroundColor = MiuixTheme.colorScheme.primary,
+                        backgroundColor = MiuixTheme.colorScheme.primary.copy(alpha = 0.15f),
                     ),
                 )
             }
@@ -253,8 +254,8 @@ fun EqualizerScreen(
             ) {
                 Text(
                     text = "虚拟环绕",
-                    style = MaterialTheme.typography.bodyLarge,
-                    color = MaterialTheme.colorScheme.onSurface,
+                    style = MiuixTheme.textStyles.body1,
+                    color = MiuixTheme.colorScheme.onSurface,
                     modifier = Modifier.weight(1f),
                 )
                 Switch(
@@ -279,8 +280,8 @@ fun EqualizerScreen(
                 ) {
                     Text(
                         text = "响度增强",
-                        style = MaterialTheme.typography.bodyLarge,
-                        color = MaterialTheme.colorScheme.onSurface,
+                        style = MiuixTheme.textStyles.body1,
+                        color = MiuixTheme.colorScheme.onSurface,
                         modifier = Modifier.weight(1f),
                     )
                     Switch(
@@ -296,10 +297,10 @@ fun EqualizerScreen(
                     onValueChangeFinished = { viewModel.setLoudnessGain(loudnessValue.toInt()) },
                     valueRange = 0f..4000f,
                     modifier = Modifier.fillMaxWidth(),
-                    colors = SliderDefaults.colors(
-                        thumbColor = MaterialTheme.colorScheme.primary,
-                        activeTrackColor = MaterialTheme.colorScheme.primary,
-                        inactiveTrackColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.15f),
+                    colors = SliderDefaults.sliderColors(
+                        thumbColor = MiuixTheme.colorScheme.primary,
+                        foregroundColor = MiuixTheme.colorScheme.primary,
+                        backgroundColor = MiuixTheme.colorScheme.primary.copy(alpha = 0.15f),
                     ),
                 )
             }
@@ -309,8 +310,8 @@ fun EqualizerScreen(
         if (!state.bassBoostAvailable && !state.virtualizerAvailable && !state.loudnessAvailable) {
             Text(
                 text = "当前设备不支持音效增强",
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                style = MiuixTheme.textStyles.footnote1,
+                color = MiuixTheme.colorScheme.onSurfaceVariantSummary,
                 modifier = Modifier.padding(horizontal = 16.dp),
             )
         }

@@ -8,7 +8,9 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
-import androidx.compose.material3.*
+import androidx.compose.material3.FilterChip
+import androidx.compose.material3.MaterialTheme
+import top.yukonga.miuix.kmp.basic.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -21,7 +23,6 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.hezi.juyumao.data.local.db.entity.SongEntity
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun BrowseScreen(
     onSongClick: (Long) -> Unit = {},
@@ -35,7 +36,6 @@ fun BrowseScreen(
     val dimensionSongs by viewModel.dimensionSongs.collectAsStateWithLifecycle()
     val batchState by viewModel.batchCacheState.collectAsStateWithLifecycle()
     var selectedTab by remember { mutableIntStateOf(0) }
-    val tabs = listOf("全部", "本地", "NAS", "我喜欢", "维度")
 
     // 维度浏览状态：-1=维度列表，否则为选中维度对应的歌曲列表
     var dimensionType by remember { mutableStateOf("album") }
@@ -69,31 +69,20 @@ fun BrowseScreen(
 
         Spacer(modifier = Modifier.height(16.dp))
 
-        // Tabs（PrimaryScrollableTabRow 可横向滚动，避免窄屏挤压）
-        PrimaryScrollableTabRow(
+        // Tabs（Miuix TabRow 可横向滚动，避免窄屏挤压）
+        val tabLabels = listOf(
+            "全部 ${allSongs.size}",
+            "本地 $localCount",
+            "NAS $smbCount",
+            "我喜欢 $favoriteCount",
+            "维度",
+        )
+        TabRow(
+            tabs = tabLabels,
             selectedTabIndex = selectedTab,
-            edgePadding = 16.dp,
-            containerColor = Color.Transparent,
-        ) {
-            tabs.forEachIndexed { index, tab ->
-                Tab(
-                    selected = selectedTab == index,
-                    onClick = { selectedTab = index },
-                    text = {
-                        Text(
-                            text = when(index) {
-                                0 -> "全部 $allSongs.size"
-                                1 -> "本地 $localCount"
-                                2 -> "NAS $smbCount"
-                                3 -> "我喜欢 $favoriteCount"
-                                else -> "维度"
-                            },
-                            maxLines = 1,
-                        )
-                    },
-                )
-            }
-        }
+            onTabSelected = { selectedTab = it },
+            modifier = Modifier.fillMaxWidth(),
+        )
 
         Spacer(modifier = Modifier.height(8.dp))
 
@@ -103,8 +92,8 @@ fun BrowseScreen(
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(horizontal = 16.dp, vertical = 4.dp),
-                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.primaryContainer),
-                shape = RoundedCornerShape(10.dp),
+                colors = CardDefaults.defaultColors(color = MaterialTheme.colorScheme.primaryContainer),
+                cornerRadius = 10.dp,
             ) {
                 Column(modifier = Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
                     Text(
@@ -122,7 +111,7 @@ fun BrowseScreen(
                         )
                     }
                     LinearProgressIndicator(
-                        progress = { batchState.progress },
+                        progress = batchState.progress,
                         modifier = Modifier.fillMaxWidth(),
                     )
                 }

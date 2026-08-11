@@ -3,11 +3,9 @@ package com.hezi.juyumao.ui.settings
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowForwardIos
 import androidx.compose.material.icons.filled.*
-import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -16,8 +14,10 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.hezi.juyumao.ui.theme.ThemeMode
+import top.yukonga.miuix.kmp.basic.*
+import top.yukonga.miuix.kmp.overlay.OverlayDialog
+import top.yukonga.miuix.kmp.theme.MiuixTheme
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun SettingsScreen(
     onNavigateToSmb: () -> Unit,
@@ -44,8 +44,8 @@ fun SettingsScreen(
 
             Text(
                 text = "设置",
-                style = MaterialTheme.typography.headlineLarge,
-                color = MaterialTheme.colorScheme.onBackground,
+                style = MiuixTheme.textStyles.title1,
+                color = MiuixTheme.colorScheme.onBackground,
                 modifier = Modifier.padding(horizontal = 16.dp),
             )
 
@@ -98,10 +98,10 @@ fun SettingsScreen(
                         .padding(horizontal = 16.dp, vertical = 8.dp),
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
-                    Icon(Icons.Default.Speed, null, tint = MaterialTheme.colorScheme.onSurface, modifier = Modifier.size(24.dp))
+                    Icon(Icons.Default.Speed, null, tint = MiuixTheme.colorScheme.onSurface, modifier = Modifier.size(24.dp))
                     Spacer(Modifier.width(16.dp))
-                    Text("缓存线程数", style = MaterialTheme.typography.bodyLarge,
-                        color = MaterialTheme.colorScheme.onSurface, modifier = Modifier.weight(1f))
+                    Text("缓存线程数", style = MiuixTheme.textStyles.body1,
+                        color = MiuixTheme.colorScheme.onSurface, modifier = Modifier.weight(1f))
                     var sliderValue by remember { mutableFloatStateOf(cacheThreads.toFloat()) }
                     LaunchedEffect(cacheThreads) { sliderValue = cacheThreads.toFloat() }
                     Slider(
@@ -110,13 +110,13 @@ fun SettingsScreen(
                         onValueChangeFinished = { viewModel.setCacheThreads(sliderValue.toInt()) },
                         valueRange = 1f..8f,
                         modifier = Modifier.width(140.dp),
-                        colors = SliderDefaults.colors(
-                            thumbColor = MaterialTheme.colorScheme.primary,
-                            activeTrackColor = MaterialTheme.colorScheme.primary,
+                        colors = SliderDefaults.sliderColors(
+                            thumbColor = MiuixTheme.colorScheme.primary,
+                            foregroundColor = MiuixTheme.colorScheme.primary,
                         ),
                     )
-                    Text("${cacheThreads}", style = MaterialTheme.typography.labelLarge,
-                        color = MaterialTheme.colorScheme.primary, modifier = Modifier.padding(start = 8.dp))
+                    Text("${cacheThreads}", style = MiuixTheme.textStyles.body2,
+                        color = MiuixTheme.colorScheme.primary, modifier = Modifier.padding(start = 8.dp))
                 }
             }
         }
@@ -143,12 +143,12 @@ fun SettingsScreen(
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.spacedBy(16.dp),
                 ) {
-                    Icon(Icons.Default.HighQuality, null, tint = MaterialTheme.colorScheme.onSurface, modifier = Modifier.size(24.dp))
+                    Icon(Icons.Default.HighQuality, null, tint = MiuixTheme.colorScheme.onSurface, modifier = Modifier.size(24.dp))
                     Column(modifier = Modifier.weight(1f)) {
-                        Text("无缝播放", style = MaterialTheme.typography.bodyLarge,
-                            color = MaterialTheme.colorScheme.onSurface)
-                        Text("同格式连续曲目切换无间隙", style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        Text("无缝播放", style = MiuixTheme.textStyles.body1,
+                            color = MiuixTheme.colorScheme.onSurface)
+                        Text("同格式连续曲目切换无间隙", style = MiuixTheme.textStyles.footnote1,
+                            color = MiuixTheme.colorScheme.onSurfaceVariantSummary)
                     }
                     Switch(checked = gaplessPlayback, onCheckedChange = { viewModel.setGaplessPlayback(it) })
                 }
@@ -159,10 +159,10 @@ fun SettingsScreen(
                         .padding(horizontal = 16.dp, vertical = 8.dp),
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
-                    Icon(Icons.Default.GraphicEq, null, tint = MaterialTheme.colorScheme.onSurface, modifier = Modifier.size(24.dp))
+                    Icon(Icons.Default.GraphicEq, null, tint = MiuixTheme.colorScheme.onSurface, modifier = Modifier.size(24.dp))
                     Spacer(Modifier.width(16.dp))
-                    Text("交叉淡化", style = MaterialTheme.typography.bodyLarge,
-                        color = MaterialTheme.colorScheme.onSurface, modifier = Modifier.weight(1f))
+                    Text("交叉淡化", style = MiuixTheme.textStyles.body1,
+                        color = MiuixTheme.colorScheme.onSurface, modifier = Modifier.weight(1f))
                     var sliderValue by remember { mutableFloatStateOf(crossfadeDuration.toFloat()) }
                     LaunchedEffect(crossfadeDuration) { sliderValue = crossfadeDuration.toFloat() }
                     Slider(
@@ -172,15 +172,15 @@ fun SettingsScreen(
                         valueRange = 0f..2000f,
                         steps = 7,
                         modifier = Modifier.width(140.dp),
-                        colors = SliderDefaults.colors(
-                            thumbColor = MaterialTheme.colorScheme.primary,
-                            activeTrackColor = MaterialTheme.colorScheme.primary,
+                        colors = SliderDefaults.sliderColors(
+                            thumbColor = MiuixTheme.colorScheme.primary,
+                            foregroundColor = MiuixTheme.colorScheme.primary,
                         ),
                     )
                     Text(
                         if (crossfadeDuration == 0) "关" else "${crossfadeDuration}ms",
-                        style = MaterialTheme.typography.labelLarge,
-                        color = MaterialTheme.colorScheme.primary, modifier = Modifier.padding(start = 8.dp),
+                        style = MiuixTheme.textStyles.body2,
+                        color = MiuixTheme.colorScheme.primary, modifier = Modifier.padding(start = 8.dp),
                     )
                 }
                 // 频谱可视化开关
@@ -192,12 +192,12 @@ fun SettingsScreen(
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.spacedBy(16.dp),
                 ) {
-                    Icon(Icons.Default.Equalizer, null, tint = MaterialTheme.colorScheme.onSurface, modifier = Modifier.size(24.dp))
+                    Icon(Icons.Default.Equalizer, null, tint = MiuixTheme.colorScheme.onSurface, modifier = Modifier.size(24.dp))
                     Column(modifier = Modifier.weight(1f)) {
-                        Text("频谱可视化", style = MaterialTheme.typography.bodyLarge,
-                            color = MaterialTheme.colorScheme.onSurface)
-                        Text("播放页实时频谱（低端机可关闭）", style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        Text("频谱可视化", style = MiuixTheme.textStyles.body1,
+                            color = MiuixTheme.colorScheme.onSurface)
+                        Text("播放页实时频谱（低端机可关闭）", style = MiuixTheme.textStyles.footnote1,
+                            color = MiuixTheme.colorScheme.onSurfaceVariantSummary)
                     }
                     Switch(checked = spectrumVisualizer, onCheckedChange = { viewModel.setSpectrumVisualizer(it) })
                 }
@@ -208,10 +208,10 @@ fun SettingsScreen(
                         .padding(horizontal = 16.dp, vertical = 8.dp),
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
-                    Icon(Icons.Default.Memory, null, tint = MaterialTheme.colorScheme.onSurface, modifier = Modifier.size(24.dp))
+                    Icon(Icons.Default.Memory, null, tint = MiuixTheme.colorScheme.onSurface, modifier = Modifier.size(24.dp))
                     Spacer(Modifier.width(16.dp))
-                    Text("音频缓冲大小", style = MaterialTheme.typography.bodyLarge,
-                        color = MaterialTheme.colorScheme.onSurface, modifier = Modifier.weight(1f))
+                    Text("音频缓冲大小", style = MiuixTheme.textStyles.body1,
+                        color = MiuixTheme.colorScheme.onSurface, modifier = Modifier.weight(1f))
                     var sliderValue by remember { mutableFloatStateOf(audioBufferSize.toFloat()) }
                     LaunchedEffect(audioBufferSize) { sliderValue = audioBufferSize.toFloat() }
                     Slider(
@@ -221,18 +221,18 @@ fun SettingsScreen(
                         valueRange = 128f..1024f,
                         steps = 6,
                         modifier = Modifier.width(140.dp),
-                        colors = SliderDefaults.colors(
-                            thumbColor = MaterialTheme.colorScheme.primary,
-                            activeTrackColor = MaterialTheme.colorScheme.primary,
+                        colors = SliderDefaults.sliderColors(
+                            thumbColor = MiuixTheme.colorScheme.primary,
+                            foregroundColor = MiuixTheme.colorScheme.primary,
                         ),
                     )
-                    Text("${audioBufferSize}KB", style = MaterialTheme.typography.labelLarge,
-                        color = MaterialTheme.colorScheme.primary, modifier = Modifier.padding(start = 8.dp))
+                    Text("${audioBufferSize}KB", style = MiuixTheme.textStyles.body2,
+                        color = MiuixTheme.colorScheme.primary, modifier = Modifier.padding(start = 8.dp))
                 }
                 Text(
                     text = "Hi-Res 歌曲自动使用 2 倍预缓冲，缓解 NAS 大文件串流卡顿",
-                    style = MaterialTheme.typography.labelSmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    style = MiuixTheme.textStyles.footnote2,
+                    color = MiuixTheme.colorScheme.onSurfaceVariantSummary,
                     modifier = Modifier.padding(horizontal = 16.dp, vertical = 4.dp),
                 )
                 // 当前输出设备与格式
@@ -257,7 +257,7 @@ fun SettingsScreen(
                         .padding(horizontal = 16.dp, vertical = 8.dp),
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
-                    Text("14sp", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    Text("14sp", style = MiuixTheme.textStyles.footnote2, color = MiuixTheme.colorScheme.onSurfaceVariantSummary)
                     // HIGH: 拖拽时用本地状态，松手后才写 DataStore
                     var sliderValue by remember { mutableFloatStateOf(lyricsFontSize) }
                     LaunchedEffect(lyricsFontSize) { sliderValue = lyricsFontSize }
@@ -267,12 +267,12 @@ fun SettingsScreen(
                         onValueChangeFinished = { viewModel.setLyricsFontSize(sliderValue) },
                         valueRange = 14f..28f,
                         modifier = Modifier.weight(1f).padding(horizontal = 8.dp),
-                        colors = SliderDefaults.colors(
-                            thumbColor = MaterialTheme.colorScheme.primary,
-                            activeTrackColor = MaterialTheme.colorScheme.primary,
+                        colors = SliderDefaults.sliderColors(
+                            thumbColor = MiuixTheme.colorScheme.primary,
+                            foregroundColor = MiuixTheme.colorScheme.primary,
                         ),
                     )
-                    Text("28sp", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    Text("28sp", style = MiuixTheme.textStyles.footnote2, color = MiuixTheme.colorScheme.onSurfaceVariantSummary)
                 }
                 Row(
                     modifier = Modifier
@@ -282,9 +282,9 @@ fun SettingsScreen(
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.spacedBy(16.dp),
                 ) {
-                    Icon(Icons.Default.FormatBold, null, tint = MaterialTheme.colorScheme.onSurface, modifier = Modifier.size(24.dp))
-                    Text("歌词加粗", style = MaterialTheme.typography.bodyLarge,
-                        color = MaterialTheme.colorScheme.onSurface, modifier = Modifier.weight(1f))
+                    Icon(Icons.Default.FormatBold, null, tint = MiuixTheme.colorScheme.onSurface, modifier = Modifier.size(24.dp))
+                    Text("歌词加粗", style = MiuixTheme.textStyles.body1,
+                        color = MiuixTheme.colorScheme.onSurface, modifier = Modifier.weight(1f))
                     Switch(checked = lyricsFontBold, onCheckedChange = { viewModel.setLyricsFontBold(it) })
                 }
             }
@@ -323,10 +323,11 @@ fun SettingsScreen(
 
     // Theme selector dialog
     if (showThemeDialog) {
-        AlertDialog(
+        OverlayDialog(
+            show = showThemeDialog,
             onDismissRequest = { showThemeDialog = false },
-            title = { Text("主题模式") },
-            text = {
+            title = "主题模式",
+            content = {
                 Column {
                     listOf(
                         ThemeMode.DARK to "深色",
@@ -351,15 +352,15 @@ fun SettingsScreen(
                                     showThemeDialog = false
                                 },
                             )
-                            Text(text = label, style = MaterialTheme.typography.bodyLarge)
+                            Text(text = label, style = MiuixTheme.textStyles.body1)
                         }
                     }
-                }
-            },
-            confirmButton = {},
-            dismissButton = {
-                TextButton(onClick = { showThemeDialog = false }) {
-                    Text("取消")
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.End,
+                    ) {
+                        TextButton(text = "取消", onClick = { showThemeDialog = false })
+                    }
                 }
             },
         )
@@ -376,15 +377,15 @@ private fun SettingsSection(
     ) {
         Text(
             text = title,
-            style = MaterialTheme.typography.titleSmall,
-            color = MaterialTheme.colorScheme.primary,
+            style = MiuixTheme.textStyles.subtitle,
+            color = MiuixTheme.colorScheme.primary,
             modifier = Modifier.padding(vertical = 8.dp),
         )
         Card(
-            colors = CardDefaults.cardColors(
-                containerColor = MaterialTheme.colorScheme.surfaceVariant,
+            colors = CardDefaults.defaultColors(
+                color = MiuixTheme.colorScheme.surfaceVariant,
             ),
-            shape = MaterialTheme.shapes.medium,
+            cornerRadius = 12.dp,
         ) {
             Column { content() }
         }
@@ -410,27 +411,27 @@ private fun SettingsItem(
         Icon(
             imageVector = icon,
             contentDescription = null,
-            tint = MaterialTheme.colorScheme.onSurface,
+            tint = MiuixTheme.colorScheme.onSurface,
             modifier = Modifier.size(24.dp),
         )
         Column(modifier = Modifier.weight(1f)) {
             Text(
                 text = title,
-                style = MaterialTheme.typography.bodyLarge,
-                color = MaterialTheme.colorScheme.onSurface,
+                style = MiuixTheme.textStyles.body1,
+                color = MiuixTheme.colorScheme.onSurface,
             )
             if (subtitle.isNotEmpty()) {
                 Text(
                     text = subtitle,
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    style = MiuixTheme.textStyles.footnote1,
+                    color = MiuixTheme.colorScheme.onSurfaceVariantSummary,
                 )
             }
         }
         Icon(
             imageVector = Icons.AutoMirrored.Filled.ArrowForwardIos,
             contentDescription = null,
-            tint = MaterialTheme.colorScheme.onSurfaceVariant,
+            tint = MiuixTheme.colorScheme.onSurfaceVariantSummary,
             modifier = Modifier.size(16.dp),
         )
     }
@@ -479,17 +480,17 @@ private fun AudioOutputInfo() {
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(16.dp),
     ) {
-        Icon(Icons.Default.GraphicEq, null, tint = MaterialTheme.colorScheme.onSurface, modifier = Modifier.size(24.dp))
+        Icon(Icons.Default.GraphicEq, null, tint = MiuixTheme.colorScheme.onSurface, modifier = Modifier.size(24.dp))
         Column(modifier = Modifier.weight(1f)) {
             Text(
                 text = "当前输出",
-                style = MaterialTheme.typography.bodyLarge,
-                color = MaterialTheme.colorScheme.onSurface,
+                style = MiuixTheme.textStyles.body1,
+                color = MiuixTheme.colorScheme.onSurface,
             )
             Text(
                 text = if (formatInfo.isEmpty()) deviceName else "$deviceName · $formatInfo",
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                style = MiuixTheme.textStyles.footnote1,
+                color = MiuixTheme.colorScheme.onSurfaceVariantSummary,
             )
         }
     }

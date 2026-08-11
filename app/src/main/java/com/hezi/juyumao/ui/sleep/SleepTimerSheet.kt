@@ -5,7 +5,9 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Timer
-import androidx.compose.material3.*
+import androidx.compose.material3.MaterialTheme
+import top.yukonga.miuix.kmp.basic.*
+import top.yukonga.miuix.kmp.overlay.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -17,7 +19,6 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 
 data class TimerOption(val label: String, val minutes: Int)
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun SleepTimerSheet(
     onDismiss: () -> Unit,
@@ -34,10 +35,10 @@ fun SleepTimerSheet(
     val remaining by viewModel.remainingSeconds.collectAsStateWithLifecycle()
     val isTimerRunning = remaining > 0
 
-    ModalBottomSheet(
+    OverlayBottomSheet(
+        show = true,
         onDismissRequest = onDismiss,
-        containerColor = MaterialTheme.colorScheme.surface,
-        shape = RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp),
+        cornerRadius = 28.dp,
     ) {
         Column(
             modifier = Modifier
@@ -73,9 +74,9 @@ fun SleepTimerSheet(
                 Button(
                     onClick = { viewModel.cancelTimer() },
                     colors = ButtonDefaults.buttonColors(
-                        containerColor = MaterialTheme.colorScheme.error,
+                        color = MaterialTheme.colorScheme.error,
                     ),
-                    shape = RoundedCornerShape(12.dp),
+                    cornerRadius = 12.dp,
                 ) {
                     Text("取消定时")
                 }
@@ -87,10 +88,10 @@ fun SleepTimerSheet(
                             .fillMaxWidth()
                             .padding(vertical = 4.dp)
                             .clickable { viewModel.setTimer(option.minutes) },
-                        colors = CardDefaults.cardColors(
-                            containerColor = MaterialTheme.colorScheme.surfaceVariant,
+                        colors = CardDefaults.defaultColors(
+                            color = MaterialTheme.colorScheme.surfaceVariant,
                         ),
-                        shape = RoundedCornerShape(12.dp),
+                        cornerRadius = 12.dp,
                     ) {
                         Text(
                             text = option.label,

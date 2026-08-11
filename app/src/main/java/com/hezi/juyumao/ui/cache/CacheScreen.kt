@@ -8,7 +8,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.*
-import androidx.compose.material3.*
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -17,8 +17,10 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.hezi.juyumao.data.local.cache.CacheManager
+import top.yukonga.miuix.kmp.basic.*
+import top.yukonga.miuix.kmp.overlay.OverlayDialog
+import top.yukonga.miuix.kmp.theme.MiuixTheme
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun CacheScreen(
     onBack: () -> Unit,
@@ -33,7 +35,7 @@ fun CacheScreen(
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically) {
             IconButton(onClick = onBack) { Icon(Icons.AutoMirrored.Filled.ArrowBack, "返回") }
-            Text("缓存管理", style = MaterialTheme.typography.titleLarge)
+            Text("缓存管理", style = MiuixTheme.textStyles.title3)
             Spacer(Modifier.size(48.dp))
         }
 
@@ -42,17 +44,17 @@ fun CacheScreen(
 
             // 总览卡片
             item {
-                Card(colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.primaryContainer),
-                    shape = RoundedCornerShape(14.dp)) {
+                Card(colors = CardDefaults.defaultColors(color = MiuixTheme.colorScheme.primaryContainer),
+                    cornerRadius = 14.dp) {
                     Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                        Text("缓存占用", style = MaterialTheme.typography.titleMedium,
-                            color = MaterialTheme.colorScheme.onPrimaryContainer)
+                        Text("缓存占用", style = MiuixTheme.textStyles.title4,
+                            color = MiuixTheme.colorScheme.onPrimaryContainer)
                         Text(CacheManager.formatSize(uiState.totalSize),
-                            style = MaterialTheme.typography.headlineMedium,
-                            color = MaterialTheme.colorScheme.onPrimaryContainer)
+                            style = MiuixTheme.textStyles.title1,
+                            color = MiuixTheme.colorScheme.onPrimaryContainer)
                         Text("封面 ${CacheManager.formatSize(uiState.albumArtSize)} · NAS下载 ${CacheManager.formatSize(uiState.nasDownloadSize)} · 歌词 ${CacheManager.formatSize(uiState.lyricsSize)} · 临时 ${CacheManager.formatSize(uiState.tempSize)}",
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.7f))
+                            style = MiuixTheme.textStyles.footnote1,
+                            color = MiuixTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.7f))
                     }
                 }
             }
@@ -67,7 +69,7 @@ fun CacheScreen(
                         Text("刷新")
                     }
                     Button(onClick = { showClearDialog = true }, modifier = Modifier.weight(1f),
-                        shape = RoundedCornerShape(8.dp)) {
+                        cornerRadius = 8.dp) {
                         Icon(Icons.Default.DeleteSweep, null, modifier = Modifier.size(18.dp))
                         Spacer(Modifier.width(4.dp))
                         Text("清除缓存")
@@ -78,10 +80,10 @@ fun CacheScreen(
             // 操作反馈
             uiState.lastAction?.let { action ->
                 item {
-                    Card(colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant),
-                        shape = RoundedCornerShape(10.dp)) {
+                    Card(colors = CardDefaults.defaultColors(color = MiuixTheme.colorScheme.surfaceVariant),
+                        cornerRadius = 10.dp) {
                         Text(action, modifier = Modifier.padding(12.dp),
-                            style = MaterialTheme.typography.bodySmall)
+                            style = MiuixTheme.textStyles.footnote1)
                     }
                 }
             }
@@ -89,37 +91,37 @@ fun CacheScreen(
             // 已下载的 NAS 歌曲
             item {
                 Text("已下载的 NAS 歌曲 (${uiState.cachedNasSongs.size})",
-                    style = MaterialTheme.typography.titleSmall, color = MaterialTheme.colorScheme.primary)
+                    style = MiuixTheme.textStyles.subtitle, color = MiuixTheme.colorScheme.primary)
             }
 
             if (uiState.cachedNasSongs.isEmpty()) {
                 item {
-                    Card(colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)),
-                        shape = RoundedCornerShape(12.dp)) {
+                    Card(colors = CardDefaults.defaultColors(color = MiuixTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)),
+                        cornerRadius = 12.dp) {
                         Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                            Icon(Icons.Default.Download, null, tint = MaterialTheme.colorScheme.onSurfaceVariant)
+                            Icon(Icons.Default.Download, null, tint = MiuixTheme.colorScheme.onSurfaceVariantSummary)
                             Text("暂无下载的歌曲。在浏览页长按 NAS 歌曲可下载到本地缓存，离线播放。",
-                                style = MaterialTheme.typography.bodySmall,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant)
+                                style = MiuixTheme.textStyles.footnote1,
+                                color = MiuixTheme.colorScheme.onSurfaceVariantSummary)
                         }
                     }
                 }
             } else {
                 items(uiState.cachedNasSongs) { cachedSong ->
-                    Card(colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant),
-                        shape = RoundedCornerShape(12.dp)) {
+                    Card(colors = CardDefaults.defaultColors(color = MiuixTheme.colorScheme.surfaceVariant),
+                        cornerRadius = 12.dp) {
                         Row(modifier = Modifier.padding(16.dp), verticalAlignment = Alignment.CenterVertically,
                             horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                            Icon(Icons.Default.AudioFile, null, tint = MaterialTheme.colorScheme.primary)
+                            Icon(Icons.Default.AudioFile, null, tint = MiuixTheme.colorScheme.primary)
                             Column(modifier = Modifier.weight(1f)) {
-                                Text(cachedSong.fileName, style = MaterialTheme.typography.bodyLarge,
+                                Text(cachedSong.fileName, style = MiuixTheme.textStyles.body1,
                                     fontWeight = FontWeight.Medium, maxLines = 1)
                                 Text(CacheManager.formatSize(cachedSong.file.length()),
-                                    style = MaterialTheme.typography.bodySmall,
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant)
+                                    style = MiuixTheme.textStyles.footnote1,
+                                    color = MiuixTheme.colorScheme.onSurfaceVariantSummary)
                             }
                             IconButton(onClick = { viewModel.deleteNasSong(cachedSong.songId) }) {
-                                Icon(Icons.Default.Delete, "删除", tint = MaterialTheme.colorScheme.error)
+                                Icon(Icons.Default.Delete, "删除", tint = MiuixTheme.colorScheme.error)
                             }
                         }
                     }
@@ -131,18 +133,26 @@ fun CacheScreen(
     }
 
     if (showClearDialog) {
-        AlertDialog(
+        OverlayDialog(
+            show = showClearDialog,
             onDismissRequest = { showClearDialog = false },
-            title = { Text("清除缓存") },
-            text = { Text("将清除所有缓存（封面、下载歌曲、歌词、临时文件），释放 ${CacheManager.formatSize(uiState.totalSize)} 空间。已下载的 NAS 歌曲删除后需重新下载。") },
-            confirmButton = {
-                TextButton(onClick = {
-                    viewModel.clearAllCache()
-                    showClearDialog = false
-                }) { Text("全部清除", color = MaterialTheme.colorScheme.error) }
-            },
-            dismissButton = {
-                TextButton(onClick = { showClearDialog = false }) { Text("取消") }
+            title = "清除缓存",
+            summary = "将清除所有缓存（封面、下载歌曲、歌词、临时文件），释放 ${CacheManager.formatSize(uiState.totalSize)} 空间。已下载的 NAS 歌曲删除后需重新下载。",
+            content = {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.End,
+                ) {
+                    TextButton(
+                        text = "全部清除",
+                        onClick = {
+                            viewModel.clearAllCache()
+                            showClearDialog = false
+                        },
+                        colors = ButtonDefaults.textButtonColors(textColor = MiuixTheme.colorScheme.error),
+                    )
+                    TextButton(text = "取消", onClick = { showClearDialog = false })
+                }
             },
         )
     }

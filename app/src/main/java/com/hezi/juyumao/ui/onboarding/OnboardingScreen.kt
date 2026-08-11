@@ -19,7 +19,10 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
-import androidx.compose.material3.*
+import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedButton
+import top.yukonga.miuix.kmp.basic.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -118,13 +121,13 @@ fun OnboardingScreen(
         // 右上角跳过按钮（非末页）
         if (pagerState.currentPage < 3) {
             TextButton(
+                text = "跳过",
                 onClick = { viewModel.completeOnboarding(); onStart() },
                 modifier = Modifier
                     .align(Alignment.TopEnd)
                     .padding(top = 48.dp, end = 16.dp),
-            ) {
-                Text("跳过", color = Color.White.copy(alpha = 0.7f))
-            }
+                colors = top.yukonga.miuix.kmp.basic.ButtonDefaults.textButtonColors(textColor = Color.White.copy(alpha = 0.7f)),
+            )
         }
     }
 }
@@ -252,8 +255,8 @@ private fun OnboardingPage2() {
 private fun FeatureCard(icon: androidx.compose.ui.graphics.vector.ImageVector, title: String, desc: String) {
     Card(
         modifier = Modifier.fillMaxWidth(),
-        colors = CardDefaults.cardColors(containerColor = Color.White.copy(alpha = 0.08f)),
-        shape = RoundedCornerShape(14.dp),
+        colors = CardDefaults.defaultColors(color = Color.White.copy(alpha = 0.08f)),
+        cornerRadius = 14.dp,
     ) {
         Row(
             modifier = Modifier.padding(16.dp),
@@ -320,8 +323,8 @@ private fun OnboardingPage3() {
 private fun PermissionExplainCard(icon: androidx.compose.ui.graphics.vector.ImageVector, title: String, desc: String) {
     Card(
         modifier = Modifier.fillMaxWidth(),
-        colors = CardDefaults.cardColors(containerColor = Color.White.copy(alpha = 0.08f)),
-        shape = RoundedCornerShape(14.dp),
+        colors = CardDefaults.defaultColors(color = Color.White.copy(alpha = 0.08f)),
+        cornerRadius = 14.dp,
     ) {
         Row(
             modifier = Modifier.padding(16.dp),
@@ -437,11 +440,11 @@ private fun OnboardingPage4(
             Button(
                 onClick = onStart,
                 modifier = Modifier.fillMaxWidth().height(52.dp),
-                colors = ButtonDefaults.buttonColors(
-                    containerColor = com.hezi.juyumao.ui.theme.LocalExtendedColors.current.hiResGold,
+                colors = top.yukonga.miuix.kmp.basic.ButtonDefaults.buttonColors(
+                    color = com.hezi.juyumao.ui.theme.LocalExtendedColors.current.hiResGold,
                     contentColor = Color.Black,
                 ),
-                shape = RoundedCornerShape(14.dp),
+                cornerRadius = 14.dp,
             ) {
                 Text("开始使用", style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold))
             }

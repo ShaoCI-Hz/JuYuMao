@@ -5,9 +5,7 @@ import androidx.compose.animation.core.spring
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
-import androidx.compose.material3.Scaffold
-import androidx.compose.material3.SnackbarHost
-import androidx.compose.material3.SnackbarHostState
+import top.yukonga.miuix.kmp.basic.*
 import androidx.compose.runtime.*
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.compose.ui.Modifier
@@ -82,7 +80,7 @@ private fun JuYuMaoAppContent(
     // 自动重连完成提示
     LaunchedEffect(reconnectState.message) {
         reconnectState.message?.let { msg ->
-            snackbarHostState.showSnackbar(msg, duration = androidx.compose.material3.SnackbarDuration.Short)
+            snackbarHostState.showSnackbar(msg, duration = SnackbarDuration.Short)
             appViewModel.clearReconnectMessage()
         }
     }
@@ -90,7 +88,7 @@ private fun JuYuMaoAppContent(
     // 播放错误提示（解码失败等）
     LaunchedEffect(playbackError) {
         playbackError?.let { msg ->
-            snackbarHostState.showSnackbar(msg, duration = androidx.compose.material3.SnackbarDuration.Short)
+            snackbarHostState.showSnackbar(msg, duration = SnackbarDuration.Short)
             appViewModel.clearPlaybackError()
         }
     }

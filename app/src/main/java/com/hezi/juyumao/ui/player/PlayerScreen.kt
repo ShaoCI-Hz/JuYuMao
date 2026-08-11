@@ -3,9 +3,12 @@ package com.hezi.juyumao.ui.player
 import androidx.compose.animation.*
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.*
+import androidx.compose.material3.MaterialTheme
+import top.yukonga.miuix.kmp.basic.*
+import top.yukonga.miuix.kmp.overlay.*
 import androidx.compose.runtime.*
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.compose.ui.Alignment
@@ -170,26 +173,33 @@ fun PlayerScreen(
                 )
                 // 倍速菜单
                 Box {
-                    TextButton(onClick = { showSpeedMenu = true }) {
-                        Text(
-                            text = if (playbackSpeed == 1.0f) "1.0x" else "${playbackSpeed}x",
-                            style = MaterialTheme.typography.labelMedium,
-                            color = Color.White.copy(alpha = 0.8f),
-                        )
-                    }
-                    DropdownMenu(
-                        expanded = showSpeedMenu,
+                    TextButton(
+                        text = if (playbackSpeed == 1.0f) "1.0x" else "${playbackSpeed}x",
+                        onClick = { showSpeedMenu = true },
+                        modifier = Modifier,
+                        textStyle = MaterialTheme.typography.labelMedium,
+                        colors = ButtonDefaults.textButtonColors(textColor = Color.White.copy(alpha = 0.8f)),
+                    )
+                    OverlayListPopup(
+                        show = showSpeedMenu,
                         onDismissRequest = { showSpeedMenu = false },
                     ) {
-                        listOf(0.5f, 0.75f, 1.0f, 1.25f, 1.5f, 2.0f).forEach { speed ->
-                            DropdownMenuItem(
-                                text = { Text(if (speed == 1.0f) "正常" else "${speed}x") },
-                                onClick = {
-                                    playbackSpeed = speed
-                                    viewModel.setPlaybackSpeed(speed)
-                                    showSpeedMenu = false
-                                },
-                            )
+                        ListPopupColumn {
+                            listOf(0.5f, 0.75f, 1.0f, 1.25f, 1.5f, 2.0f).forEach { speed ->
+                                Text(
+                                    text = if (speed == 1.0f) "正常" else "${speed}x",
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .clickable {
+                                            playbackSpeed = speed
+                                            viewModel.setPlaybackSpeed(speed)
+                                            showSpeedMenu = false
+                                        }
+                                        .padding(horizontal = 16.dp, vertical = 12.dp),
+                                    style = MaterialTheme.typography.bodyLarge,
+                                    color = Color.White,
+                                )
+                            }
                         }
                     }
                 }

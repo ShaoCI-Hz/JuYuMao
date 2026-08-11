@@ -14,7 +14,9 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.QueueMusic
 import androidx.compose.material.icons.filled.*
-import androidx.compose.material3.*
+import androidx.compose.material3.FilledTonalButton
+import androidx.compose.material3.MaterialTheme
+import top.yukonga.miuix.kmp.basic.*
 import androidx.compose.runtime.*
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.compose.ui.Alignment
@@ -78,8 +80,8 @@ fun HomeScreen(
         item {
             Spacer(modifier = Modifier.height(24.dp))
             Card(modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp),
-                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant),
-                shape = RoundedCornerShape(14.dp)) {
+                colors = CardDefaults.defaultColors(color = MaterialTheme.colorScheme.surfaceVariant),
+                cornerRadius = 14.dp) {
                 Row(modifier = Modifier.fillMaxWidth().padding(16.dp),
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.spacedBy(12.dp)) {
@@ -105,8 +107,8 @@ fun HomeScreen(
         item {
             Spacer(modifier = Modifier.height(12.dp))
             Card(modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp),
-                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant),
-                shape = RoundedCornerShape(14.dp)) {
+                colors = CardDefaults.defaultColors(color = MaterialTheme.colorScheme.surfaceVariant),
+                cornerRadius = 14.dp) {
                 Row(modifier = Modifier.fillMaxWidth().padding(16.dp),
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.spacedBy(12.dp)) {
@@ -153,8 +155,8 @@ fun HomeScreen(
             Spacer(modifier = Modifier.height(24.dp))
             val dailyCard = uiState.dailyCard
             Card(modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp),
-                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.1f)),
-                shape = RoundedCornerShape(14.dp)) {
+                colors = CardDefaults.defaultColors(color = MaterialTheme.colorScheme.primary.copy(alpha = 0.1f)),
+                cornerRadius = 14.dp) {
                 Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
                     Row(modifier = Modifier.fillMaxWidth(),
                         horizontalArrangement = Arrangement.SpaceBetween,
@@ -213,8 +215,8 @@ fun HomeScreen(
 @Composable
 private fun RecentSongCard(song: SongEntity, onClick: () -> Unit) {
     Card(modifier = Modifier.width(120.dp).clickable(onClick = onClick),
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant),
-        shape = RoundedCornerShape(12.dp)) {
+        colors = CardDefaults.defaultColors(color = MaterialTheme.colorScheme.surfaceVariant),
+        cornerRadius = 12.dp) {
         Column(modifier = Modifier.padding(12.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -240,8 +242,8 @@ private fun RecentSongCard(song: SongEntity, onClick: () -> Unit) {
 
 @Composable
 private fun StatCard(icon: ImageVector, value: String, label: String, modifier: Modifier = Modifier) {
-    Card(modifier = modifier, colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant),
-        shape = RoundedCornerShape(12.dp)) {
+    Card(modifier = modifier, colors = CardDefaults.defaultColors(color = MaterialTheme.colorScheme.surfaceVariant),
+        cornerRadius = 12.dp) {
         Column(modifier = Modifier.padding(12.dp), horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.spacedBy(4.dp)) {
             Icon(icon, null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(22.dp))
@@ -255,8 +257,8 @@ private fun StatCard(icon: ImageVector, value: String, label: String, modifier: 
 @Composable
 private fun QuickActionCard(icon: ImageVector, title: String, onClick: () -> Unit, modifier: Modifier = Modifier) {
     Card(modifier = modifier.clickable(onClick = onClick),
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant),
-        shape = RoundedCornerShape(12.dp)) {
+        colors = CardDefaults.defaultColors(color = MaterialTheme.colorScheme.surfaceVariant),
+        cornerRadius = 12.dp) {
         Column(modifier = Modifier.fillMaxWidth().padding(16.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.spacedBy(8.dp)) {

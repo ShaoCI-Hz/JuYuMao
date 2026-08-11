@@ -9,7 +9,10 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.QueueMusic
 import androidx.compose.material.icons.filled.*
-import androidx.compose.material3.*
+import androidx.compose.material3.FilledTonalButton
+import androidx.compose.material3.MaterialTheme
+import top.yukonga.miuix.kmp.basic.*
+import top.yukonga.miuix.kmp.overlay.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -151,20 +154,30 @@ fun PlaylistScreen(
 
     // ── 删除确认 ──
     deleteTarget?.let { target ->
-        AlertDialog(
+        OverlayDialog(
+            show = true,
+            title = "删除歌单",
+            summary = "确定删除歌单「${target.name}」吗？歌单内的歌曲不会被删除。",
             onDismissRequest = { deleteTarget = null },
-            title = { Text("删除歌单") },
-            text = { Text("确定删除歌单「${target.name}」吗？歌单内的歌曲不会被删除。") },
-            confirmButton = {
-                TextButton(onClick = {
-                    viewModel.deletePlaylist(target.id)
-                    deleteTarget = null
-                }) { Text("删除", color = MaterialTheme.colorScheme.error) }
-            },
-            dismissButton = {
-                TextButton(onClick = { deleteTarget = null }) { Text("取消") }
-            },
-        )
+        ) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+            ) {
+                TextButton(
+                    text = "取消",
+                    onClick = { deleteTarget = null },
+                )
+                TextButton(
+                    text = "删除",
+                    onClick = {
+                        viewModel.deletePlaylist(target.id)
+                        deleteTarget = null
+                    },
+                    colors = ButtonDefaults.textButtonColors(textColor = MaterialTheme.colorScheme.error),
+                )
+            }
+        }
     }
 }
 
@@ -272,25 +285,33 @@ private fun NameDialog(
     onDismiss: () -> Unit,
 ) {
     var name by remember { mutableStateOf(initialName) }
-    AlertDialog(
+    OverlayDialog(
+        show = true,
+        title = title,
         onDismissRequest = onDismiss,
-        title = { Text(title) },
-        text = {
-            OutlinedTextField(
-                value = name,
-                onValueChange = { name = it },
-                label = { Text("歌单名称") },
-                singleLine = true,
-                modifier = Modifier.fillMaxWidth(),
+    ) {
+        TextField(
+            value = name,
+            onValueChange = { name = it },
+            label = "歌单名称",
+            singleLine = true,
+            modifier = Modifier.fillMaxWidth(),
+        )
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween,
+        ) {
+            TextButton(
+                text = "取消",
+                onClick = onDismiss,
             )
-        },
-        confirmButton = {
-            TextButton(onClick = { onConfirm(name) }, enabled = name.isNotBlank()) { Text("确定") }
-        },
-        dismissButton = {
-            TextButton(onClick = onDismiss) { Text("取消") }
-        },
-    )
+            TextButton(
+                text = "确定",
+                onClick = { onConfirm(name) },
+                enabled = name.isNotBlank(),
+            )
+        }
+    }
 }
 
 /**
@@ -305,48 +326,48 @@ fun AddToPlaylistDialog(
     val playlists by viewModel.playlists.collectAsStateWithLifecycle()
     var showCreate by remember { mutableStateOf(false) }
 
-    AlertDialog(
+    OverlayDialog(
+        show = true,
+        title = "添加到歌单",
         onDismissRequest = onDismiss,
-        title = { Text("添加到歌单") },
-        text = {
-            Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                if (playlists.isEmpty()) {
-                    Text("还没有歌单", style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant)
-                } else {
-                    playlists.forEach { item ->
-                        Row(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .clickable {
-                                    viewModel.addSongToPlaylist(item.playlist.id, song.id)
-                                    onDismiss()
-                                }
-                                .padding(vertical = 10.dp),
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.spacedBy(8.dp),
-                        ) {
-                            Icon(Icons.AutoMirrored.Filled.QueueMusic, null,
-                                tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(20.dp))
-                            Text(item.playlist.name, style = MaterialTheme.typography.bodyLarge,
-                                color = MaterialTheme.colorScheme.onSurface)
-                            Text("(${item.songCount})", style = MaterialTheme.typography.bodySmall,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant)
-                        }
+    ) {
+        Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+            if (playlists.isEmpty()) {
+                Text("还没有歌单", style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant)
+            } else {
+                playlists.forEach { item ->
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clickable {
+                                viewModel.addSongToPlaylist(item.playlist.id, song.id)
+                                onDismiss()
+                            }
+                            .padding(vertical = 10.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    ) {
+                        Icon(Icons.AutoMirrored.Filled.QueueMusic, null,
+                            tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(20.dp))
+                        Text(item.playlist.name, style = MaterialTheme.typography.bodyLarge,
+                            color = MaterialTheme.colorScheme.onSurface)
+                        Text("(${item.songCount})", style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant)
                     }
                 }
-                TextButton(onClick = { showCreate = true }, modifier = Modifier.fillMaxWidth()) {
-                    Icon(Icons.Default.Add, null, modifier = Modifier.size(18.dp))
-                    Spacer(Modifier.width(4.dp))
-                    Text("新建歌单")
-                }
             }
-        },
-        confirmButton = {},
-        dismissButton = {
-            TextButton(onClick = onDismiss) { Text("关闭") }
-        },
-    )
+            TextButton(
+                text = "新建歌单",
+                onClick = { showCreate = true },
+                modifier = Modifier.fillMaxWidth(),
+            )
+            TextButton(
+                text = "关闭",
+                onClick = onDismiss,
+            )
+        }
+    }
 
     if (showCreate) {
         NameDialog(
