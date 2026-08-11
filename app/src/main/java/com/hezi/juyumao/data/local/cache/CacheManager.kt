@@ -93,42 +93,49 @@ class CacheManager @Inject constructor(
         } ?: emptyList()
     }
 
+    /** 下载 NAS 歌曲到本地缓存（带总大小限制）；写/删/清共用同一把锁，避免并发 unlink 正在写入的文件 */
+    private val lock = Any()
+
     /** 下载 NAS 歌曲到本地缓存（带总大小限制） */
-    fun saveNasSong(songId: Long, fileName: String, data: java.io.InputStream): File {
+    fun saveNasSong(songId: Long, fileName: String, data: java.io.InputStream): File = synchronized(lock) {
         val safeName = fileName.replace(Regex("[\\\\/:*?\"<>|]"), "_")
         val file = File(nasDownloadDir, "song_${songId}_$safeName")
         file.outputStream().use { out ->
             data.copyTo(out, bufferSize = 64 * 1024)
         }
-        // 超过上限时清理最旧的缓存
-        enforceNasLimit()
-        return file
+        // 超过上限时清理最旧的缓存（跳过刚写入的文件，避免单文件超限时被自身清理逻辑删掉）
+        enforceNasLimit(justWritten = file)
+        file
     }
 
-    /** 保持 NAS 下载缓存总量在上限内（删除最旧文件） */
-    private fun enforceNasLimit() {
-        val files = nasDownloadDir.listFiles()?.filter { it.isFile }?.sortedBy { it.lastModified() } ?: return
-        var total = files.sumOf { it.length() }
+    /** 保持 NAS 下载缓存总量在上限内（删除最旧文件，排除刚写入的文件） */
+    private fun enforceNasLimit(justWritten: File) {
+        val files = nasDownloadDir.listFiles()
+            ?.filter { it.isFile && it != justWritten }
+            ?.sortedBy { it.lastModified() }
+            ?: return
+        var total = files.sumOf { it.length() } + justWritten.length()
         for (file in files) {
             if (total <= MAX_NAS_DOWNLOAD_SIZE) break
             total -= file.length()
-            file.delete()
+            // 删除失败回滚计数，避免记账偏差与后续循环误判
+            if (!file.delete()) total += file.length()
         }
     }
 
     /** 删除单个 NAS 缓存歌曲 */
-    fun deleteNasSong(songId: Long): Boolean {
+    fun deleteNasSong(songId: Long): Boolean = synchronized(lock) {
         var deleted = false
         nasDownloadDir.listFiles()?.forEach { file ->
             if (file.name.startsWith("song_${songId}_")) {
                 if (file.delete()) deleted = true
             }
         }
-        return deleted
+        deleted
     }
 
     /** 清除指定类型的缓存 */
-    fun clearCache(clearAlbumArt: Boolean, clearNas: Boolean, clearLyrics: Boolean, clearTemp: Boolean) {
+    fun clearCache(clearAlbumArt: Boolean, clearNas: Boolean, clearLyrics: Boolean, clearTemp: Boolean) = synchronized(lock) {
         if (clearAlbumArt) clearDir(albumArtDir)
         if (clearNas) clearDir(nasDownloadDir)
         if (clearLyrics) clearDir(lyricsDir)
@@ -136,7 +143,7 @@ class CacheManager @Inject constructor(
     }
 
     /** 清除所有缓存 */
-    fun clearAllCache() {
+    fun clearAllCache() = synchronized(lock) {
         clearDir(albumArtDir)
         clearDir(nasDownloadDir)
         clearDir(lyricsDir)

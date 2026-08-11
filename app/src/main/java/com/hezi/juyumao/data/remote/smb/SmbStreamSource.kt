@@ -15,19 +15,17 @@ class SmbStreamSource(
     private var bytesRemaining: Long = 0
 
     override fun open(dataSpec: DataSpec): Long {
+        close() // 先释放上一次未关闭的流（异常路径/重试场景），避免 SMB 文件句柄泄漏
         // ExoPlayer 调用线程已非主线程，runBlocking 不会 ANR
         val result = runBlocking {
-            smbClient.openFile(filePath)
+            // 按 dataSpec.position 从指定偏移打开：ExoPlayer seek/恢复播放会带非零 position 重新 open
+            smbClient.openFile(filePath, dataSpec.position)
         }
         inputStream = result.getOrNull()
             ?: throw Exception("无法打开文件: $filePath")
 
-        bytesRemaining = if (dataSpec.length >= 0) {
-            dataSpec.length
-        } else {
-            Long.MAX_VALUE
-        }
-
+        // 未知长度原样返回 C.LENGTH_UNSET(-1)，符合 DataSource 契约（影响 seekability 与读满判断）
+        bytesRemaining = dataSpec.length
         return bytesRemaining
     }
 
@@ -35,15 +33,24 @@ class SmbStreamSource(
         if (length == 0) return 0
         if (bytesRemaining == 0L) return -1
 
-        val bytesToRead = minOf(length.toLong(), bytesRemaining).toInt()
-        val bytesRead = inputStream?.read(buffer, offset, bytesToRead) ?: -1
+        val bytesToRead = if (bytesRemaining > 0) {
+            minOf(length.toLong(), bytesRemaining).toInt()
+        } else {
+            length // 未知长度（-1）时不截断
+        }
+
+        // InputStream 契约：length > 0 时不得返回 0，否则 ExoPlayer 会忙循环空转
+        var bytesRead = inputStream?.read(buffer, offset, bytesToRead) ?: -1
+        while (bytesRead == 0) {
+            bytesRead = inputStream?.read(buffer, offset, bytesToRead) ?: -1
+        }
 
         if (bytesRead == -1) {
             bytesRemaining = 0
             return -1
         }
 
-        bytesRemaining -= bytesRead
+        if (bytesRemaining > 0) bytesRemaining -= bytesRead
         return bytesRead
     }
 

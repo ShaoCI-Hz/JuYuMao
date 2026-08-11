@@ -3,6 +3,7 @@ package com.hezi.juyumao.data.local.db.dao
 import androidx.room.Dao
 import androidx.room.Embedded
 import androidx.room.Insert
+import androidx.room.OnConflictStrategy
 import androidx.room.Query
 import androidx.room.Transaction
 import com.hezi.juyumao.data.local.db.entity.PlaylistEntity
@@ -38,10 +39,11 @@ interface PlaylistDao {
 
     // ── 歌单歌曲关联 ──
 
-    @Insert
+    // 复合主键 (playlistId, songId) 已唯一；IGNORE 避免重复加入同曲目抛 SQLiteConstraintException 崩溃
+    @Insert(onConflict = OnConflictStrategy.IGNORE)
     suspend fun addSong(relation: PlaylistSongEntity)
 
-    @Insert
+    @Insert(onConflict = OnConflictStrategy.IGNORE)
     suspend fun addSongs(relations: List<PlaylistSongEntity>)
 
     @Query("DELETE FROM playlist_songs WHERE playlistId = :playlistId AND songId = :songId")

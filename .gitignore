@@ -11,3 +11,6 @@ local.properties
 /app/build
 /.worktrees
 .gh_token
+# Reasonix 本地运行时数据与权限记录，不入库
+/.reasonix
+/reasonix.toml

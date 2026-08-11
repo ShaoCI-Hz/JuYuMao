@@ -8,6 +8,7 @@ import com.hezi.juyumao.data.local.scanner.LocalMusicScanner
 import com.hezi.juyumao.data.remote.smb.SmbClientWrapper
 import com.hezi.juyumao.data.remote.smb.SmbFileScanner
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.first
 import javax.inject.Inject
 import javax.inject.Singleton
 
@@ -58,12 +59,28 @@ class MusicRepository @Inject constructor(
         return try {
             val result = localMusicScanner.scanAllMusic()
             result.map { songs ->
-                // 事务保证删除旧数据和插入新数据的原子性
                 database.withTransaction {
-                    songDao.deleteBySource("LOCAL")
-                    songs.chunked(200).forEach { batch ->
-                        songDao.insertAll(batch)
+                    // 保留旧状态：按 filePath 合并已存在的 isFavorite/playCount/lastPlayedAt/addedAt/id，
+                    // 绝不 delete+insert（否则重扫会清空收藏与播放统计、歌单外键级联删歌）
+                    val existing = songDao.getAllSongs().first()
+                        .filter { it.source == "LOCAL" }
+                        .associateBy { it.filePath }
+                    val merged = songs.map { new ->
+                        val old = existing[new.filePath]
+                        if (old != null) {
+                            new.copy(
+                                id = old.id,
+                                isFavorite = old.isFavorite,
+                                playCount = old.playCount,
+                                lastPlayedAt = old.lastPlayedAt,
+                                addedAt = old.addedAt,
+                            )
+                        } else new
                     }
+                    // 差集清理：本地已删除/移走的文件从索引移除，其余 upsert 保留 ID 与统计
+                    val newPaths = merged.map { it.filePath }.toSet()
+                    existing.values.filter { it.filePath !in newPaths }.forEach { songDao.delete(it) }
+                    merged.chunked(200).forEach { batch -> songDao.upsertAll(batch) }
                 }
                 songs.size
             }

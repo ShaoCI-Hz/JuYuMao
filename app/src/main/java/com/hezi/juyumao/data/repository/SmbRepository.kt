@@ -41,7 +41,9 @@ class SmbRepository @Inject constructor(
                 password = decrypted.password,
                 shareName = decrypted.effectiveShareName,
             )
-            serverDao.update(server.copy(lastConnectedAt = System.currentTimeMillis()))
+            // 强制加密后再写库：getAllServers 返回的是解密后的明文对象，直接 update 会把明文密码回写数据库，
+            // 绕过 AES-GCM 加密（安全）
+            serverDao.update(server.copy(lastConnectedAt = System.currentTimeMillis()).encryptPassword())
             Result.success(Unit)
         } catch (e: Exception) {
             Result.failure(e)

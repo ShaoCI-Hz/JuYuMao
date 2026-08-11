@@ -141,7 +141,11 @@ class SmbClientWrapper @Inject constructor() {
     // smbj 的 DiskShare 非线程安全，openFile 需串行化
     private val ioMutex = Mutex()
 
-    suspend fun openFile(path: String): Result<InputStream> = ioMutex.withLock {
+    /**
+     * 打开 SMB 文件。ExoPlayer seek/恢复播放时需从指定偏移读取，否则拖动进度条会从文件头重读。
+     * @param offset 起始读取偏移（字节）；smbj FileInputStream.skip 为 seek 语义，循环跳过直到目标偏移
+     */
+    suspend fun openFile(path: String, offset: Long = 0): Result<InputStream> = ioMutex.withLock {
         withContext(Dispatchers.IO) {
             try {
                 val currentShare = share ?: return@withContext Result.failure(IllegalStateException("未连接"))
@@ -151,7 +155,16 @@ class SmbClientWrapper @Inject constructor() {
                     path, accessMask, null, shareAccess,
                     com.hierynomus.mssmb2.SMB2CreateDisposition.FILE_OPEN, null,
                 )
-                Result.success(file.inputStream)
+                val stream = file.inputStream
+                if (offset > 0) {
+                    var remaining = offset
+                    while (remaining > 0) {
+                        val skipped = stream.skip(remaining)
+                        if (skipped <= 0) break
+                        remaining -= skipped
+                    }
+                }
+                Result.success(stream)
             } catch (e: Exception) {
                 Result.failure(e)
             }
