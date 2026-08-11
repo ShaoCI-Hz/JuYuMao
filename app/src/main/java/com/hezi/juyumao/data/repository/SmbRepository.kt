@@ -3,6 +3,7 @@ package com.hezi.juyumao.data.repository
 import com.hezi.juyumao.data.local.crypto.decryptPassword
 import com.hezi.juyumao.data.local.crypto.encryptPassword
 import com.hezi.juyumao.data.local.db.dao.ServerDao
+import com.hezi.juyumao.data.local.db.dao.SongDao
 import com.hezi.juyumao.data.local.db.entity.ServerEntity
 import com.hezi.juyumao.data.remote.discovery.DiscoveredServer
 import com.hezi.juyumao.data.remote.discovery.SmbDiscovery
@@ -15,6 +16,7 @@ import javax.inject.Singleton
 @Singleton
 class SmbRepository @Inject constructor(
     private val serverDao: ServerDao,
+    private val songDao: SongDao,
     private val connectionPool: SmbConnectionPool,
     private val discovery: SmbDiscovery,
 ) {
@@ -55,6 +57,8 @@ class SmbRepository @Inject constructor(
     }
 
     suspend fun deleteServer(server: ServerEntity) {
+        // 先删除服务器相关歌曲（防止断连服务器的歌曲/歌单引用残留），再断开连接、删记录
+        try { songDao.deleteSongsByServer(server.id) } catch (_: Exception) {}
         connectionPool.disconnect(server.id)
         serverDao.delete(server)
     }

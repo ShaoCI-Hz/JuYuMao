@@ -19,6 +19,14 @@ interface SongDao {
     @Query("SELECT * FROM songs WHERE id = :id")
     suspend fun getById(id: Long): SongEntity?
 
+    /** 一次性取某台 SMB 服务器的全部歌曲（扫描差集清理用） */
+    @Query("SELECT * FROM songs WHERE smbServerId = :serverId")
+    suspend fun getSongsByServerOnce(serverId: Long): List<SongEntity>
+
+    /** 删除某台 SMB 服务器的全部歌曲（删除服务器时清理，避免幽灵数据） */
+    @Query("DELETE FROM songs WHERE smbServerId = :serverId")
+    suspend fun deleteSongsByServer(serverId: Long)
+
     @Query("SELECT * FROM songs ORDER BY lastPlayedAt DESC LIMIT 20")
     fun getRecentlyPlayed(): Flow<List<SongEntity>>
 
@@ -113,4 +121,24 @@ interface SongDao {
     /** 今日播放次数（首页卡片） */
     @Query("SELECT COUNT(*) FROM songs WHERE lastPlayedAt >= :dayStart AND lastPlayedAt > 0")
     fun getTodayPlayCount(dayStart: Long): Flow<Int>
+
+    // ── 听歌报告 SQL 聚合（避免 top200 截断导致总时长/榜单失真） ──
+
+    /** 全量总播放时长 = Σ duration × playCount */
+    @Query("SELECT COALESCE(SUM(duration * playCount), 0) FROM songs")
+    suspend fun getTotalPlayDurationOnce(): Long
+
+    /** 全量 TOP10 播放歌曲 */
+    @Query("SELECT * FROM songs WHERE playCount > 0 ORDER BY playCount DESC, lastPlayedAt DESC LIMIT 10")
+    suspend fun getTopPlayedSongsOnce(): List<SongEntity>
+
+    /** 全量 TOP10 艺术家（按播放次数聚合） */
+    @Query("SELECT artist AS name, SUM(playCount) AS playCount FROM songs WHERE playCount > 0 AND artist != :unknown GROUP BY artist ORDER BY playCount DESC LIMIT 10")
+    suspend fun getTopArtistsOnce(unknown: String = SongEntity.UNKNOWN_ARTIST): List<ArtistPlayCount>
 }
+
+/** 艺术家播放次数聚合结果 */
+data class ArtistPlayCount(
+    val name: String,
+    val playCount: Long,
+)

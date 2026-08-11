@@ -47,10 +47,38 @@ class MusicRepository @Inject constructor(
 
     fun getSongsPlayedSince(since: Long) = songDao.getSongsPlayedSince(since)
 
+    suspend fun getTotalPlayDurationOnce() = songDao.getTotalPlayDurationOnce()
+
+    suspend fun getTopPlayedSongsOnce() = songDao.getTopPlayedSongsOnce()
+
+    suspend fun getTopArtistsOnce() = songDao.getTopArtistsOnce()
+
     suspend fun scanSmbDirectory(smbClient: SmbClientWrapper, path: String, serverId: Long): Result<Int> {
         val result = smbScanner.scanDirectory(smbClient, path, serverId)
         return result.map { songs ->
-            songDao.insertAll(songs)
+            database.withTransaction {
+                // 只清理"本次扫描目录前缀内"的旧记录（防 NAS 已删文件残留幽灵数据，
+                // 且不会误删其他目录的歌曲），并合并已存在的收藏/统计状态
+                val prefix = if (path.endsWith("/")) path else "$path/"
+                val existing = songDao.getSongsByServerOnce(serverId)
+                    .filter { it.smbSharePath?.startsWith(prefix) == true }
+                    .associateBy { it.smbSharePath }
+                val merged = songs.map { new ->
+                    val old = existing[new.smbSharePath]
+                    if (old != null) {
+                        new.copy(
+                            id = old.id,
+                            isFavorite = old.isFavorite,
+                            playCount = old.playCount,
+                            lastPlayedAt = old.lastPlayedAt,
+                            addedAt = old.addedAt,
+                        )
+                    } else new
+                }
+                val newPaths = merged.map { it.smbSharePath }.toSet()
+                existing.values.filter { it.smbSharePath !in newPaths }.forEach { songDao.delete(it) }
+                songDao.upsertAll(merged)
+            }
             songs.size
         }
     }

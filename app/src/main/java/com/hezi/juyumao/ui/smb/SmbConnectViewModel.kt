@@ -146,11 +146,21 @@ class SmbConnectViewModel @Inject constructor(
             Log.d("SmbConnect", "连接: $ip:$port, share=$shareName, subPath=$subPath")
 
             val existing = _uiState.value.savedServers.find { it.ip == ip && it.port == port }
-            val server = existing ?: ServerEntity(
-                name = ip, ip = ip, port = port,
-                username = username, password = password,
-                shareName = sharePath, autoConnect = true,
-            ).encryptPassword()
+            // 已存在时用本次输入的凭据/路径更新并重新加密：否则用户改密码/路径只用于本次连接，
+            // 下次启动自动重连（AppViewModel）会用库内旧凭据必然认证失败
+            val server = if (existing != null) {
+                existing.copy(
+                    username = username,
+                    password = password,
+                    shareName = sharePath,
+                ).encryptPassword()
+            } else {
+                ServerEntity(
+                    name = ip, ip = ip, port = port,
+                    username = username, password = password,
+                    shareName = sharePath, autoConnect = true,
+                ).encryptPassword()
+            }
             val serverId = if (existing != null) existing.id else serverDao.insert(server)
 
             try {

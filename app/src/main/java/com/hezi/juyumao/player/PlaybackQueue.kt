@@ -21,10 +21,13 @@ class PlaybackQueue {
 
     fun setQueue(songs: List<Song>, startIndex: Int = 0) {
         _songs.value = songs
-        _currentIndex.value = startIndex
-        if (songs.isNotEmpty()) {
-            _shuffleOrder.value = songs.indices.shuffled()
-        }
+        _currentIndex.value = if (songs.isEmpty()) -1 else startIndex.coerceIn(0, songs.lastIndex)
+        _shuffleOrder.value = if (songs.isEmpty()) emptyList() else songs.indices.shuffled()
+    }
+
+    /** 外部同步当前索引（无缝模式 ExoPlayer 自然切歌时由 PlaybackController 调用，保持统计/currentSong 一致） */
+    fun syncIndex(index: Int) {
+        if (index in _songs.value.indices) _currentIndex.value = index
     }
 
     fun currentSong(): Song? {
@@ -35,36 +38,38 @@ class PlaybackQueue {
     fun next(repeatMode: RepeatMode, shuffle: Boolean): Song? {
         val songs = _songs.value
         if (songs.isEmpty()) return null
+        val currentIdx = _currentIndex.value
+        val shuffleOrder = _shuffleOrder.value
 
         val nextIndex = when (repeatMode) {
-            RepeatMode.ONE -> _currentIndex.value
+            RepeatMode.ONE -> currentIdx
             RepeatMode.ALL -> {
                 if (shuffle) {
-                    val shuffleIdx = _shuffleOrder.value.indexOf(_currentIndex.value)
-                    // 修复: indexOf 返回 -1 时重建 shuffle order
+                    val shuffleIdx = shuffleOrder.indexOf(currentIdx)
+                    // 索引失效（并发修改）时重建随机序列
                     if (shuffleIdx == -1) {
                         _shuffleOrder.value = songs.indices.shuffled()
-                        (_currentIndex.value + 1) % songs.size
+                        val newOrder = _shuffleOrder.value
+                        newOrder[(newOrder.indexOf(currentIdx) + 1) % songs.size]
                     } else {
-                        _shuffleOrder.value[(shuffleIdx + 1) % songs.size]
+                        shuffleOrder[(shuffleIdx + 1) % songs.size]
                     }
                 } else {
-                    (_currentIndex.value + 1) % songs.size
+                    (currentIdx + 1) % songs.size
                 }
             }
             RepeatMode.OFF -> {
                 if (shuffle) {
-                    var shuffleIdx = _shuffleOrder.value.indexOf(_currentIndex.value)
+                    var shuffleIdx = shuffleOrder.indexOf(currentIdx)
                     if (shuffleIdx == -1) {
-                        // 索引失效时重建
                         _shuffleOrder.value = songs.indices.shuffled()
-                        shuffleIdx = _shuffleOrder.value.indexOf(_currentIndex.value)
+                        shuffleIdx = _shuffleOrder.value.indexOf(currentIdx)
                         if (shuffleIdx == -1) shuffleIdx = 0
                     }
                     if (shuffleIdx + 1 >= songs.size) return null
                     _shuffleOrder.value[shuffleIdx + 1]
                 } else {
-                    val next = _currentIndex.value + 1
+                    val next = currentIdx + 1
                     if (next >= songs.size) return null
                     next
                 }
@@ -78,11 +83,13 @@ class PlaybackQueue {
     fun previous(repeatMode: RepeatMode, shuffle: Boolean = false): Song? {
         val songs = _songs.value
         if (songs.isEmpty()) return null
+        val currentIdx = _currentIndex.value
 
         _currentIndex.value = when (repeatMode) {
+            RepeatMode.ONE -> currentIdx // 与 next(ONE) 对称：单曲循环原地
             RepeatMode.ALL -> {
                 if (shuffle) {
-                    val shuffleIdx = _shuffleOrder.value.indexOf(_currentIndex.value)
+                    val shuffleIdx = _shuffleOrder.value.indexOf(currentIdx)
                     if (shuffleIdx == -1) {
                         _shuffleOrder.value = songs.indices.shuffled()
                         songs.size - 1
@@ -91,10 +98,10 @@ class PlaybackQueue {
                         _shuffleOrder.value[prevIdx]
                     }
                 } else {
-                    (_currentIndex.value - 1 + songs.size) % songs.size
+                    (currentIdx - 1 + songs.size) % songs.size
                 }
             }
-            else -> maxOf(0, _currentIndex.value - 1)
+            RepeatMode.OFF -> maxOf(0, currentIdx - 1)
         }
         return currentSong()
     }
@@ -112,8 +119,10 @@ class PlaybackQueue {
         val wasBeforeCurrent = index < _currentIndex.value
         songs.removeAt(index)
         _songs.value = songs
-        // 删除后重建 shuffle 索引
-        _shuffleOrder.value = songs.indices.shuffled()
+        // 保持原随机播放进度：order 中大于 index 的减一、被删索引丢弃，不再整体重建随机序列
+        _shuffleOrder.value = _shuffleOrder.value
+            .filter { it != index }
+            .map { if (it > index) it - 1 else it }
         _currentIndex.value = when {
             songs.isEmpty() -> -1
             removingCurrent -> maxOf(0, index.coerceAtMost(songs.size - 1))

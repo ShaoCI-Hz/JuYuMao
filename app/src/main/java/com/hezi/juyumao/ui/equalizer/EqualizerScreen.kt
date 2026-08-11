@@ -31,7 +31,9 @@ fun EqualizerScreen(
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
     val spectrum by viewModel.spectrum.collectAsStateWithLifecycle()
-    var selectedPresetIndex by remember(state.currentPreset) { mutableIntStateOf(state.currentPreset.toInt()) }
+    // 选中态完全由 AudioEffectsManager 的 state.currentPreset 派生（本地副本与真实预设脱节
+    // 会导致"自定义"chip 不通知管理器、退出重进后高亮回旧预设）
+    val currentPreset = state.currentPreset.toInt()
 
     Column(
         modifier = Modifier
@@ -113,9 +115,8 @@ fun EqualizerScreen(
             ) {
                 items(state.presets) { preset ->
                     FilterChip(
-                        selected = selectedPresetIndex == preset.index.toInt(),
+                        selected = currentPreset == preset.index.toInt(),
                         onClick = {
-                            selectedPresetIndex = preset.index.toInt()
                             viewModel.usePreset(preset.index)
                         },
                         label = { Text(preset.name) },
@@ -123,8 +124,8 @@ fun EqualizerScreen(
                 }
                 item {
                     FilterChip(
-                        selected = selectedPresetIndex == -1,
-                        onClick = { selectedPresetIndex = -1 },
+                        selected = currentPreset == -1,
+                        onClick = { viewModel.usePreset(-1) },
                         label = { Text("自定义") },
                     )
                 }
@@ -177,7 +178,7 @@ fun EqualizerScreen(
                         value = sliderValue,
                         onValueChange = {
                             sliderValue = it
-                            selectedPresetIndex = -1
+                            // 手动调频即自定义模式：由 AudioEffectsManager.setBandLevel 统一置 currentPreset=-1
                         },
                         onValueChangeFinished = {
                             viewModel.setBandLevel(band.index, sliderValue.toInt().toShort())

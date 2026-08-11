@@ -19,6 +19,11 @@ data class ScanProgress(
 
 class SmbFileScanner @Inject constructor() {
 
+    private companion object {
+        /** 递归深度上限：防止符号链接/reparse point 成环导致栈溢出或超时 */
+        const val MAX_DEPTH = 64
+    }
+
     suspend fun scanDirectory(
         smbClient: SmbClientWrapper,
         path: String,
@@ -28,7 +33,9 @@ class SmbFileScanner @Inject constructor() {
         try {
             val songs = mutableListOf<SongEntity>()
             val progressState = ScanProgressState()
-            scanRecursive(smbClient, path, serverId, songs, onProgress, progressState)
+            // visited 集合做循环检测（符号链接环）
+            val visited = java.util.HashSet<String>()
+            scanRecursive(smbClient, path, serverId, songs, onProgress, progressState, visited, isRoot = true)
             onProgress(ScanProgress(
                 scannedFiles = progressState.totalScanned,
                 foundSongs = songs.size,
@@ -55,9 +62,20 @@ class SmbFileScanner @Inject constructor() {
         result: MutableList<SongEntity>,
         onProgress: (ScanProgress) -> Unit,
         progressState: ScanProgressState,
+        visited: java.util.HashSet<String>,
+        isRoot: Boolean = false,
+        depth: Int = 0,
     ) {
+        if (depth > MAX_DEPTH) return
+        // 循环检测：同一路径已访问则跳过（SMB 符号链接/reparse point 可能成环）
+        if (!visited.add(path)) return
+
         val filesResult = smbClient.listFiles(path)
         if (filesResult.isFailure) {
+            // 根目录失败必须上报（UI 显示"扫描完成找到 0 首"是误导）；子目录失败仅记录继续
+            if (isRoot) {
+                throw filesResult.exceptionOrNull() ?: Exception("扫描失败: $path")
+            }
             Log.e("SmbFileScanner", "列出文件失败: $path", filesResult.exceptionOrNull())
             return
         }
@@ -66,10 +84,12 @@ class SmbFileScanner @Inject constructor() {
 
         for (file in files) {
             progressState.totalScanned++
+            // 跳过隐藏文件/目录（NAS 常见 @eaDir/#recycle/.Trash/.thumbnail 等）
+            if (file.name.startsWith(".") || file.name.startsWith("@") || file.name.startsWith("#")) continue
             if (file.isDirectory) {
                 // 排除系统目录
                 if (!AudioFileFilter.isExcludedPath(file.path)) {
-                    scanRecursive(smbClient, file.path, serverId, result, onProgress, progressState)
+                    scanRecursive(smbClient, file.path, serverId, result, onProgress, progressState, visited, depth = depth + 1)
                 }
             } else if (AudioFileFilter.isAudioFile(file.name)
                 && !AudioFileFilter.isExcludedPath(file.path)

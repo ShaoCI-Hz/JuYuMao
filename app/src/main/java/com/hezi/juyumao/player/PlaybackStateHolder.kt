@@ -39,6 +39,7 @@ class PlaybackStateHolder @Inject constructor() {
     val errorMessage: StateFlow<String?> = _errorMessage
 
     @Volatile private var exoPlayer: ExoPlayer? = null
+    private var boundListener: Player.Listener? = null
 
     // 进度轮询协程
     private val scope = CoroutineScope(Dispatchers.Main + SupervisorJob())
@@ -47,8 +48,10 @@ class PlaybackStateHolder @Inject constructor() {
     fun getExoPlayer(): ExoPlayer? = exoPlayer
 
     fun bindPlayer(player: ExoPlayer) {
+        // 重复 bind 时先移除旧 listener，避免监听器堆积与旧播放器回调串台
+        boundListener?.let { exoPlayer?.removeListener(it) }
         exoPlayer = player
-        player.addListener(object : Player.Listener {
+        val listener = object : Player.Listener {
             override fun onPlaybackStateChanged(state: Int) {
                 if (state == Player.STATE_READY) {
                     _duration.value = player.duration.coerceAtLeast(0)
@@ -59,12 +62,15 @@ class PlaybackStateHolder @Inject constructor() {
                     _isPlaying.value = false
                 }
             }
+
             override fun onIsPlayingChanged(playing: Boolean) {
                 _isPlaying.value = playing
                 // 播放时启动轮询，暂停时停止
                 if (playing) startPolling() else stopPolling()
             }
-        })
+        }
+        boundListener = listener
+        player.addListener(listener)
     }
 
     private fun startPolling() {
@@ -85,9 +91,11 @@ class PlaybackStateHolder @Inject constructor() {
     private fun stopPolling() {
         pollJob?.cancel()
         pollJob = null
-        // 暂停时最后一次同步位置
+        // 暂停时最后一次同步位置（播放器已释放时 currentPosition 可能抛异常，需防护）
         exoPlayer?.let {
-            _position.value = it.currentPosition
+            try {
+                _position.value = it.currentPosition
+            } catch (_: Exception) {}
         }
     }
 
@@ -125,5 +133,8 @@ class PlaybackStateHolder @Inject constructor() {
     fun release() {
         pollJob?.cancel()
         scope.cancel()
+        // 置空引用：release 后 getExoPlayer() 不应返回已释放实例，避免外部 IllegalStateException
+        exoPlayer = null
+        boundListener = null
     }
 }

@@ -43,7 +43,9 @@ class DynamicLoadControl @Inject constructor() : DefaultLoadControl() {
     }
 
     override fun shouldStartPlayback(parameters: LoadControl.Parameters): Boolean {
-        // HiRes 歌曲需要更多预缓冲才启动播放，避免 SMB 串流起播即卡
+        // HiRes 歌曲需要更多预缓冲才启动播放，避免 SMB 串流起播即卡。
+        // 注意：LoadControl.Parameters 无媒体总时长字段，短歌曲（时长 < 缓冲门槛）依赖
+        // 扫描/过滤层（本地 ≥30s、SMB ≥100KB）兜底，此处不做时长比较。
         val requiredUs = playbackBufferMs * 1000L
         if (parameters.bufferedDurationUs < requiredUs) return false
         return super.shouldStartPlayback(parameters)

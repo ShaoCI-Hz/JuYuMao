@@ -9,6 +9,7 @@ import com.hierynomus.smbj.connection.Connection
 import com.hierynomus.smbj.session.Session
 import com.hierynomus.smbj.share.DiskShare
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
@@ -46,7 +47,7 @@ class SmbClientWrapper @Inject constructor() {
             try {
                 disconnect()
 
-                Log.d("SmbClient", "开始连接: $host:$port, user=$username, share=$shareName, domain=$domain")
+                Log.d("SmbClient", "开始连接: $host:$port, share=$shareName")
 
                 val config = SmbConfig.builder()
                     .withTimeout(15, TimeUnit.SECONDS)
@@ -123,6 +124,10 @@ class SmbClientWrapper @Inject constructor() {
                 val currentShare = share ?: return@withContext Result.failure(IllegalStateException("未连接"))
                 val files = currentShare.list(path).mapNotNull { info ->
                     if (info.fileName == "." || info.fileName == "..") return@mapNotNull null
+                    // 拒绝路径穿越：fileName 含 .. 或分隔符（恶意/异常服务器）
+                    if (info.fileName.contains("..") || info.fileName.contains("/") || info.fileName.contains("\\")) {
+                        return@mapNotNull null
+                    }
                     SmbFileInfo(
                         name = info.fileName,
                         path = if (path.endsWith("/")) "$path${info.fileName}" else "$path/${info.fileName}",
@@ -143,11 +148,16 @@ class SmbClientWrapper @Inject constructor() {
 
     /**
      * 打开 SMB 文件。ExoPlayer seek/恢复播放时需从指定偏移读取，否则拖动进度条会从文件头重读。
-     * @param offset 起始读取偏移（字节）；smbj FileInputStream.skip 为 seek 语义，循环跳过直到目标偏移
+     * 返回的流在 read/skip/close 时持有 ioMutex（smbj DiskShare 非线程安全，避免读取期间
+     * 并发 openFile/listFiles 请求交错损坏状态）。
+     * @param offset 起始读取偏移（字节）
      */
     suspend fun openFile(path: String, offset: Long = 0): Result<InputStream> = ioMutex.withLock {
         withContext(Dispatchers.IO) {
             try {
+                if (path.contains("..")) {
+                    return@withContext Result.failure(IllegalArgumentException("非法路径: $path"))
+                }
                 val currentShare = share ?: return@withContext Result.failure(IllegalStateException("未连接"))
                 val accessMask = EnumSet.of(AccessMask.FILE_READ_DATA)
                 val shareAccess = EnumSet.of(com.hierynomus.mssmb2.SMB2ShareAccess.FILE_SHARE_READ)
@@ -155,16 +165,17 @@ class SmbClientWrapper @Inject constructor() {
                     path, accessMask, null, shareAccess,
                     com.hierynomus.mssmb2.SMB2CreateDisposition.FILE_OPEN, null,
                 )
-                val stream = file.inputStream
+                val rawStream = file.inputStream
                 if (offset > 0) {
                     var remaining = offset
                     while (remaining > 0) {
-                        val skipped = stream.skip(remaining)
+                        val skipped = rawStream.skip(remaining)
                         if (skipped <= 0) break
                         remaining -= skipped
                     }
                 }
-                Result.success(stream)
+                // 返回持锁委托流：整个读取生命周期串行化所有 smbj 操作
+                Result.success(LockedInputStream(rawStream, ioMutex))
             } catch (e: Exception) {
                 Result.failure(e)
             }
@@ -174,15 +185,42 @@ class SmbClientWrapper @Inject constructor() {
     // share/connection 是 @Volatile，直接读即可，避免与 connect 的 Mutex 交叉死锁
     fun isConnected(): Boolean = share != null && connection?.isConnected == true
 
+    /**
+     * 断开连接。先摘除引用再释放资源（避免与进行中的 connect 竞态：connect 后续写入的是新引用，
+     * 不会拿到半关闭对象）。
+     */
     fun disconnect() {
-        try { share?.close() } catch (_: Exception) {}
-        try { session?.close() } catch (_: Exception) {}
-        try { connection?.close() } catch (_: Exception) {}
-        try { client?.close() } catch (_: Exception) {}
+        val s = share; val se = session; val c = connection; val cl = client
         share = null
         session = null
         connection = null
         client = null
+        try { s?.close() } catch (_: Exception) {}
+        try { se?.close() } catch (_: Exception) {}
+        try { c?.close() } catch (_: Exception) {}
+        try { cl?.close() } catch (_: Exception) {}
+    }
+}
+
+/**
+ * 持锁输入流：read/skip/close 全部在 ioMutex 内执行，保证 smbj DiskShare 的并发安全。
+ * ExoPlayer loader 线程非主线程，runBlocking 不会 ANR。
+ */
+private class LockedInputStream(
+    private val delegate: InputStream,
+    private val mutex: Mutex,
+) : InputStream() {
+    override fun read(): Int = runBlocking { mutex.withLock { delegate.read() } }
+
+    override fun read(b: ByteArray, off: Int, len: Int): Int =
+        runBlocking { mutex.withLock { delegate.read(b, off, len) } }
+
+    override fun skip(n: Long): Long = runBlocking { mutex.withLock { delegate.skip(n) } }
+
+    override fun available(): Int = runBlocking { mutex.withLock { delegate.available() } }
+
+    override fun close() {
+        runBlocking { mutex.withLock { delegate.close() } }
     }
 }
 

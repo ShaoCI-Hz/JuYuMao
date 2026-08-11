@@ -88,6 +88,9 @@ class AudioEffectsManager @Inject constructor() {
     fun setBandLevel(bandIndex: Short, level: Short) {
         try {
             equalizer?.setBandLevel(bandIndex, level)
+            // 手动调频后进入自定义模式：重置 currentPreset，
+            // 否则 Android Equalizer.currentPreset 仍返回旧预设，UI 同时显示"已选预设"与自定义频段
+            _state.value = _state.value.copy(currentPreset = -1)
             refreshState()
         } catch (_: Exception) {}
     }

@@ -23,6 +23,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import javax.inject.Inject
@@ -62,11 +63,30 @@ class PlaybackController @Inject constructor(
         exoPlayer.addListener(object : androidx.media3.common.Player.Listener {
             override fun onPlayerError(error: androidx.media3.common.PlaybackException) {
                 val song = queue.currentSong()
-                playbackStateHolder.setErrorMessage("无法播放该格式，已跳过")
                 val songId = song?.id
+                // 按错误类型给提示：网络/IO 类可重试，解码类提示格式不支持
+                val message = when (error.errorCode) {
+                    androidx.media3.common.PlaybackException.ERROR_CODE_IO_UNSPECIFIED,
+                    androidx.media3.common.PlaybackException.ERROR_CODE_IO_NETWORK_CONNECTION_FAILED,
+                    androidx.media3.common.PlaybackException.ERROR_CODE_IO_NETWORK_CONNECTION_TIMEOUT,
+                    androidx.media3.common.PlaybackException.ERROR_CODE_IO_BAD_HTTP_STATUS,
+                    -> "网络中断，请检查 NAS 连接"
+                    else -> "无法播放该格式"
+                }
+                playbackStateHolder.setErrorMessage("$message，已跳过")
                 if (songId != null && songId != lastErrorSongId) {
                     lastErrorSongId = songId
-                    scope.launch { next() }
+                    scope.launch {
+                        // 无缝模式错误后 ExoPlayer 停在 STATE_IDLE，必须先 prepare 才能离开；
+                        // 否则 seek/play 无效，无缝队列永久卡死
+                        if (exoPlayer.mediaItemCount > 1) {
+                            exoPlayer.prepare()
+                            exoPlayer.seekToDefaultPosition(queue.currentIndex.value)
+                            exoPlayer.play()
+                        } else {
+                            playCurrent()
+                        }
+                    }
                 } else {
                     // 连续同一首失败：停止，避免死循环
                     lastErrorSongId = null
@@ -75,10 +95,14 @@ class PlaybackController @Inject constructor(
             }
         })
 
-        // 读取无缝/淡化设置 + 倍速
+        // 无缝/淡化设置持续生效（改设置后无需杀进程）；倍速仍只读一次启动值
         scope.launch {
-            gaplessEnabled = try { settingsRepository.gaplessPlayback.first() } catch (_: Exception) { false }
-            crossfadeMs = try { settingsRepository.crossfadeDuration.first() } catch (_: Exception) { 0 }
+            try { settingsRepository.gaplessPlayback.collect { gaplessEnabled = it } } catch (_: Exception) {}
+        }
+        scope.launch {
+            try { settingsRepository.crossfadeDuration.collect { crossfadeMs = it } } catch (_: Exception) {}
+        }
+        scope.launch {
             val speed = try { settingsRepository.playbackSpeed.first() } catch (_: Exception) { 1.0f }
             if (speed > 0f && speed != 1.0f) exoPlayer.setPlaybackSpeed(speed)
         }
@@ -86,6 +110,9 @@ class PlaybackController @Inject constructor(
         // 播放统计埋点：曲目切换时递增 playCount（T10.9）
         exoPlayer.addListener(object : androidx.media3.common.Player.Listener {
             override fun onMediaItemTransition(mediaItem: androidx.media3.common.MediaItem?, reason: Int) {
+                // 无缝模式自然切歌：先同步队列索引，保证统计与 currentSong 一致（不记旧歌）
+                val mediaIndex = exoPlayer.currentMediaItemIndex
+                if (mediaIndex in 0 until queue.songs.value.size) queue.syncIndex(mediaIndex)
                 val song = queue.currentSong() ?: return
                 scope.launch {
                     try { songDao.incrementPlayCount(song.id) } catch (_: Exception) {}
@@ -115,8 +142,12 @@ class PlaybackController @Inject constructor(
         scope.launch {
             // 无缝播放开启时整队列加载，由 ExoPlayer 衔接曲目
             if (gaplessEnabled && songs.size > 1) {
+                // 无缝队列按整库 HiRes 情况设置缓冲档位（单个 playCurrent 只在单曲模式调用）
+                val bufferKb = try { settingsRepository.audioBufferSize.first() } catch (_: Exception) { 256 }
+                dynamicLoadControl.updateSettings(bufferKb, songs.any { it.isHiRes })
                 val sources = buildMediaSources(songs)
                 exoPlayer.setMediaSources(sources, startIndex.coerceIn(0, sources.size - 1), 0L)
+                syncExoPlayerRepeatMode()
                 exoPlayer.prepare()
                 exoPlayer.playWhenReady = true
             } else {
@@ -126,6 +157,8 @@ class PlaybackController @Inject constructor(
     }
 
     fun play() {
+        // 交叉淡化关闭时保证音量归一（避免上次淡出/取消停在中间音量）
+        if (crossfadeMs <= 0) exoPlayer.setVolume(1f)
         exoPlayer.playWhenReady = true
         // 淡入（交叉淡化开启时）
         if (crossfadeMs > 0) {
@@ -154,7 +187,7 @@ class PlaybackController @Inject constructor(
     }
 
     fun next() {
-        val song = queue.next(repeatMode, shuffleEnabled) ?: return
+        if (queue.next(repeatMode, shuffleEnabled) == null) return
         scope.launch {
             if (gaplessEnabled && exoPlayer.mediaItemCount > 1) {
                 // 无缝模式：ExoPlayer 已加载整队列，直接跳转
@@ -167,7 +200,8 @@ class PlaybackController @Inject constructor(
     }
 
     fun previous() {
-        val song = queue.previous(repeatMode) ?: return
+        // shuffle 模式下上一首也走随机序列（与 next 对称）
+        if (queue.previous(repeatMode, shuffleEnabled) == null) return
         scope.launch {
             if (gaplessEnabled && exoPlayer.mediaItemCount > 1) {
                 exoPlayer.seekToDefaultPosition(queue.currentIndex.value)
@@ -188,6 +222,21 @@ class PlaybackController @Inject constructor(
 
     fun setRepeat(modeIndex: Int) {
         repeatModeIndex = modeIndex
+        // 无缝模式由 ExoPlayer 承担列表/单曲循环（非无缝走 queue 逻辑，此处同步无副作用）
+        exoPlayer.repeatMode = when (modeIndex) {
+            2 -> androidx.media3.common.Player.REPEAT_MODE_ONE
+            1 -> androidx.media3.common.Player.REPEAT_MODE_ALL
+            else -> androidx.media3.common.Player.REPEAT_MODE_OFF
+        }
+    }
+
+    /** 无缝模式下按当前模式同步 ExoPlayer 循环模式 */
+    private fun syncExoPlayerRepeatMode() {
+        exoPlayer.repeatMode = when (repeatModeIndex) {
+            2 -> androidx.media3.common.Player.REPEAT_MODE_ONE
+            1 -> androidx.media3.common.Player.REPEAT_MODE_ALL
+            else -> androidx.media3.common.Player.REPEAT_MODE_OFF
+        }
     }
 
     fun currentSong(): Song? = queue.currentSong()
@@ -196,6 +245,12 @@ class PlaybackController @Inject constructor(
     fun getQueue(): List<Song> = queue.songs.value
 
     fun getQueueIndex(): Int = queue.currentIndex.value
+
+    /** 响应式队列（QueueViewModel 订阅，播放中变化自动反映） */
+    fun queueSongs(): StateFlow<List<Song>> = queue.songs
+
+    /** 响应式当前索引 */
+    fun queueIndex(): StateFlow<Int> = queue.currentIndex
 
     fun playAt(index: Int) {
         queue.playAt(index)
@@ -211,7 +266,10 @@ class PlaybackController @Inject constructor(
 
     fun clearQueue() {
         queue.clear()
+        fadeJob?.cancel()
         exoPlayer.stop()
+        // Media3 的 stop 保留队列，需显式清空，否则下次 play() 会重播残留队列
+        exoPlayer.setMediaItems(emptyList())
         playbackStateHolder.updateSong(null)
     }
 
@@ -226,12 +284,13 @@ class PlaybackController @Inject constructor(
 
     // ── 内部 ──
 
-    /** 为整队列构建 MediaSource（SMB 歌曲逐首连接，失败降级为单曲模式） */
+    /** 为整队列构建 MediaSource（SMB 歌曲逐首连接，失败降级为本地占位源） */
     private suspend fun buildMediaSources(songs: List<SongEntity>): List<MediaSource> {
         val sources = mutableListOf<MediaSource>()
         for (song in songs) {
             val domain = song.toDomain()
-            val artPath = playbackStateHolder.artworkUri.value
+            // 每首歌用自己的封面（不再全局复用 artworkUri，避免切歌后通知栏/媒体控件封面错误）
+            val artPath = song.albumArtUri ?: playbackStateHolder.artworkUri.value
             val metadata = MediaMetadata.Builder()
                 .setTitle(domain.title)
                 .setArtist(domain.artist)
@@ -257,7 +316,7 @@ class PlaybackController @Inject constructor(
                         continue
                     }
                 } catch (_: Exception) {}
-                // SMB 连接失败：降级为本地 MediaItem（播放时由错误兜底跳过）
+                // SMB 连接失败：降级为本地占位源（保持 sources 与 queue 索引对齐），播放时由 onPlayerError 跳过
                 sources.add(
                     localSourceFactory.createMediaSource(
                         MediaItem.Builder()
@@ -282,10 +341,13 @@ class PlaybackController @Inject constructor(
 
     private suspend fun playCurrent() {
         val song = queue.currentSong() ?: return
+        // 非淡入淡出路径确保音量归一（上次淡出取消可能停在中间值）
+        if (crossfadeMs <= 0) exoPlayer.setVolume(1f)
         // 动态缓冲：HiRes 歌曲用更大预缓冲（SMB 大文件防卡顿）
         val bufferKb = try { settingsRepository.audioBufferSize.first() } catch (_: Exception) { 256 }
         dynamicLoadControl.updateSettings(bufferKb, song.isHiRes)
-        val artPath = playbackStateHolder.artworkUri.value
+        // 每首歌用自己的封面
+        val artPath = song.albumArtUri ?: playbackStateHolder.artworkUri.value
 
         val metadata = MediaMetadata.Builder()
             .setTitle(song.title)
@@ -300,9 +362,9 @@ class PlaybackController @Inject constructor(
 
         if (song.source == SongSource.SMB && song.smbServerId != null && song.smbSharePath != null) {
             // SMB 歌曲：使用 SmbMediaSource（metadata 在 MediaSource 内，避免 setMediaItem 被覆盖）
-            val server = serverDao.getServerById(song.smbServerId)?.decryptPassword()
-            if (server != null) {
-                try {
+            try {
+                val server = serverDao.getServerById(song.smbServerId)?.decryptPassword()
+                if (server != null) {
                     val smbClient = smbConnectionPool.getConnection(
                         serverId = server.id,
                         host = server.ip,
@@ -316,9 +378,9 @@ class PlaybackController @Inject constructor(
                     exoPlayer.prepare()
                     exoPlayer.playWhenReady = true
                     return
-                } catch (_: Exception) {
-                    // SMB 连接失败，跳过
                 }
+            } catch (_: Exception) {
+                // SMB 连接失败，跳过
             }
         }
 
@@ -338,11 +400,16 @@ class PlaybackController @Inject constructor(
         if (crossfadeMs <= 0) return
         val steps = 20
         val stepMs = crossfadeMs / steps
-        for (i in 1..steps) {
-            val progress = i.toFloat() / steps
-            val volume = from + (to - from) * progress
-            try { exoPlayer.setVolume(volume.coerceIn(0f, 1f)) } catch (_: Exception) {}
-            delay(stepMs.toLong())
+        try {
+            for (i in 1..steps) {
+                val progress = i.toFloat() / steps
+                val volume = from + (to - from) * progress
+                try { exoPlayer.setVolume(volume.coerceIn(0f, 1f)) } catch (_: Exception) {}
+                delay(stepMs.toLong())
+            }
+        } finally {
+            // 任务被取消时把音量收敛到目标端，避免停在中间音量（下次播放静音/错乱）
+            try { exoPlayer.setVolume(to.coerceIn(0f, 1f)) } catch (_: Exception) {}
         }
     }
 }

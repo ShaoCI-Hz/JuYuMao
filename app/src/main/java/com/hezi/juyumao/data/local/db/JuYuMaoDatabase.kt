@@ -17,7 +17,8 @@ import com.hezi.juyumao.data.local.db.entity.SongEntity
 @Database(
     entities = [SongEntity::class, ServerEntity::class, PlaylistEntity::class, PlaylistSongEntity::class],
     version = 3,
-    exportSchema = false,
+    // 导出 schema JSON 到版本库，使迁移可用 MigrationTestHelper 验证（防止升级崩溃）
+    exportSchema = true,
 )
 abstract class JuYuMaoDatabase : RoomDatabase() {
     abstract fun songDao(): SongDao

@@ -39,7 +39,11 @@ fun SmbConnectScreen(
     var showAdvanced by remember { mutableStateOf(false) }
 
     LaunchedEffect(uiState.connectSuccess, uiState.isScanningMusic) {
-        if (uiState.connectSuccess && !uiState.isScanningMusic) onBack()
+        if (uiState.connectSuccess && !uiState.isScanningMusic) {
+            // 先重置成功标志再返回：否则配置变更（旋转屏幕）后重建页面会再次触发 onBack 把用户弹回
+            viewModel.resetConnectSuccess()
+            onBack()
+        }
     }
 
     Column(modifier = Modifier.fillMaxSize()) {

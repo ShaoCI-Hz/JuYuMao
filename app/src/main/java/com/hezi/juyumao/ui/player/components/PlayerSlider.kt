@@ -63,5 +63,6 @@ fun PlayerSlider(
 private fun formatDuration(ms: Long): String {
     if (ms <= 0) return "0:00"
     val totalSeconds = ms / 1000
-    return "%d:%02d".format(totalSeconds / 60, totalSeconds % 60)
+    // 指定 Locale，避免阿拉伯语等系统 locale 下输出非拉丁数字
+    return String.format(java.util.Locale.US, "%d:%02d", totalSeconds / 60, totalSeconds % 60)
 }

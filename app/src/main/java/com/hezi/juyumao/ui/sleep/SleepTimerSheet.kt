@@ -65,7 +65,7 @@ fun SleepTimerSheet(
                 val minutes = remaining / 60
                 val seconds = remaining % 60
                 Text(
-                    text = String.format("%02d:%02d", minutes, seconds),
+                    text = String.format(java.util.Locale.US, "%02d:%02d", minutes, seconds),
                     fontSize = 48.sp,
                     fontWeight = FontWeight.Bold,
                     color = MaterialTheme.colorScheme.primary,

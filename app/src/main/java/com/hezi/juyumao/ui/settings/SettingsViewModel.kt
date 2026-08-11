@@ -40,6 +40,9 @@ class SettingsViewModel @Inject constructor(
     val spectrumVisualizer: StateFlow<Boolean> = settingsRepository.spectrumVisualizer
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), true)
 
+    val smbAutoConnect: StateFlow<Boolean> = settingsRepository.smbAutoConnect
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), true)
+
     fun setThemeMode(mode: ThemeMode) {
         viewModelScope.launch { settingsRepository.setThemeMode(mode) }
     }
@@ -70,5 +73,9 @@ class SettingsViewModel @Inject constructor(
 
     fun setSpectrumVisualizer(enabled: Boolean) {
         viewModelScope.launch { settingsRepository.setSpectrumVisualizer(enabled) }
+    }
+
+    fun setSmbAutoConnect(enabled: Boolean) {
+        viewModelScope.launch { settingsRepository.setSmbAutoConnect(enabled) }
     }
 }

@@ -18,6 +18,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
@@ -53,18 +54,23 @@ class MetadataBatchProcessor @Inject constructor(
     private val _state = MutableStateFlow(BatchCacheState())
     val state: StateFlow<BatchCacheState> = _state.asStateFlow()
 
+    /** 运行中标志：AtomicBoolean CAS 原子占用，避免并发调用双双通过检查启动两个任务 */
+    private val runningFlag = java.util.concurrent.atomic.AtomicBoolean(false)
+
     /** 是否已在运行（防止重复启动） */
-    fun isRunning(): Boolean = _state.value.isRunning
+    fun isRunning(): Boolean = runningFlag.get()
 
     /**
      * 批量处理指定歌曲列表（多线程并行，每个 worker 独立 SMB 连接）
      */
     fun processSongs(songs: List<SongEntity>) {
-        if (_state.value.isRunning) {
+        // 原子占用运行权：检查与设置之间不留窗口
+        if (!runningFlag.compareAndSet(false, true)) {
             Log.d("BatchCache", "批量缓存已在运行，跳过")
             return
         }
         if (songs.isEmpty()) {
+            runningFlag.set(false)
             Log.d("BatchCache", "无歌曲需要处理")
             return
         }
@@ -122,7 +128,8 @@ class MetadataBatchProcessor @Inject constructor(
                         }
 
                         if (workers.isEmpty()) {
-                            // 全部连接失败：降级为逐个处理（无 SMB 连接，跳过下载）
+                            // 全部连接失败：跳过该服务器的 SMB 歌曲（不再降级逐首重连，
+                            // 否则服务器宕机时 N 首歌 = N 次连接尝试并阻塞全局连接池）
                             Log.w("BatchCache", "服务器 ${server.ip} 连接失败，跳过元数据缓存")
                             for (song in serverSongs) {
                                 processOne(song, null, mutex, total) { processed = it }
@@ -136,6 +143,7 @@ class MetadataBatchProcessor @Inject constructor(
                             workers.map { worker ->
                                 async {
                                     while (true) {
+                                        if (!coroutineContext.isActive) break
                                         val song = taskQueue.poll() ?: break
                                         mutex.withLock {
                                             _state.value = BatchCacheState(
@@ -171,8 +179,11 @@ class MetadataBatchProcessor @Inject constructor(
                 Log.e("BatchCache", "批量缓存异常", e)
             }
 
-            _state.value = BatchCacheState(isRunning = false, total = total, processed = total, threadCount = threadCount)
-            Log.d("BatchCache", "批量缓存完成: $total 首")
+            // 收尾用实际处理数（中途异常/取消时不虚报 100% 完成）
+            val actual = _state.value.processed
+            _state.value = BatchCacheState(isRunning = false, total = total, processed = actual, threadCount = threadCount)
+            Log.d("BatchCache", "批量缓存完成: $actual/$total 首")
+            runningFlag.set(false)
         }
     }
 
@@ -183,6 +194,20 @@ class MetadataBatchProcessor @Inject constructor(
         total: Int,
         onProcessed: (Int) -> Unit,
     ) {
+        // 无外部连接时跳过 SMB 歌曲：extractAndUpdateSong(song, null) 会对每首重新发起完整
+        // SMB 连接（服务器宕机时最坏 15s+/首），违背"全失败跳过下载"的既定策略
+        if (client == null && song.source == "SMB") {
+            Log.w("BatchCache", "无可用连接，跳过 SMB 歌曲: ${song.title}")
+            mutex.withLock {
+                val p = _state.value.processed + 1
+                onProcessed(p)
+                _state.value = BatchCacheState(
+                    isRunning = true, total = total,
+                    processed = p, threadCount = _state.value.threadCount,
+                )
+            }
+            return
+        }
         mutex.withLock {
             _state.value = BatchCacheState(
                 isRunning = true, total = total,

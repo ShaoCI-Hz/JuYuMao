@@ -144,7 +144,7 @@ fun HomeScreen(
             Spacer(modifier = Modifier.height(12.dp))
             Row(modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp),
                 horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                QuickActionCard(Icons.Default.QueueMusic, "歌单", onNavigateToPlaylist, Modifier.weight(1f))
+                QuickActionCard(Icons.AutoMirrored.Filled.QueueMusic, "歌单", onNavigateToPlaylist, Modifier.weight(1f))
                 QuickActionCard(Icons.Default.BarChart, "听歌报告", onNavigateToStatistics, Modifier.weight(1f))
                 QuickActionCard(Icons.Default.Storage, "缓存管理", { }, Modifier.weight(1f))
             }

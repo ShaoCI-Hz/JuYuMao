@@ -73,12 +73,25 @@ fun SettingsScreen(
                     subtitle = "管理 NAS 连接",
                     onClick = onNavigateToSmb,
                 )
-                SettingsItem(
-                    icon = Icons.Default.Sync,
-                    title = "自动连接",
-                    subtitle = "WiFi 下自动连接已保存的 NAS",
-                    onClick = { },
-                )
+                // 自动连接开关（原为空 onClick 死按钮：设置从未接线，用户无法关闭启动自动重连）
+                val smbAutoConnect by viewModel.smbAutoConnect.collectAsStateWithLifecycle()
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clickable { viewModel.setSmbAutoConnect(!smbAutoConnect) }
+                        .padding(horizontal = 16.dp, vertical = 14.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(16.dp),
+                ) {
+                    Icon(Icons.Default.Sync, null, tint = MiuixTheme.colorScheme.onSurface, modifier = Modifier.size(24.dp))
+                    Column(modifier = Modifier.weight(1f)) {
+                        Text("自动连接", style = MiuixTheme.textStyles.body1,
+                            color = MiuixTheme.colorScheme.onSurface)
+                        Text("WiFi 下自动连接已保存的 NAS", style = MiuixTheme.textStyles.footnote1,
+                            color = MiuixTheme.colorScheme.onSurfaceVariantSummary)
+                    }
+                    Switch(checked = smbAutoConnect, onCheckedChange = { viewModel.setSmbAutoConnect(it) })
+                }
             }
         }
 

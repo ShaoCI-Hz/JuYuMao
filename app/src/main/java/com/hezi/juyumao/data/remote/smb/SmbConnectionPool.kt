@@ -4,6 +4,7 @@ import android.util.Log
 import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import java.util.concurrent.ConcurrentHashMap
@@ -20,7 +21,10 @@ class SmbConnectionPool @Inject constructor() {
     private val idleTimeoutMs = 30 * 60 * 1000L  // 30 分钟空闲才断开
     private val connections = ConcurrentHashMap<Long, PooledConnection>()
     private val scope = CoroutineScope(Dispatchers.IO + SupervisorJob())
+    // 仅保护 map 的快速查找/替换/驱逐（网络 connect 在锁外执行，避免一台慢服务器阻塞全部建连）
     private val connectionMutex = Mutex()
+    // per-server 建连锁：同一服务器并发请求只建一次连接
+    private val perServerLocks = ConcurrentHashMap<Long, Mutex>()
 
     private val _connectionStates = ConcurrentHashMap<Long, MutableStateFlow<SmbConnectionState>>()
 
@@ -47,55 +51,80 @@ class SmbConnectionPool @Inject constructor() {
         password: String,
         shareName: String,
         domain: String = "",
-    ): SmbClientWrapper = connectionMutex.withLock {
+    ): SmbClientWrapper {
         val stateFlow = getMutableStateFor(serverId)
 
-        // 检查已有连接
-        connections[serverId]?.let { pooled ->
-            if (pooled.client.isConnected()) {
+        // 快速路径（锁内只做查找 + 刷新访问时间，不做网络 IO）
+        connectionMutex.withLock {
+            connections[serverId]?.takeIf { it.client.isConnected() }?.let { pooled ->
                 connections[serverId] = pooled.copy(lastAccessed = System.currentTimeMillis())
                 return pooled.client
             }
         }
 
-        if (connections.size >= maxConnections) {
-            evictOldest()
-        }
+        // 慢路径：per-server 锁内建连（网络 IO 在锁外执行，但仍按服务器互斥）
+        return lockFor(serverId).withLock {
+            // 双检：等锁期间可能已被其他协程建好
+            connectionMutex.withLock {
+                connections[serverId]?.takeIf { it.client.isConnected() }?.let { pooled ->
+                    connections[serverId] = pooled.copy(lastAccessed = System.currentTimeMillis())
+                    return pooled.client
+                }
+            }
 
-        stateFlow.value = SmbConnectionState.Connecting
+            stateFlow.value = SmbConnectionState.Connecting
+            Log.d("SmbPool", "创建新连接: $host:$port, share=$shareName")
 
-        Log.d("SmbPool", "创建新连接: $host:$port, share=$shareName")
-
-        val client = SmbClientWrapper()
-        try {
-            client.connect(host, port, username, password, shareName, domain)
-            connections[serverId] = PooledConnection(client, serverId)
-            stateFlow.value = SmbConnectionState.Connected
-            Log.d("SmbPool", "连接成功")
-            client
-        } catch (e: Exception) {
-            Log.e("SmbPool", "连接失败", e)
-            stateFlow.value = SmbConnectionState.Error(e.message ?: "连接失败")
-            throw e
+            val client = SmbClientWrapper()
+            try {
+                client.connect(host, port, username, password, shareName, domain)
+                connectionMutex.withLock {
+                    // 全局配额：满则驱逐最旧（锁内执行，避免与 cleanup 竞态误驱健康连接）
+                    if (connections.size >= maxConnections) {
+                        evictOldestLocked()
+                    }
+                    connections[serverId] = PooledConnection(client, serverId)
+                }
+                stateFlow.value = SmbConnectionState.Connected
+                Log.d("SmbPool", "连接成功")
+                client
+            } catch (e: Exception) {
+                Log.e("SmbPool", "连接失败", e)
+                stateFlow.value = SmbConnectionState.Error(e.message ?: "连接失败")
+                throw e
+            }
         }
     }
 
-    fun getExistingConnection(serverId: Long): SmbClientWrapper? {
-        return connections[serverId]?.takeIf { it.client.isConnected() }?.client
+    private fun lockFor(serverId: Long): Mutex = perServerLocks.getOrPut(serverId) { Mutex() }
+
+    suspend fun getExistingConnection(serverId: Long): SmbClientWrapper? = connectionMutex.withLock {
+        connections[serverId]?.takeIf { it.client.isConnected() }?.also {
+            connections[serverId] = it.copy(lastAccessed = System.currentTimeMillis())
+        }?.client
     }
 
     /** 是否有任一活跃连接 */
     fun isAnyConnected(): Boolean = connections.values.any { it.client.isConnected() }
 
     fun disconnect(serverId: Long) {
-        connections.remove(serverId)?.client?.disconnect()
-        _connectionStates[serverId]?.value = SmbConnectionState.Disconnected
+        // runBlocking：保护与 getConnection/cleanup 的竞态（网络 close 通常很快）
+        runBlocking {
+            connectionMutex.withLock {
+                connections.remove(serverId)?.client?.disconnect()
+                _connectionStates[serverId]?.value = SmbConnectionState.Disconnected
+            }
+        }
     }
 
     fun disconnectAll() {
-        connections.values.forEach { it.client.disconnect() }
-        connections.clear()
-        _connectionStates.values.forEach { it.value = SmbConnectionState.Disconnected }
+        runBlocking {
+            connectionMutex.withLock {
+                connections.values.forEach { it.client.disconnect() }
+                connections.clear()
+                _connectionStates.values.forEach { it.value = SmbConnectionState.Disconnected }
+            }
+        }
     }
 
     fun close() {
@@ -103,23 +132,25 @@ class SmbConnectionPool @Inject constructor() {
         disconnectAll()
     }
 
-    private fun cleanupIdleConnections() {
+    private suspend fun cleanupIdleConnections() {
         val now = System.currentTimeMillis()
-        connections.entries.removeIf { (serverId, pooled) ->
-            if (now - pooled.lastAccessed > idleTimeoutMs) {
+        // 与 getConnection 共用同一把锁：杜绝"cleanup 读到旧 lastAccessed 后 disconnect 掉刚借出的活跃连接"
+        connectionMutex.withLock {
+            val idle = connections.entries.filter { now - it.value.lastAccessed > idleTimeoutMs }
+            idle.forEach { (serverId, pooled) ->
                 pooled.client.disconnect()
+                connections.remove(serverId)
                 _connectionStates[serverId]?.value = SmbConnectionState.Disconnected
-                true
-            } else false
+            }
         }
     }
 
-    private fun evictOldest() {
-        val oldest = connections.entries.minByOrNull { it.value.lastAccessed }
-        oldest?.let {
-            it.value.client.disconnect()
-            connections.remove(it.key)
-        }
+    /** 仅可在 connectionMutex 持有者内调用 */
+    private fun evictOldestLocked() {
+        val oldest = connections.entries.minByOrNull { it.value.lastAccessed } ?: return
+        oldest.value.client.disconnect()
+        connections.remove(oldest.key)
+        _connectionStates[oldest.key]?.value = SmbConnectionState.Disconnected
     }
 }
 

@@ -87,12 +87,14 @@ class JuYuMaoWidget : GlanceAppWidget() {
                     )
                 }
 
-                // Play button
+                // Play button：当前为静态占位（未接入播放状态源），点击打开 App；
+                // 播放/暂停控制需接入播放服务状态后实现（updatePeriodMillis=0 不自动刷新）
                 Box(
                     modifier = GlanceModifier
                         .size(40.dp)
                         .background(primaryColor)
-                        .cornerRadius(20.dp),
+                        .cornerRadius(20.dp)
+                        .clickable(actionStartActivity<MainActivity>()),
                     contentAlignment = Alignment.Center,
                 ) {
                     Text(

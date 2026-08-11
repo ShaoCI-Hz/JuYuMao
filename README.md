@@ -25,7 +25,7 @@ Android 局域网 SMB 音乐播放器，直连 NAS 串流播放，同时支持�
 ### 音乐播放
 - 本地音乐扫描（MediaStore + 元数据增强提取）
 - NAS 音乐流式播放（smbj SMB2/3）
-- MP3/AAC/FLAC/WAV/DSD/APE/WavPack 等格式
+- MP3/AAC/FLAC(含24bit)/WAV/OGG/OPUS（DSD/APE/WavPack 因未集成 FFmpeg 解码器暂不可播）
 - 封面/歌词自动提取缓存
 - 播放队列、随机、循环模式
 - 均衡器

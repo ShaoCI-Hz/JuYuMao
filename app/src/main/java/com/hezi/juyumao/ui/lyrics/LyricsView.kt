@@ -41,8 +41,12 @@ fun LyricsView(
         return
     }
 
-    val currentIndex by remember(lyricsData) {
-        derivedStateOf { LrcParser.findCurrentLineIndex(lyricsData.lines, currentPositionMs) }
+    // 纯文本歌词（全部行 timeMs == 0）不计算高亮行：findCurrentLineIndex 对 positionMs >= 0
+    // 恒返回最后一行，会让纯文本歌词永远高亮末行并滚到底部
+    val hasTimestamps = lyricsData.lines.any { it.timeMs > 0 }
+    val currentIndex = remember(lyricsData, currentPositionMs) {
+        if (!hasTimestamps) -1
+        else LrcParser.findCurrentLineIndex(lyricsData.lines, currentPositionMs)
     }
 
     val listState = rememberLazyListState()
@@ -50,10 +54,13 @@ fun LyricsView(
 
     // 用户手动滚动时暂停自动滚动，5秒无操作后恢复
     var autoScrollEnabled by remember { mutableStateOf(true) }
+    // 程序自动滚动标志：区分 animateScrollToItem 与用户手势（否则自动滚动自身会禁用自己）
+    var autoScrolling by remember { mutableStateOf(false) }
 
     LaunchedEffect(listState.isScrollInProgress) {
         if (listState.isScrollInProgress) {
-            autoScrollEnabled = false
+            // 只有用户手势才禁用自动滚动（程序滚动由 autoScrolling 标记忽略）
+            if (!autoScrolling) autoScrollEnabled = false
         } else {
             delay(5000)
             autoScrollEnabled = true
@@ -63,11 +70,21 @@ fun LyricsView(
     // 自动滚动到当前行（仅当用户未手动滚动时；动画不打断用户操作）
     LaunchedEffect(currentIndex, autoScrollEnabled) {
         if (currentIndex >= 0 && autoScrollEnabled && !listState.isScrollInProgress) {
-            listState.animateScrollToItem(
-                index = maxOf(0, currentIndex - 3),
-                scrollOffset = 0,
-            )
+            autoScrolling = true
+            try {
+                listState.animateScrollToItem(
+                    index = maxOf(0, currentIndex - 3),
+                    scrollOffset = 0,
+                )
+            } finally {
+                autoScrolling = false
+            }
         }
+    }
+
+    // 切歌时滚回顶部（listState 无 key，切歌后停留在上一首歌的滚动位置）
+    LaunchedEffect(lyricsData) {
+        listState.scrollToItem(0)
     }
 
     LazyColumn(

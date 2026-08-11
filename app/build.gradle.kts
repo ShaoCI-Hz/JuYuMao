@@ -45,6 +45,11 @@ android {
     }
 }
 
+// Room schema 导出位置（配合 JuYuMaoDatabase 的 exportSchema = true，供迁移测试与 schema 对比）
+ksp {
+    arg("room.schemaLocation", "$projectDir/schemas")
+}
+
 // AGP 9.0 起内置 Kotlin 支持，jvmTarget 用 compilerOptions 配置
 kotlin {
     compilerOptions {

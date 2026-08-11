@@ -23,26 +23,25 @@ class QueueViewModel @Inject constructor(
     val currentIndex: StateFlow<Int> = _currentIndex.asStateFlow()
 
     init {
-        // 初始化时同步一次当前队列
-        refresh()
-    }
-
-    private fun refresh() {
-        _queue.value = playbackController.getQueue()
-        _currentIndex.value = playbackController.getQueueIndex()
+        // 响应式订阅：播放中队列变化（切歌/换歌单/清空）自动反映，不再需要快照式手动刷新
+        viewModelScope.launch {
+            playbackController.queueSongs().collect { _queue.value = it }
+        }
+        viewModelScope.launch {
+            playbackController.queueIndex().collect { _currentIndex.value = it }
+        }
     }
 
     fun playAt(index: Int) {
         viewModelScope.launch {
+            // 队列流会自动更新当前索引，无需手动刷新
             playbackController.playAt(index)
-            refresh()
         }
     }
 
     fun clearQueue() {
         viewModelScope.launch {
             playbackController.clearQueue()
-            refresh()
         }
     }
 }

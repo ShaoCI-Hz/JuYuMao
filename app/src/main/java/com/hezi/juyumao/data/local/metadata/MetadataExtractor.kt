@@ -27,6 +27,9 @@ class MetadataExtractor @Inject constructor(
         // 先用 jaudiotagger 提取完整元数据（含歌词）
         try {
             extractWithJAudioTagger(filePath)
+        } catch (e: OutOfMemoryError) {
+            // OOM 必须向上抛，不能被当成普通解析失败吞掉
+            throw e
         } catch (_: Exception) {
             // 回退到 MediaMetadataRetriever
             extractWithRetriever(filePath)
@@ -39,7 +42,12 @@ class MetadataExtractor @Inject constructor(
         val header = audioFile.audioHeader
 
         if (tag == null) {
-            return extractWithRetriever(filePath)
+            // 无标签：返回占位（不再重复调 retriever，外层 catch 已兜底一次回退）
+            return AudioMetadata(
+                duration = (header?.trackLength ?: 0).toLong() * 1000L,
+                mimeType = AudioFileFilter.getMimeType(filePath),
+                fileSize = File(filePath).length(),
+            )
         }
 
         // 读取基础标签
@@ -48,22 +56,31 @@ class MetadataExtractor @Inject constructor(
         val album = tag.getFirst(FieldKey.ALBUM).ifEmpty { null }
         val albumArtist = tag.getFirst(FieldKey.ALBUM_ARTIST).ifEmpty { null }
         val trackNumber = tag.getFirst(FieldKey.TRACK).split("/").firstOrNull()?.toIntOrNull()
+        // TRACKTOTAL 回退：FLAC/Vorbis 用独立字段，TRACK 的 "/" 后缀常缺失
         val totalTracks = tag.getFirst(FieldKey.TRACK).split("/").getOrNull(1)?.toIntOrNull()
+            ?: tag.getFirst(FieldKey.TRACK_TOTAL).toIntOrNull()
         val discNumber = tag.getFirst(FieldKey.DISC_NO).toIntOrNull()
-        val year = tag.getFirst(FieldKey.YEAR).toIntOrNull()
+        // Vorbis 的 YEAR 常为 "2020-10-10" 等日期串，先取年份段
+        val year = tag.getFirst(FieldKey.YEAR).substringBefore('-').toIntOrNull()
         val genre = tag.getFirst(FieldKey.GENRE).ifEmpty { null }
         val composer = tag.getFirst(FieldKey.COMPOSER).ifEmpty { null }
 
         // 读取内嵌歌词
         val lyrics = readEmbeddedLyrics(tag)
 
-        // 读取封面
+        // 读取封面（超大封面限制大小，防本地文件 OOM）
         val artwork = tag.firstArtwork
+        val artworkData = artwork?.binaryData?.takeIf { it.size <= MAX_ARTWORK_BYTES }
 
         // 读取音频参数
         val sampleRate = (header?.sampleRateAsNumber ?: 0).toInt()
         val bitsPerSample = (header?.bitsPerSample ?: 0).toInt()
-        val channels = 0
+        // 声道信息从 header 解析（"Stereo"→2、"Mono"→1），不再硬编码 0
+        val channels = when (header?.channels?.lowercase()) {
+            "stereo" -> 2
+            "mono" -> 1
+            else -> 0
+        }
         val bitrate = (header?.bitRateAsNumber ?: 0).toInt()
         val durationMs: Long = (header?.trackLength ?: 0).toLong() * 1000L
 
@@ -85,16 +102,23 @@ class MetadataExtractor @Inject constructor(
             channels = channels,
             mimeType = AudioFileFilter.getMimeType(filePath),
             fileSize = File(filePath).length(),
-            artworkData = artwork?.binaryData,
-            artworkMimeType = artwork?.mimeType,
+            artworkData = artworkData,
+            artworkMimeType = artworkData?.let { getArtworkMime(it) } ?: artwork?.mimeType,
             embeddedLyrics = lyrics,
         )
+    }
+
+    private companion object {
+        /** 内嵌封面大小上限（超大封面直接全量载入会 OOM） */
+        const val MAX_ARTWORK_BYTES = 8L * 1024 * 1024
     }
 
     private fun extractWithRetriever(filePath: String): AudioMetadata {
         val retriever = MediaMetadataRetriever()
         try {
             retriever.setDataSource(filePath)
+            // embeddedPicture 只取一次（重复调用会重新解析整张内嵌图，双倍内存峰值）
+            val picture = retriever.embeddedPicture?.takeIf { it.size <= MAX_ARTWORK_BYTES }
             return AudioMetadata(
                 title = retriever.extractMetadata(MediaMetadataRetriever.METADATA_KEY_TITLE),
                 artist = retriever.extractMetadata(MediaMetadataRetriever.METADATA_KEY_ARTIST),
@@ -107,8 +131,8 @@ class MetadataExtractor @Inject constructor(
                 composer = retriever.extractMetadata(MediaMetadataRetriever.METADATA_KEY_COMPOSER),
                 duration = retriever.extractMetadata(MediaMetadataRetriever.METADATA_KEY_DURATION)?.toLongOrNull() ?: 0L,
                 bitrate = retriever.extractMetadata(MediaMetadataRetriever.METADATA_KEY_BITRATE)?.toIntOrNull()?.div(1000) ?: 0,
-                artworkData = retriever.embeddedPicture,
-                artworkMimeType = getArtworkMime(retriever.embeddedPicture),
+                artworkData = picture,
+                artworkMimeType = picture?.let { getArtworkMime(it) },
                 mimeType = retriever.extractMetadata(MediaMetadataRetriever.METADATA_KEY_MIMETYPE) ?: "",
                 fileSize = File(filePath).length(),
             )
@@ -130,7 +154,8 @@ class MetadataExtractor @Inject constructor(
                 if (frame is org.jaudiotagger.tag.id3.AbstractTagFrame) {
                     val body = frame.body
                     if (body is org.jaudiotagger.tag.id3.framebody.FrameBodyUSLT) {
-                        val lyric: String? = body.toString().takeIf { it.isNotBlank() && it != "Unsyncronised lyrics frame" }
+                        // 用 getLyric() 取纯歌词（toString() 返回带字段描述的格式化串，会污染歌词）
+                        val lyric: String? = body.getLyric().takeIf { it.isNotBlank() }
                         if (lyric != null) return lyric
                     }
                 }

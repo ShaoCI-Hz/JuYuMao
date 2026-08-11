@@ -7,6 +7,8 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.MaterialTheme
@@ -411,7 +413,7 @@ private fun DimensionBrowse(
                         )
                         Text(name, style = MaterialTheme.typography.bodyLarge,
                             color = MaterialTheme.colorScheme.onSurface, modifier = Modifier.weight(1f))
-                        Icon(Icons.Default.KeyboardArrowRight, null,
+                        Icon(Icons.AutoMirrored.Filled.KeyboardArrowRight, null,
                             tint = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.size(20.dp))
                     }
                 }
@@ -426,7 +428,7 @@ private fun DimensionBrowse(
                 horizontalArrangement = Arrangement.spacedBy(8.dp),
             ) {
                 IconButton(onClick = onBackToList) {
-                    Icon(Icons.Default.ArrowBack, "返回")
+                    Icon(Icons.AutoMirrored.Filled.ArrowBack, "返回")
                 }
                 Text(
                     text = dimensionName,

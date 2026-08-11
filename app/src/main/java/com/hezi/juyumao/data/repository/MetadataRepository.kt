@@ -41,7 +41,10 @@ class MetadataRepository @Inject constructor(
         // 提取元数据
         val meta = try {
             extractMetadataForSong(song)
-        } catch (_: Exception) {
+        } catch (e: kotlinx.coroutines.CancellationException) {
+            throw e // 协程取消必须向上传播
+        } catch (e: Exception) {
+            android.util.Log.w("MetadataRepo", "封面提取失败: ${song.title}", e)
             return null
         }
 
@@ -96,13 +99,14 @@ class MetadataRepository @Inject constructor(
                 title = meta.title ?: song.title,
                 artist = meta.artist ?: song.artist,
                 album = meta.album ?: song.album,
-                albumArtist = meta.albumArtist,
+                // 以下字段提取失败时必须保留旧值，否则会清空数据库已有内容
+                albumArtist = meta.albumArtist ?: song.albumArtist,
                 albumArtUri = artPath ?: song.albumArtUri,
                 trackNumber = meta.trackNumber ?: song.trackNumber,
                 discNumber = meta.discNumber ?: song.discNumber,
                 year = meta.year ?: song.year,
-                genre = meta.genre,
-                composer = meta.composer,
+                genre = meta.genre ?: song.genre,
+                composer = meta.composer ?: song.composer,
                 bitrate = if (meta.bitrate > 0) meta.bitrate else song.bitrate,
                 sampleRate = if (meta.sampleRate > 0) meta.sampleRate else song.sampleRate,
                 bitsPerSample = if (meta.bitsPerSample > 0) meta.bitsPerSample else song.bitsPerSample,
@@ -115,7 +119,10 @@ class MetadataRepository @Inject constructor(
                     song.isHiRes
                 },
             )
+        } catch (e: kotlinx.coroutines.CancellationException) {
+            throw e // 协程取消必须向上传播，不能静默吞掉
         } catch (e: Exception) {
+            android.util.Log.w("MetadataRepo", "元数据提取失败: ${song.title}", e)
             song
         }
     }
@@ -185,17 +192,21 @@ class MetadataRepository @Inject constructor(
         val ext = sharePath.substringAfterLast('.', "").ifBlank { "bin" }
         val tempFile = File(context.cacheDir, "${namePrefix}.$ext")
         client.openFile(sharePath).getOrThrow().use { input ->
+            // output 流必须 try/finally 关闭（异常时也要关闭并清理临时文件）
             val output = tempFile.outputStream()
-            val buffer = ByteArray(64 * 1024)
-            var total = 0L
-            while (total < maxBytes) {
-                val n = input.read(buffer)
-                if (n < 0) break
-                output.write(buffer, 0, n)
-                total += n
-                if (total >= maxBytes) break
+            try {
+                val buffer = ByteArray(64 * 1024)
+                var total = 0L
+                while (total < maxBytes) {
+                    val n = input.read(buffer)
+                    if (n < 0) break
+                    output.write(buffer, 0, n)
+                    total += n
+                    if (total >= maxBytes) break
+                }
+            } finally {
+                try { output.close() } catch (_: Exception) {}
             }
-            output.close()
         }
         return tempFile
     }

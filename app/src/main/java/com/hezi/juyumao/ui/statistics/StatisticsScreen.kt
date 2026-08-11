@@ -7,6 +7,7 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.MaterialTheme
 import top.yukonga.miuix.kmp.basic.*
@@ -37,7 +38,7 @@ fun StatisticsScreen(
             modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp),
             verticalAlignment = Alignment.CenterVertically,
         ) {
-            IconButton(onClick = onBack) { Icon(Icons.Default.ArrowBack, "返回") }
+            IconButton(onClick = onBack) { Icon(Icons.AutoMirrored.Filled.ArrowBack, "返回") }
             Text("听歌报告", style = MaterialTheme.typography.headlineLarge,
                 color = MaterialTheme.colorScheme.onBackground, modifier = Modifier.weight(1f))
             IconButton(onClick = { viewModel.refresh() }) {

@@ -2,7 +2,6 @@ package com.hezi.juyumao.data.local.scanner
 
 import android.content.Context
 import android.provider.MediaStore
-import com.hezi.juyumao.data.local.artwork.ArtworkCache
 import com.hezi.juyumao.data.local.db.entity.SongEntity
 import com.hezi.juyumao.data.local.metadata.HiRes
 import com.hezi.juyumao.data.local.metadata.MetadataExtractor
@@ -16,7 +15,6 @@ import javax.inject.Singleton
 class LocalMusicScanner @Inject constructor(
     @ApplicationContext private val context: Context,
     private val metadataExtractor: MetadataExtractor,
-    private val artworkCache: ArtworkCache,
 ) {
     companion object {
         private val AUDIO_EXTENSIONS = setOf(
@@ -57,9 +55,12 @@ class LocalMusicScanner @Inject constructor(
                 MediaStore.Audio.Media.IS_NOTIFICATION,
             )
 
+            // 排除正在下载/复制中的不完整文件（API 29+）
+            val selection = "${MediaStore.Audio.Media.IS_PENDING}=0"
+
             context.contentResolver.query(
                 MediaStore.Audio.Media.EXTERNAL_CONTENT_URI,
-                projection, null, null,
+                projection, selection, null,
                 "${MediaStore.Audio.Media.DATE_ADDED} DESC",
             )?.use { cursor ->
                 val idCol = cursor.getColumnIndexOrThrow(MediaStore.Audio.Media._ID)
@@ -86,7 +87,8 @@ class LocalMusicScanner @Inject constructor(
                     val isNotif = cursor.getInt(isNotifCol)
 
                     if (!isValidMusicFile(filePath, duration, fileSize, title, isMusic, isRingtone, isAlarm, isNotif)) continue
-                    if (!seenPaths.add(filePath.lowercase())) continue
+                    // 去重保留大小写（仅大小写不同的两个真实文件不应被误判为重复）
+                    if (!seenPaths.add(filePath)) continue
 
                     // 基础元数据来自 MediaStore
                     val mediaStoreArtist = cursor.getString(artistCol) ?: "未知艺术家"
@@ -126,13 +128,8 @@ class LocalMusicScanner @Inject constructor(
                         sampleRate = meta.sampleRate
                         bitsPerSample = meta.bitsPerSample
                         hasEmbeddedLyrics = meta.embeddedLyrics != null
-
-                        // 缓存封面到本地文件
-                        if (meta.artworkData != null && meta.artworkData.isNotEmpty()) {
-                            // 用 filePath 的 hashCode 作为 songId 的临时替代
-                            val tempId = filePath.hashCode().toLong()
-                            artworkPath = artworkCache.saveArtwork(tempId, meta.artworkData)
-                        }
+                        // 注意：封面不在此处写盘（扫描阶段无 DB id 作缓存键，写了也对不上），
+                        // 由 MetadataRepository.extractAndUpdateSong 在 UI 首次展示时按需缓存（避免 O(N²) 写盘）
                     } catch (_: Exception) {
                         // 元数据提取失败，使用 MediaStore 数据
                     }
@@ -180,7 +177,9 @@ class LocalMusicScanner @Inject constructor(
         filePath: String, duration: Long, fileSize: Long, title: String?,
         isMusic: Int, isRingtone: Int, isAlarm: Int, isNotification: Int,
     ): Boolean {
-        if (isMusic != 1) return false
+        // IS_MUSIC 是系统启发式标志，MTP 拷贝/Telegram 等来源的真实音乐常为 0，不硬性依赖；
+        // 改为显式排除铃声/闹钟/通知（这三个标志才是确定性排除项）
+        if (isRingtone == 1 || isAlarm == 1 || isNotification == 1) return false
         val ext = filePath.substringAfterLast('.', "").lowercase()
         if (ext !in AUDIO_EXTENSIONS) return false
         if (duration < MIN_DURATION_MS) return false
