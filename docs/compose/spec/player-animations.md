@@ -1,12 +1,16 @@
 ---
 feature: player-animations
-status: designed
+status: in-progress
 updated: 2026-08-03
 ---
 
 # 播放器动效升级
 
 ## Report
+
+**v4.0.2 交付状态（2026-08-03 多 AGENT 审计核实）**：
+- 已落地：PulsingGlow 呼吸动画（CoverLyricsPager 已使用）；MiniPlayerBar 内部动效（封面 crossfade/进度 spring）；频谱可视化（SpectrumBars+SpectrumAnalyzer+设置开关）；AnimatedIconButton 已在 MiniPlayerBar 使用（尚未全局替换）。
+- 未落地（遗留，本轮与 miuix-ui 合并执行）：共享元素转场（T1）；迷你条展开/收起（T2）；封面/歌词翻页增强（T5）未核实。
 
 ## [S1] Problem
 
@@ -24,7 +28,9 @@ updated: 2026-08-03
 
 ### S2.1 列表 → 播放器共享元素转场
 
-- 首选方案：Compose 1.7 的 `SharedTransitionLayout`（BOM 2024.12 已含，实验 API）——列表项封面与播放页封面共享过渡。
+> **执行前提（审计修正）**：本 spec 与 `miuix-ui.md` 合并执行，执行顺序为 miuix-ui 完成后本 spec 再开工。届时 Compose 已升级至 CMP 1.11.1 对应版本，**原「Compose 1.7 / BOM 2024.12」技术前提已失效**，落地时先在新基线复核 `SharedTransitionLayout` 可用性，再决定首选/备选方案。
+
+- 首选方案：`SharedTransitionLayout`（升级后的 Compose 版本，实验 API）——列表项封面与播放页封面共享过渡。
 - 备选方案（若 navigation 场景下实验 API 受限）：自定义入场动画——点击时记录封面在列表中的布局位置/尺寸，播放页入场时用同一图片经 `graphicsLayer` 做缩放+位移动画放大到播放页封面位置。
 - 验收基准：点击列表封面后，播放页封面从点击处放大入场；返回时对称缩小。
 - 前置：列表项封面为独立 Composable（可复用 `RotatingAlbumArt`/列表缩略图），播放页封面容器支持动画初始态。
@@ -66,7 +72,7 @@ updated: 2026-08-03
 
 - [ ] T1: 列表 → 播放器共享元素转场 — acceptance: 点击列表封面，播放页封面从点击位置放大入场；返回动画对称 (covers: S2.1)
 - [ ] T2: 迷你播放器展开/收起 + 内部动效 — acceptance: 迷你条点开展开动画流畅，收起可反向；切歌封面过渡可见 (covers: S2.2)
-- [ ] T3: 补全 PulsingGlow 呼吸动画并全局启用 AnimatedIconButton — acceptance: 光晕随播放呼吸可见；播放页所有主按钮有弹性按压反馈 (covers: S2.3)
+- [x] T3: 补全 PulsingGlow 呼吸动画并全局启用 AnimatedIconButton — acceptance: 光晕随播放呼吸可见；播放页所有主按钮有弹性按压反馈 (covers: S2.3) — 部分落地（PulsingGlow 已呼吸；AnimatedIconButton 仅 MiniPlayerBar 使用，全局替换待 miuix-ui 基座复核）
 - [ ] T4: 频谱可视化（播放页 + 均衡器页 + 开关） — acceptance: 播放中显示实时频谱；开关可关闭；播放页 10 分钟运行无显著掉帧 (covers: S2.4)
 - [ ] T5: 封面/歌词翻页与切歌过渡增强 — acceptance: 翻页拖拽有缩放/透明度跟随，切歌有封面过渡 (covers: S2.5)
 - [ ] T6: 动效性能回归 — acceptance: 低端机（或模拟器节流）上播放页持续运行无卡顿；无未回收动画协程泄漏 (covers: S2.1-S2.5)

@@ -1,12 +1,15 @@
 ---
 feature: onboarding
-status: designed
+status: delivered
 updated: 2026-08-03
 ---
 
 # 首次使用引导
 
 ## Report
+
+**v4.0.2 交付状态（2026-08-03 多 AGENT 审计核实）**：引导页、根路由切换、集中权限申请、NAS 连接引导均已实现（OnboardingScreen 存在，JuYuMaoApp 按 `onboarding_completed` 路由，MainActivity 已移除启动即弹权限）。
+**遗留修复项（下轮处理）**：老用户升级安装后 `onboarding_completed` 默认 false，会被强制进入引导——需区分「首次安装 vs 升级」（见 T1 验收补充）。
 
 ## [S1] Problem
 
@@ -64,8 +67,8 @@ updated: 2026-08-03
 
 ## Tasks
 
-- [ ] T1: 引导状态存储（DataStore `onboarding_completed`）+ 根路由切换 + 设置页重看入口 — acceptance: 全新安装首启进引导；完成后重启直接进首页；重看入口可再次展示 (covers: S2.1)
-- [ ] T2: 引导页 UI（P1-P4 + 渐入动效 + 页码指示器） — acceptance: 4 页可滑动浏览，元素渐入动画，视觉与现有主题一致 (covers: S2.2)
-- [ ] T3: 权限集中申请 — acceptance: 引导末尾按系统版本申请通知/音频权限；已授权项自动跳过；拒绝后仍可进入首页 (covers: S2.3)
-- [ ] T4: NAS 连接引导 — acceptance: 引导末尾「连接 NAS」进入 SMB 连接页并显示引导提示 (covers: S2.4)
-- [ ] T5: 移除启动即弹权限 + 扫描按钮兜底回归 — acceptance: 启动不再直接弹通知权限；扫描按钮未授权时仍可申请 (covers: S2.5)
+- [x] T1: 引导状态存储（DataStore `onboarding_completed`）+ 根路由切换 + 设置页重看入口 — acceptance: 全新安装首启进引导；完成后重启直接进首页；重看入口可再次展示 (covers: S2.1) — 已落地；**遗留修复**：既有用户升级后不触发引导（首次安装 vs 升级需区分，如按版本升级写入标记）
+- [x] T2: 引导页 UI（P1-P4 + 渐入动效 + 页码指示器） — acceptance: 4 页可滑动浏览，元素渐入动画，视觉与现有主题一致 (covers: S2.2) — 已落地
+- [x] T3: 权限集中申请 — acceptance: 引导末尾按系统版本申请通知/音频权限；已授权项自动跳过；拒绝后仍可进入首页 (covers: S2.3) — 已落地
+- [x] T4: NAS 连接引导 — acceptance: 引导末尾「连接 NAS」进入 SMB 连接页并显示引导提示 (covers: S2.4) — 已落地
+- [x] T5: 移除启动即弹权限 + 扫描按钮兜底回归 — acceptance: 启动不再直接弹通知权限；扫描按钮未授权时仍可申请 (covers: S2.5) — 已落地

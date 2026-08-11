@@ -13,6 +13,7 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -20,6 +21,7 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.hezi.juyumao.data.local.db.entity.SongEntity
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun BrowseScreen(
     onSongClick: (Long) -> Unit = {},
@@ -67,26 +69,26 @@ fun BrowseScreen(
 
         Spacer(modifier = Modifier.height(16.dp))
 
-        // Tabs
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 16.dp),
-            horizontalArrangement = Arrangement.spacedBy(8.dp),
+        // Tabs（PrimaryScrollableTabRow 可横向滚动，避免窄屏挤压）
+        PrimaryScrollableTabRow(
+            selectedTabIndex = selectedTab,
+            edgePadding = 16.dp,
+            containerColor = Color.Transparent,
         ) {
             tabs.forEachIndexed { index, tab ->
-                FilterChip(
+                Tab(
                     selected = selectedTab == index,
                     onClick = { selectedTab = index },
-                    label = {
+                    text = {
                         Text(
                             text = when(index) {
-                        0 -> "$tab (${allSongs.size})"
-                        1 -> "$tab ($localCount)"
-                        2 -> "$tab ($smbCount)"
-                        3 -> "$tab ($favoriteCount)"
-                        else -> tab
-                    },
+                                0 -> "全部 $allSongs.size"
+                                1 -> "本地 $localCount"
+                                2 -> "NAS $smbCount"
+                                3 -> "我喜欢 $favoriteCount"
+                                else -> "维度"
+                            },
+                            maxLines = 1,
                         )
                     },
                 )

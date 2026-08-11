@@ -1,12 +1,16 @@
 ---
 feature: advanced-player-features
-status: designed
+status: in-progress
 updated: 2026-08-03
 ---
 
 # 播放器进阶功能
 
 ## Report
+
+**v4.0.2 交付状态（2026-08-03 多 AGENT 审计核实）**：
+- 已落地：收藏持久化（PlayerScreen→SongDao.updateFavorite）；歌单（PlaylistDao/playlist_songs 表/PlaylistScreen，数据库已至 v3）；无缝播放与缓冲设置生效；倍速菜单；音效增强（BassBoost/Virtualizer/LoudnessEnhancer）。
+- 未落地（遗留）：交叉淡化（T5）；专辑/艺术家/流派浏览（T8）、播放统计埋点与报告（T9/T10）未核实完成（BrowseScreen 存在未提交 WIP，疑似进行中）。
 
 ## [S1] Problem
 
@@ -75,13 +79,13 @@ updated: 2026-08-03
 
 ## Tasks
 
-- [ ] T1: 收藏持久化（播放页 + 列表 + 我喜欢入口） — acceptance: 收藏状态跨重启保留，列表/播放页/我喜欢三处状态一致 (covers: S2.1)
-- [ ] T2: 歌单关联表 + PlaylistDao + 数据库迁移 v3 — acceptance: 升级安装不丢数据；歌单/歌曲关联增删查可用 (covers: S2.2)
-- [ ] T3: 歌单 UI（列表页/详情页/添加弹层/新建重命名删除） — acceptance: 可新建歌单、加歌、整单播放、移除歌曲 (covers: S2.2)
-- [ ] T4: 无缝播放生效 — acceptance: 开启后同格式连续曲目切换无间隙；关闭时行为不变 (covers: S2.3)
+- [x] T1: 收藏持久化（播放页 + 列表 + 我喜欢入口） — acceptance: 收藏状态跨重启保留，列表/播放页/我喜欢三处状态一致 (covers: S2.1) — 已落地
+- [x] T2: 歌单关联表 + PlaylistDao + 数据库迁移 v3 — acceptance: 升级安装不丢数据；歌单/歌曲关联增删查可用 (covers: S2.2) — 已落地（version=3, MIGRATION_2_3）
+- [x] T3: 歌单 UI（列表页/详情页/添加弹层/新建重命名删除） — acceptance: 可新建歌单、加歌、整单播放、移除歌曲 (covers: S2.2; depends: T2) — 已落地（PlaylistScreen）
+- [x] T4: 无缝播放生效 — acceptance: 开启后同格式连续曲目切换无间隙；关闭时行为不变 (covers: S2.3) — 已落地（PlaybackController 整队列加载）
 - [ ] T5: 淡入淡出与交叉淡化 — acceptance: 播放/暂停/切歌有平滑音量过渡；`crossfade_duration=0` 时关闭；API 不支持时退化为淡入淡出 (covers: S2.3)
-- [ ] T6: 倍速控制 — acceptance: 速度菜单生效且重启后保留，倍速下音高不变、歌词同步 (covers: S2.3)
-- [ ] T7: 音效增强（低音/虚拟环绕/响度） — acceptance: 三个效果器可调可开关；不支持设备上对应项隐藏 (covers: S2.4)
+- [x] T6: 倍速控制 — acceptance: 速度菜单生效且重启后保留，倍速下音高不变、歌词同步 (covers: S2.3) — 已落地（播放页速度菜单）
+- [x] T7: 音效增强（低音/虚拟环绕/响度） — acceptance: 三个效果器可调可开关；不支持设备上对应项隐藏 (covers: S2.4) — 已落地（AudioEffectsManager）
 - [ ] T8: 专辑/艺术家/流派浏览与详情页 — acceptance: 三维度可浏览，可整专/整艺术家播放 (covers: S2.5)
-- [ ] T9: 播放统计埋点 — acceptance: 播放后 `playCount` 递增、`lastPlayedAt` 更新 (covers: S2.6)
-- [ ] T10: 听歌报告页 — acceptance: 周/月报告的总次数/时长/TOP 与埋点数据一致；首页播放次数卡片显示真实值 (covers: S2.6)
+- [ ] T9: 播放统计埋点 — acceptance: 播放超过阈值（如 ≥10s）后 `playCount` 递增、`lastPlayedAt` 更新，防误触计次 (covers: S2.6)
+- [ ] T10: 听歌报告页 — acceptance: 周/月报告的总次数/时长/TOP 与埋点数据一致；首页播放次数卡片显示真实值 (covers: S2.6; depends: T9)

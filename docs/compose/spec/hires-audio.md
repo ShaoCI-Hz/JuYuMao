@@ -1,12 +1,16 @@
 ---
 feature: hires-audio
-status: designed
+status: in-progress
 updated: 2026-08-03
 ---
 
 # Hi-Res 高音质支持
 
 ## Report
+
+**v4.0.2 交付状态（2026-08-03 多 AGENT 审计核实）**：
+- 已落地：HiRes 统一判定已抽到 `data/local/metadata/HiRes.kt`（sampleRate>48000 ‖ bitsPerSample>=24 ‖ dsf/dff，FLAC 不再误判）；播放页金色 Hi-Res 徽标与音频规格行（AudioSpecRow）已实现；缓冲设置已生效（DynamicLoadControl）。
+- 未落地（遗留）：FFmpeg 扩展（T3，方案见 S2.3 修正）；`SmbFileScanner` 未填充 sampleRate/bitsPerSample（SMB 歌曲 HiRes 判定仅按扩展名）。
 
 ## [S1] Problem
 
@@ -43,7 +47,10 @@ updated: 2026-08-03
 
 ### S2.3 FFmpeg 扩展（全格式解码）
 
-- 引入 `androidx.media3:media3-exoplayer-ffmpeg:1.5.1`（与现有 Media3 1.5.1 版本严格一致，`gradle/libs.versions.toml` 统一版本管理）。
+> **事实修正（审计核实）**：`androidx.media3:media3-exoplayer-ffmpeg` **从未发布到 Google Maven**（dl.google.com 该路径返回 404，与 `gradle/libs.versions.toml:56` 注释一致，juyumao-player.md S2.7 亦写明需编译 FFmpeg so 库）。原"直接引入 Maven 依赖"方案不成立，改为以下路径：
+
+- **主路径（推荐）**：自编译 FFmpeg 扩展——从 media3 仓库 1.5.1 分支 `libraries/decoder_ffmpeg` 按官方脚本构建 AAR，经 `mavenLocal()` 或本地仓库引入；或将该解码器源码以 Gradle 子模块纳入工程。落地前先验证构建脚本可用性（NDK 版本、各 ABI 产物）。
+- **备选路径**：若自编译不可行，放弃 DSD/APE/WavPack 播放，改为明确标注「格式不支持」（沿用 S2.5 兜底），并同步修正 README 的格式支持声明。
 - `PlayerModule.kt` 中 ExoPlayer 改用 `DefaultRenderersFactory(context).setExtensionRendererMode(EXTENSION_RENDERER_MODE_ON_DEMAND)`：
   - FLAC/WAV/MP3/AAC/OGG/OPUS 继续走 Media3 原生解码器（FLAC 保持 24bit 输出，不受 FFmpeg 影响）；
   - DSD/APE/WavPack/WMA/AIFF 由 FFmpeg 解码补齐。
@@ -71,8 +78,8 @@ updated: 2026-08-03
 
 ## Tasks
 
-- [ ] T1: 统一 HiRes 判定函数并接入本地/SMB 扫描 — acceptance: 44.1kHz/16bit FLAC 不再标记 HiRes；24bit/96kHz 与 DSF/DFF 正确标记；存量歌曲标记可刷新 (covers: S2.1)
-- [ ] T2: HiRes 徽标与音频规格展示（列表项 + 播放页） — acceptance: 列表与播放页按判定显示金色 Hi-Res/DSD 徽标与「采样率/位深/码率」文本 (covers: S2.2)
-- [ ] T3: 引入 media3-exoplayer-ffmpeg 并配置 RenderersFactory — acceptance: DSD/APE/WavPack 文件可播放；FLAC 仍走原生解码；release 构建通过、proguard 不裁剪 (covers: S2.3)
-- [ ] T4: 缓冲设置生效 + HiRes 分档缓冲 + 输出信息展示 — acceptance: 修改缓冲设置可观察 ExoPlayer 行为变化；HiRes 歌曲缓冲参数大于普通歌曲；设置页展示当前输出设备/格式 (covers: S2.4)
+- [x] T1: 统一 HiRes 判定函数并接入本地/SMB 扫描 — acceptance: 44.1kHz/16bit FLAC 不再标记 HiRes；24bit/96kHz 与 DSF/DFF 正确标记；存量歌曲标记可刷新 (covers: S2.1) — 已落地（HiRes.kt）；SmbFileScanner 补全见 Report 遗留
+- [x] T2: HiRes 徽标与音频规格展示（列表项 + 播放页） — acceptance: 列表与播放页按判定显示金色 Hi-Res/DSD 徽标与「采样率/位深/码率」文本 (covers: S2.2) — 已落地（AudioSpecRow）
+- [ ] T3: FFmpeg 扩展自编译并配置 RenderersFactory — acceptance: 自编译 AAR 可构建入工程（NDK/ABI 产物验证）；DSD/APE/WavPack 可播放；FLAC 仍走原生解码（日志确认 codec 非 ffmpeg）；release+minify 构建通过、proguard 不裁剪；APK 体积增量有记录 (covers: S2.3)
+- [ ] T4: 缓冲设置生效 + HiRes 分档缓冲 + 输出信息展示 — acceptance: 通过 logcat 或调试 UI 显示 bufferMs/LoadControl 参数，断言修改缓冲设置后行为变化；HiRes 歌曲缓冲参数大于普通歌曲；设置页展示当前输出设备/格式（含设备不支持 HiRes 输出时回退 48kHz 说明） (covers: S2.4)
 - [ ] T5: 解码失败兜底回归 — acceptance: 无法解码的文件提示并跳过，不崩溃 (covers: S2.5)
