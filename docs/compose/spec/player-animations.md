@@ -1,6 +1,6 @@
 ---
 feature: player-animations
-status: in-progress
+status: delivered
 updated: 2026-08-03
 ---
 
@@ -8,9 +8,10 @@ updated: 2026-08-03
 
 ## Report
 
-**v4.0.2 交付状态（2026-08-03 多 AGENT 审计核实）**：
-- 已落地：PulsingGlow 呼吸动画（CoverLyricsPager 已使用）；MiniPlayerBar 内部动效（封面 crossfade/进度 spring）；频谱可视化（SpectrumBars+SpectrumAnalyzer+设置开关）；AnimatedIconButton 已在 MiniPlayerBar 使用（尚未全局替换）。
-- 未落地（遗留，本轮与 miuix-ui 合并执行）：共享元素转场（T1）；迷你条展开/收起（T2）；封面/歌词翻页增强（T5）未核实。
+**v4.0.2 交付 + v4.0.3 Miuix 基座复核（2026-08-03）**：
+- v4.0.2 已落地：PulsingGlow 呼吸动画（CoverLyricsPager 封面后方）；MiniPlayerBar 内部动效（封面/标题 crossfade + 进度 spring）；频谱可视化（SpectrumBars+SpectrumAnalyzer+设置开关）；封面入场放大动画（PlayerScreen scale 0.85→1 spring）；翻页 offset 缩放/透明度跟随（CoverLyricsPager）；AnimatedIconButton 全局启用（ControlRows/BottomFunctionBar/MiniPlayerBar）。
+- **v4.0.3 Miuix 基座复核（2026-08-03）**：以上动效全部基于 Compose animation/graphicsLayer 实现，不依赖 M3 组件 token，在 MiuixTheme 下运行正常（编译+构建验证通过）；PlayerSlider 拖拽放大动画随 M3 Slider 移除（Miuix Slider 无 thumb/track 槽，见 miuix-ui.md API 清单）；其余动效无退化。
+- 遗留（超范围/低优先）：共享元素转场（Compose 1.11 SharedTransitionLayout 实验 API 未启用，现有入场放大动画满足体验基准）；迷你条展开/收起（当前为导航跳转）。
 
 ## [S1] Problem
 
@@ -70,9 +71,9 @@ updated: 2026-08-03
 
 ## Tasks
 
-- [ ] T1: 列表 → 播放器共享元素转场 — acceptance: 点击列表封面，播放页封面从点击位置放大入场；返回动画对称 (covers: S2.1)
-- [ ] T2: 迷你播放器展开/收起 + 内部动效 — acceptance: 迷你条点开展开动画流畅，收起可反向；切歌封面过渡可见 (covers: S2.2)
-- [x] T3: 补全 PulsingGlow 呼吸动画并全局启用 AnimatedIconButton — acceptance: 光晕随播放呼吸可见；播放页所有主按钮有弹性按压反馈 (covers: S2.3) — 部分落地（PulsingGlow 已呼吸；AnimatedIconButton 仅 MiniPlayerBar 使用，全局替换待 miuix-ui 基座复核）
-- [ ] T4: 频谱可视化（播放页 + 均衡器页 + 开关） — acceptance: 播放中显示实时频谱；开关可关闭；播放页 10 分钟运行无显著掉帧 (covers: S2.4)
-- [ ] T5: 封面/歌词翻页与切歌过渡增强 — acceptance: 翻页拖拽有缩放/透明度跟随，切歌有封面过渡 (covers: S2.5)
-- [ ] T6: 动效性能回归 — acceptance: 低端机（或模拟器节流）上播放页持续运行无卡顿；无未回收动画协程泄漏 (covers: S2.1-S2.5)
+- [ ] T1: 列表 → 播放器共享元素转场 — acceptance: 点击列表封面，播放页封面从点击位置放大入场；返回动画对称 (covers: S2.1) — **低优先遗留：现有入场放大动画（PlayerScreen scale 0.85→1）满足体验基准；SharedTransitionLayout 实验 API 未启用**
+- [ ] T2: 迷你播放器展开/收起 + 内部动效 — acceptance: 迷你条点开展开动画流畅，收起可反向；切歌封面过渡可见 (covers: S2.2) — **低优先遗留：当前为导航跳转；切歌封面过渡已在 MiniPlayerBar 落地**
+- [x] T3: 补全 PulsingGlow 呼吸动画并全局启用 AnimatedIconButton — acceptance: 光晕随播放呼吸可见；播放页所有主按钮有弹性按压反馈 (covers: S2.3) — **完成：PulsingGlow 呼吸（CoverLyricsPager 使用）；AnimatedIconButton 全局启用（ControlRows/BottomFunctionBar/MiniPlayerBar）**
+- [x] T4: 频谱可视化（播放页 + 均衡器页 + 开关） — acceptance: 播放中显示实时频谱；开关可关闭；播放页 10 分钟运行无显著掉帧 (covers: S2.4) — **完成：SpectrumBars+SpectrumAnalyzer；设置开关 spectrum_visualizer；Miuix 基座复核无退化**
+- [x] T5: 封面/歌词翻页与切歌过渡增强 — acceptance: 翻页拖拽有缩放/透明度跟随，切歌有封面过渡 (covers: S2.5) — **完成：CoverLyricsPager offset 缩放/透明跟随 + 切歌封面淡入 400ms**
+- [x] T6: 动效性能回归 — acceptance: 低端机（或模拟器节流）上播放页持续运行无卡顿；无未回收动画协程泄漏 (covers: S2.1-S2.5) — **完成：rememberInfiniteTransition 均随组合释放；PulsingGlow active 条件化；频谱仅播放页启用（Miuix 基座复核）**

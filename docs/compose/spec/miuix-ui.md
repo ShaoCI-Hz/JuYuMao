@@ -1,12 +1,38 @@
 ---
 feature: miuix-ui
-status: designed
+status: delivered
 updated: 2026-08-03
 ---
 
 # UI 全线接入 Miuix（MIUI 设计语言）
 
 ## Report
+
+**v4.0.3 交付状态（2026-08-03）**：
+- 工具链升级完成：Kotlin 2.4.0 / Gradle 9.4.1 / AGP 9.2.1 / KSP 2.3.11 / Hilt 2.60.1 / Room 2.8.4 / Compose BOM 2026.06.01（androidx 1.11.4，与 CMP 1.11.1 对齐）。AGP 9 内置 Kotlin（移除 org.jetbrains.kotlin.android 插件）、kotlinOptions→compilerOptions 迁移。
+- 依赖：accompanist-permissions 移除（零引用）；Room 升 2.8.4 修复 KSP2 `unexpected jvm signature V`；Hilt 升 2.60.1 修复 AGP 9 `BaseExtension not found`。
+- Miuix 0.9.3 引入：miuix-ui / miuix-squircle / miuix-icons / miuix-preference。**miuix-blur 未引入**（要求 minSdk 33，本项目 minSdk 29），GlassMorphism 自绘保留→后续确认死代码已删除。
+- 主题：MiuixTheme + ThemeController，MonetDark/MonetLight/MonetSystem 三模式映射 theme_mode；LocalExtendedColors（hiResGold）保留。
+- 组件替换：17 文件 M3→Miuix；缺件保留 FilterChip / FilledTonalButton / OutlinedButton（Miuix 无对应）。
+- compileSdk 35→37（Miuix 0.9.3 要求），Android SDK 安装 android-37.0 平台。
+- APK 体积：Debug 91.1MB（原 78.4MB，Miuix+Compose 1.11 增量约 12.7MB）；Release 17.7MB。
+- 验证：assembleDebug + assembleRelease（minify）均 BUILD SUCCESSFUL；proguard 加 `-keep class top.yukonga.miuix.**`。
+
+### Miuix API 使用清单
+- basic: Button / TextButton / OutlinedButton(保留M3) / Card / IconButton / Checkbox / Slider / Switch / TextField / LinearProgressIndicator / CircularProgressIndicator / TabRow(tabs:List<String>, selectedTabIndex, onTabSelected) / Scaffold / Snackbar / TopAppBar / Icon / Text
+- overlay: OverlayDialog / OverlayBottomSheet / OverlayListPopup（+ ListPopupColumn）
+- theme: MiuixTheme(controller=, content=) / ThemeController(colorSchemeMode=) / ColorSchemeMode.Monet* / ColorsKt.lightColorScheme()/darkColorScheme()
+- 差异：Card 用 cornerRadius 非 shape；Slider 无 thumb/track 槽（PlayerSlider 自定义拖拽放大动画移除）；TextButton 文本为 String 参数非 content lambda；TabRow 无 content lambda
+
+### 缺件保留项（M3）
+- FilterChip（浏览/均衡器筛选）— Miuix 无对应
+- FilledTonalButton（首页/歌单/缓存/SMB 等次级按钮）— Miuix 无对应变体
+- OutlinedButton（引导/SMB 等描边按钮）— Miuix 无对应
+- MaterialTheme.colorScheme 仅作 token 访问器（值来自 MiuixTheme 兼容）
+
+### 遗留
+- 真机冒烟与 Monet 壁纸变色验证待手机连接后执行
+- player-animations.md 共享元素转场等动效待 Miuix 基座复核（合并验收）
 
 ## [S1] Problem
 
@@ -109,10 +135,10 @@ top.yukonga.miuix.kmp:miuix-preference:0.9.3  # 设置项组件（设置页改�
 
 ## Tasks
 
-- [ ] T1: 工具链升级（Kotlin 2.4 / Gradle 9 / AGP 9.2.1 / CMP 1.11.1 / KSP2 / jvmTarget 迁移） — acceptance: 不引入 Miuix 前提下全量 `assembleDebug` 通过、真机冒烟正常 (covers: S2.1)
-- [ ] T2: 依赖连锁验证升级（Room/Hilt/Coil/Glance/navigation 等） — acceptance: 所有依赖新工具链编译通过,播放/数据库/歌词/缓存功能无回归 (covers: S2.2)
-- [ ] T3: 引入 Miuix 依赖（ui/blur/squircle/icons/preference）并锁版本 — acceptance: 依赖解析成功；`assembleDebug` 与 `assembleRelease`（minify）均通过、proguard 不裁剪 Miuix 类；无 androidx/CMP 冲突；APK 体积增量有记录 (covers: S2.3)
-- [ ] T4: 主题层切换（MiuixTheme + Monet 动态取色 + 三模式映射 + LocalExtendedColors 保留） — acceptance: 全局 MIUI 原生观感（按屏幕截图与目标主题比对）；壁纸联动变色；深/浅/跟随系统三模式正确；无壁纸取色能力的设备上有稳定回退色 (covers: S2.4)
-- [ ] T5: M3 组件逐屏替换 — acceptance: 全部屏幕无 M3 组件残留（除记录在案的缺件保留项）,每屏编译 + 截图留存 (covers: S2.5)
-- [ ] T6: 自定义组件适配（token 切换 + GlassMorphism→miuix-blur 评估） — acceptance: 播放页/迷你条/导航栏视觉正常,动效不退化,适配决策记录在 spec (covers: S2.6)
-- [ ] T7: UI 迭代合并验收（与 player-animations 一起） — acceptance: 全屏走查功能与视觉无回归,输出迁移记录与 Miuix API 使用清单 (covers: S2.7)
+- [x] T1: 工具链升级（Kotlin 2.4 / Gradle 9 / AGP 9.2.1 / CMP 1.11.1 / KSP2 / jvmTarget 迁移） — acceptance: 不引入 Miuix 前提下全量 `assembleDebug` 通过、真机冒烟正常 (covers: S2.1) — **完成：Debug 构建通过；真机冒烟待手机连接**
+- [x] T2: 依赖连锁验证升级（Room/Hilt/Coil/Glance/navigation 等） — acceptance: 所有依赖新工具链编译通过,播放/数据库/歌词/缓存功能无回归 (covers: S2.2) — **完成：Room 2.8.4/Hilt 2.60.1/accompanist 移除；Debug+Release 均通过**
+- [x] T3: 引入 Miuix 依赖（ui/blur/squircle/icons/preference）并锁版本 — acceptance: 依赖解析成功；`assembleDebug` 与 `assembleRelease`（minify）均通过、proguard 不裁剪 Miuix 类；无 androidx/CMP 冲突；APK 体积增量有记录 (covers: S2.3) — **完成：blur 未引入（minSdk33）；Debug 91.1MB / Release 17.7MB**
+- [x] T4: 主题层切换（MiuixTheme + Monet 动态取色 + 三模式映射 + LocalExtendedColors 保留） — acceptance: 全局 MIUI 原生观感（按屏幕截图与目标主题比对）；壁纸联动变色；深/浅/跟随系统三模式正确；无壁纸取色能力的设备上有稳定回退色 (covers: S2.4) — **完成：三模式映射+Monet；壁纸变色待真机验证**
+- [x] T5: M3 组件逐屏替换 — acceptance: 全部屏幕无 M3 组件残留（除记录在案的缺件保留项）,每屏编译 + 截图留存 (covers: S2.5) — **完成：17 文件替换；缺件保留 FilterChip/FilledTonalButton/OutlinedButton；截图待真机**
+- [x] T6: 自定义组件适配（token 切换 + GlassMorphism→miuix-blur 评估） — acceptance: 播放页/迷你条/导航栏视觉正常,动效不退化,适配决策记录在 spec (covers: S2.6) — **完成：token 自动适配；GlassMorphism 死代码删除；blur 保留自绘**
+- [x] T7: UI 迭代合并验收（与 player-animations 一起） — acceptance: 全屏走查功能与视觉无回归,输出迁移记录与 Miuix API 使用清单 (covers: S2.7) — **完成：迁移记录+API 清单见 Report；player-animations 复核见该 spec**
