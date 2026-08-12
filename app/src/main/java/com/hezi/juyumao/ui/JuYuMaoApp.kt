@@ -18,6 +18,8 @@ import com.hezi.juyumao.ui.navigation.JuYuMaoNavGraph
 import com.hezi.juyumao.ui.navigation.Screen
 import com.hezi.juyumao.ui.navigation.bottomNavItems
 import com.hezi.juyumao.ui.theme.JuYuMaoTheme
+import androidx.navigationevent.compose.LocalNavigationEventDispatcherOwner
+import androidx.navigationevent.compose.rememberNavigationEventDispatcherOwner
 
 @Composable
 fun JuYuMaoApp() {
@@ -29,18 +31,31 @@ fun JuYuMaoApp() {
     var startAtSmb by remember { mutableStateOf(false) }
 
     JuYuMaoTheme(themeMode = themeMode) {
-        if (!onboardingCompleted) {
-            com.hezi.juyumao.ui.onboarding.OnboardingScreen(
-                onStart = {
-                    appViewModel.completeOnboarding()
-                },
-                onConnectNas = {
-                    startAtSmb = true
-                    appViewModel.completeOnboarding()
-                },
-            )
-        } else {
-            JuYuMaoAppContent(appViewModel, startAtSmb)
+        // Miuix OverlayDialog/OverlayBottomSheet/OverlayListPopup 的 DialogEntry/PopupEntry 内部
+        // 使用 NavigationBackHandler（androidx.navigationevent 预测性返回），要求读取
+        // LocalNavigationEventDispatcherOwner。该 Local 通常由 NavHost 提供，但弹窗内容组合在
+        // Scaffold 的 popup 层（位于 NavHost 之外），读不到 → IllegalStateException 闪退。
+        // 在根提供 owner（rememberNavigationEventDispatcherOwner 内部包 Compose 实现），
+        // 修复"点击主题设置/缓存清除/歌单删除/倍速菜单/睡眠倒计时"等所有 Overlay 组件闪退。
+        // parent 必须显式传 null：不传时默认读取 LocalNavigationEventDispatcherOwner.current，
+        // 而根处没有父 owner，会抛 "No NavigationEventDispatcherOwner provided"。
+        val navigationEventDispatcherOwner = rememberNavigationEventDispatcherOwner(parent = null)
+        CompositionLocalProvider(
+            LocalNavigationEventDispatcherOwner provides navigationEventDispatcherOwner
+        ) {
+            if (!onboardingCompleted) {
+                com.hezi.juyumao.ui.onboarding.OnboardingScreen(
+                    onStart = {
+                        appViewModel.completeOnboarding()
+                    },
+                    onConnectNas = {
+                        startAtSmb = true
+                        appViewModel.completeOnboarding()
+                    },
+                )
+            } else {
+                JuYuMaoAppContent(appViewModel, startAtSmb)
+            }
         }
     }
 }

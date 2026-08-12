@@ -5,6 +5,7 @@ import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.compositionLocalOf
+import androidx.compose.runtime.remember
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalView
 import androidx.core.view.WindowCompat
@@ -27,9 +28,10 @@ private val DefaultExtendedColors = ExtendedColors()
 val LocalExtendedColors = compositionLocalOf { DefaultExtendedColors }
 
 /**
- * 主题：全盘 MIUI 原生配色 + Monet 动态取色（T4）。
- * - theme_mode 三模式映射到 Miuix ColorSchemeMode
- * - MonetSystem = 壁纸动态取色（无取色能力的设备回退 system 深/浅）
+ * 主题：MIUI 风格（按 Miuix README 官方推荐用法）。
+ * - ThemeController + Monet 动态取色 + keyColor = MIUI 蓝(0xFF3482FF)
+ * - 主色恒为 MIUI 蓝（非壁纸 MD3 紫罗兰），Monet 算法保留色调层次
+ * - theme_mode 三模式（深/浅/跟随系统）映射 ColorSchemeMode.MonetDark/Light/System
  * - 保留 LocalExtendedColors（HiRes 金色徽标）
  */
 @Composable
@@ -43,14 +45,20 @@ fun JuYuMaoTheme(
         ThemeMode.SYSTEM -> isSystemInDarkTheme()
     }
 
-    // theme_mode → Miuix ColorSchemeMode（system 模式用 MonetSystem 壁纸联动）
+    // theme_mode → Miuix ColorSchemeMode。真机验证结论：
+    // Monet 模式（无论是否传 keyColor）本质是 MD3 算法——即使 seed 用 MIUI 蓝 0xFF3482FF，
+    // 经 tonal 变换后 primary 变成低饱和灰蓝（真机实测 #707EA4），观感仍是 MD3。
+    // 因此改用 Miuix 默认配色 ColorSchemeMode.Dark/Light/System：
+    // primary 直接取 lightColorScheme(0xFF3482FF)/darkColorScheme(0xFF277AF7) 鲜亮 MIUI 蓝，
+    // 背景/卡片为 MIUI 的 白/近黑/灰 层次。remember 避免每次重组重建控制器。
     val colorSchemeMode = when (themeMode) {
-        ThemeMode.DARK -> ColorSchemeMode.MonetDark
-        ThemeMode.LIGHT -> ColorSchemeMode.MonetLight
-        ThemeMode.SYSTEM -> ColorSchemeMode.MonetSystem
+        ThemeMode.DARK -> ColorSchemeMode.Dark
+        ThemeMode.LIGHT -> ColorSchemeMode.Light
+        ThemeMode.SYSTEM -> ColorSchemeMode.System
     }
-
-    val themeController = ThemeController(colorSchemeMode = colorSchemeMode)
+    val themeController = remember(colorSchemeMode) {
+        ThemeController(colorSchemeMode = colorSchemeMode)
+    }
 
     val extendedColors = ExtendedColors(
         hiResGold = HiResGold,

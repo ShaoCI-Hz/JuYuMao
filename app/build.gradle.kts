@@ -138,4 +138,10 @@ dependencies {
     implementation(libs.miuix.squircle)
     implementation(libs.miuix.icons)
     implementation(libs.miuix.preference)
+
+    // Miuix Overlay 组件（OverlayDialog/OverlayBottomSheet/OverlayListPopup）内部使用
+    // NavigationBackHandler（androidx.navigationevent 预测性返回），需要显式提供
+    // LocalNavigationEventDispatcherOwner（Miuix 仅作 implementation 传递，不在 compile classpath）。
+    // 版本与 Miuix 0.9.3 传递引入的 1.1.2 保持一致。
+    implementation("androidx.navigationevent:navigationevent-compose-android:1.1.2")
 }
