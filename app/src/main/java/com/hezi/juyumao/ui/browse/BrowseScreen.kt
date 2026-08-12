@@ -11,8 +11,8 @@ import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.FilterChip
-import androidx.compose.material3.MaterialTheme
 import top.yukonga.miuix.kmp.basic.*
+import top.yukonga.miuix.kmp.theme.MiuixTheme
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -64,8 +64,8 @@ fun BrowseScreen(
 
         Text(
             text = "浏览",
-            style = MaterialTheme.typography.headlineLarge,
-            color = MaterialTheme.colorScheme.onBackground,
+            style = MiuixTheme.textStyles.title1,
+            color = MiuixTheme.colorScheme.onBackground,
             modifier = Modifier.padding(horizontal = 16.dp),
         )
 
@@ -94,20 +94,20 @@ fun BrowseScreen(
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(horizontal = 16.dp, vertical = 4.dp),
-                colors = CardDefaults.defaultColors(color = MaterialTheme.colorScheme.primaryContainer),
+                colors = CardDefaults.defaultColors(color = MiuixTheme.colorScheme.primaryContainer),
                 cornerRadius = 10.dp,
             ) {
                 Column(modifier = Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
                     Text(
                         text = "正在缓存歌曲元数据... (${batchState.processed}/${batchState.total})",
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onPrimaryContainer,
+                        style = MiuixTheme.textStyles.footnote1,
+                        color = MiuixTheme.colorScheme.onPrimaryContainer,
                     )
                     if (batchState.currentSongTitle.isNotEmpty()) {
                         Text(
                             text = batchState.currentSongTitle,
-                            style = MaterialTheme.typography.labelSmall,
-                            color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.7f),
+                            style = MiuixTheme.textStyles.footnote2,
+                            color = MiuixTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.7f),
                             maxLines = 1,
                             overflow = TextOverflow.Ellipsis,
                         )
@@ -152,14 +152,14 @@ fun BrowseScreen(
                     Icon(
                         imageVector = Icons.Default.MusicOff,
                         contentDescription = null,
-                        tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                        tint = MiuixTheme.colorScheme.onSurfaceSecondary,
                         modifier = Modifier.size(64.dp),
                     )
                     Text(
                         text = if (allSongs.isEmpty()) "暂无歌曲，请先扫描本地音乐"
                                else "当前筛选无结果",
-                        style = MaterialTheme.typography.bodyLarge,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        style = MiuixTheme.textStyles.body1,
+                        color = MiuixTheme.colorScheme.onSurfaceSecondary,
                     )
                 }
             }
@@ -221,7 +221,7 @@ private fun SongListItem(
                 modifier = Modifier
                     .size(48.dp)
                     .background(
-                        color = MaterialTheme.colorScheme.primary.copy(alpha = 0.15f),
+                        color = MiuixTheme.colorScheme.primary.copy(alpha = 0.15f),
                         shape = RoundedCornerShape(8.dp),
                     ),
                 contentAlignment = Alignment.Center,
@@ -229,7 +229,7 @@ private fun SongListItem(
                 Icon(
                     imageVector = Icons.Default.MusicNote,
                     contentDescription = null,
-                    tint = MaterialTheme.colorScheme.primary,
+                    tint = MiuixTheme.colorScheme.primary,
                     modifier = Modifier.size(24.dp),
                 )
             }
@@ -243,8 +243,8 @@ private fun SongListItem(
             ) {
                 Text(
                     text = song.title,
-                    style = MaterialTheme.typography.bodyLarge,
-                    color = MaterialTheme.colorScheme.onSurface,
+                    style = MiuixTheme.textStyles.body1,
+                    color = MiuixTheme.colorScheme.onSurface,
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis,
                     modifier = Modifier.weight(1f, fill = false),
@@ -261,9 +261,9 @@ private fun SongListItem(
             ) {
                 // 来源标签
                 val (tagText, tagColor) = if (song.source == "LOCAL") {
-                    "本地" to MaterialTheme.colorScheme.primary
+                    "本地" to MiuixTheme.colorScheme.primary
                 } else {
-                    "NAS" to MaterialTheme.colorScheme.tertiary
+                    "NAS" to MiuixTheme.colorScheme.primary
                 }
                 Box(
                     modifier = Modifier
@@ -275,14 +275,14 @@ private fun SongListItem(
                 ) {
                     Text(
                         text = tagText,
-                        style = MaterialTheme.typography.labelSmall,
+                        style = MiuixTheme.textStyles.footnote2,
                         color = tagColor,
                     )
                 }
                 Text(
                     text = "${song.artist.ifEmpty { "未知艺术家" }} · ${song.album.ifEmpty { "未知专辑" }}",
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    style = MiuixTheme.textStyles.footnote1,
+                    color = MiuixTheme.colorScheme.onSurfaceSecondary,
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis,
                 )
@@ -293,23 +293,23 @@ private fun SongListItem(
         if (isProcessing) {
             Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(2.dp)) {
                 CircularProgressIndicator(modifier = Modifier.size(16.dp), strokeWidth = 2.dp)
-                Text("缓存中", style = MaterialTheme.typography.labelSmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant)
+                Text("缓存中", style = MiuixTheme.textStyles.footnote2,
+                    color = MiuixTheme.colorScheme.onSurfaceSecondary)
             }
         } else {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Text(
                     text = formatDuration(song.duration),
-                    style = MaterialTheme.typography.labelSmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    style = MiuixTheme.textStyles.footnote2,
+                    color = MiuixTheme.colorScheme.onSurfaceSecondary,
                 )
                 // 收藏按钮
                 IconButton(onClick = onToggleFavorite, modifier = Modifier.size(32.dp)) {
                     Icon(
                         imageVector = if (song.isFavorite) Icons.Default.Favorite else Icons.Default.FavoriteBorder,
                         contentDescription = if (song.isFavorite) "取消收藏" else "收藏",
-                        tint = if (song.isFavorite) MaterialTheme.colorScheme.primary
-                               else MaterialTheme.colorScheme.onSurfaceVariant,
+                        tint = if (song.isFavorite) MiuixTheme.colorScheme.primary
+                               else MiuixTheme.colorScheme.onSurfaceSecondary,
                         modifier = Modifier.size(18.dp),
                     )
                 }
@@ -339,7 +339,7 @@ private fun HiResBadge(text: String) {
     ) {
         Text(
             text = text,
-            style = MaterialTheme.typography.labelSmall,
+            style = MiuixTheme.textStyles.footnote2,
             color = com.hezi.juyumao.ui.theme.LocalExtendedColors.current.hiResGold,
             fontWeight = FontWeight.Bold,
         )
@@ -387,8 +387,8 @@ private fun DimensionBrowse(
         }
         if (names.isEmpty()) {
             Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                Text("暂无数据", style = MaterialTheme.typography.bodyLarge,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant)
+                Text("暂无数据", style = MiuixTheme.textStyles.body1,
+                    color = MiuixTheme.colorScheme.onSurfaceSecondary)
             }
         } else {
             LazyColumn(modifier = Modifier.fillMaxSize(), contentPadding = PaddingValues(bottom = 160.dp)) {
@@ -408,13 +408,13 @@ private fun DimensionBrowse(
                                 else -> Icons.Default.Album
                             },
                             contentDescription = null,
-                            tint = MaterialTheme.colorScheme.primary,
+                            tint = MiuixTheme.colorScheme.primary,
                             modifier = Modifier.size(24.dp),
                         )
-                        Text(name, style = MaterialTheme.typography.bodyLarge,
-                            color = MaterialTheme.colorScheme.onSurface, modifier = Modifier.weight(1f))
+                        Text(name, style = MiuixTheme.textStyles.body1,
+                            color = MiuixTheme.colorScheme.onSurface, modifier = Modifier.weight(1f))
                         Icon(Icons.AutoMirrored.Filled.KeyboardArrowRight, null,
-                            tint = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.size(20.dp))
+                            tint = MiuixTheme.colorScheme.onSurfaceSecondary, modifier = Modifier.size(20.dp))
                     }
                 }
             }
@@ -432,19 +432,19 @@ private fun DimensionBrowse(
                 }
                 Text(
                     text = dimensionName,
-                    style = MaterialTheme.typography.titleMedium,
-                    color = MaterialTheme.colorScheme.onBackground,
+                    style = MiuixTheme.textStyles.title4,
+                    color = MiuixTheme.colorScheme.onBackground,
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis,
                     modifier = Modifier.weight(1f),
                 )
-                Text("${dimensionSongs.size} 首", style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant)
+                Text("${dimensionSongs.size} 首", style = MiuixTheme.textStyles.footnote1,
+                    color = MiuixTheme.colorScheme.onSurfaceSecondary)
             }
             if (dimensionSongs.isEmpty()) {
                 Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                    Text("暂无歌曲", style = MaterialTheme.typography.bodyLarge,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    Text("暂无歌曲", style = MiuixTheme.textStyles.body1,
+                        color = MiuixTheme.colorScheme.onSurfaceSecondary)
                 }
             } else {
                 LazyColumn(modifier = Modifier.fillMaxSize(), contentPadding = PaddingValues(bottom = 160.dp)) {
@@ -466,20 +466,20 @@ private fun DimensionBrowse(
                                 )
                             } else {
                                 Icon(Icons.Default.MusicNote, null,
-                                    tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(24.dp))
+                                    tint = MiuixTheme.colorScheme.primary, modifier = Modifier.size(24.dp))
                             }
                             Column(modifier = Modifier.weight(1f)) {
-                                Text(song.title, style = MaterialTheme.typography.bodyLarge,
-                                    color = MaterialTheme.colorScheme.onSurface, maxLines = 1,
+                                Text(song.title, style = MiuixTheme.textStyles.body1,
+                                    color = MiuixTheme.colorScheme.onSurface, maxLines = 1,
                                     overflow = TextOverflow.Ellipsis)
-                                Text(song.artist, style = MaterialTheme.typography.bodySmall,
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant, maxLines = 1,
+                                Text(song.artist, style = MiuixTheme.textStyles.footnote1,
+                                    color = MiuixTheme.colorScheme.onSurfaceSecondary, maxLines = 1,
                                     overflow = TextOverflow.Ellipsis)
                             }
                             Text(
                                 text = formatDuration(song.duration),
-                                style = MaterialTheme.typography.labelSmall,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                style = MiuixTheme.textStyles.footnote2,
+                                color = MiuixTheme.colorScheme.onSurfaceSecondary,
                             )
                         }
                     }

@@ -8,7 +8,7 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.MusicNote
 import androidx.compose.material3.Icon
-import androidx.compose.material3.MaterialTheme
+import top.yukonga.miuix.kmp.theme.MiuixTheme
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -54,8 +54,15 @@ fun RotatingAlbumArt(
 
     // 记住暂停时的旋转角度
     var pausedRotation by remember { mutableFloatStateOf(0f) }
-    LaunchedEffect(isPlaying, rotation) {
-        if (isPlaying) pausedRotation = rotation
+    // 修复已知 bug：key 原为 (isPlaying, rotation)，而 rotation 在播放时每帧变化，
+    // 导致 LaunchedEffect 每帧取消并重启。改为仅以 isPlaying 为 key 一次启动，
+    // 播放时在 withInfiniteAnimationFrameMillis 内每帧记录角度（暂停时自动停止）。
+    LaunchedEffect(isPlaying) {
+        if (isPlaying) {
+            withInfiniteAnimationFrameMillis {
+                pausedRotation = rotation
+            }
+        }
     }
     val displayRotation by animateFloatAsState(
         targetValue = if (isPlaying) rotation else pausedRotation,
@@ -71,7 +78,7 @@ fun RotatingAlbumArt(
             }
             .shadow(elevation = 20.dp, shape = CircleShape)
             .background(
-                color = MaterialTheme.colorScheme.surfaceVariant,
+                color = MiuixTheme.colorScheme.surfaceVariant,
                 shape = CircleShape,
             )
             .clip(CircleShape),
@@ -92,7 +99,7 @@ fun RotatingAlbumArt(
             Icon(
                 imageVector = Icons.Default.MusicNote,
                 contentDescription = "专辑封面",
-                tint = MaterialTheme.colorScheme.primary.copy(alpha = 0.5f),
+                tint = MiuixTheme.colorScheme.primary.copy(alpha = 0.5f),
                 modifier = Modifier.size(size * 0.4f),
             )
         }

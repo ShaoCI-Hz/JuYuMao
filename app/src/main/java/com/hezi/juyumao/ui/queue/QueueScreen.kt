@@ -9,8 +9,8 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.MusicNote
-import androidx.compose.material3.MaterialTheme
 import top.yukonga.miuix.kmp.basic.*
+import top.yukonga.miuix.kmp.theme.MiuixTheme
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -46,7 +46,7 @@ fun QueueScreen(
             }
             Text(
                 text = "播放队列 (${queue.size})",
-                style = MaterialTheme.typography.titleLarge,
+                style = MiuixTheme.textStyles.title3,
             )
             IconButton(onClick = { viewModel.clearQueue() }) {
                 Icon(
@@ -63,8 +63,8 @@ fun QueueScreen(
             ) {
                 Text(
                     text = "队列为空",
-                    style = MaterialTheme.typography.bodyLarge,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    style = MiuixTheme.textStyles.body1,
+                    color = MiuixTheme.colorScheme.onSurfaceSecondary,
                 )
             }
         } else {
@@ -86,30 +86,30 @@ fun QueueScreen(
                         Icon(
                             imageVector = Icons.Default.MusicNote,
                             contentDescription = null,
-                            tint = if (isCurrent) MaterialTheme.colorScheme.primary
-                                   else MaterialTheme.colorScheme.onSurfaceVariant,
+                            tint = if (isCurrent) MiuixTheme.colorScheme.primary
+                                   else MiuixTheme.colorScheme.onSurfaceSecondary,
                             modifier = Modifier.size(22.dp),
                         )
                         Column(modifier = Modifier.weight(1f)) {
                             Text(
                                 text = song.title,
-                                style = MaterialTheme.typography.bodyLarge,
-                                color = if (isCurrent) MaterialTheme.colorScheme.primary
-                                        else MaterialTheme.colorScheme.onSurface,
+                                style = MiuixTheme.textStyles.body1,
+                                color = if (isCurrent) MiuixTheme.colorScheme.primary
+                                        else MiuixTheme.colorScheme.onSurface,
                                 maxLines = 1,
                                 overflow = TextOverflow.Ellipsis,
                             )
                             Text(
                                 text = "${song.artist} · ${song.album}",
-                                style = MaterialTheme.typography.bodySmall,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                style = MiuixTheme.textStyles.footnote1,
+                                color = MiuixTheme.colorScheme.onSurfaceSecondary,
                                 maxLines = 1,
                                 overflow = TextOverflow.Ellipsis,
                             )
                         }
                         if (isCurrent) {
-                            Text("播放中", style = MaterialTheme.typography.labelSmall,
-                                color = MaterialTheme.colorScheme.primary)
+                            Text("播放中", style = MiuixTheme.textStyles.footnote2,
+                                color = MiuixTheme.colorScheme.primary)
                         }
                     }
                 }

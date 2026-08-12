@@ -9,8 +9,8 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.*
-import androidx.compose.material3.MaterialTheme
 import top.yukonga.miuix.kmp.basic.*
+import top.yukonga.miuix.kmp.theme.MiuixTheme
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -39,8 +39,8 @@ fun StatisticsScreen(
             verticalAlignment = Alignment.CenterVertically,
         ) {
             IconButton(onClick = onBack) { Icon(Icons.AutoMirrored.Filled.ArrowBack, "返回") }
-            Text("听歌报告", style = MaterialTheme.typography.headlineLarge,
-                color = MaterialTheme.colorScheme.onBackground, modifier = Modifier.weight(1f))
+            Text("听歌报告", style = MiuixTheme.textStyles.title1,
+                color = MiuixTheme.colorScheme.onBackground, modifier = Modifier.weight(1f))
             IconButton(onClick = { viewModel.refresh() }) {
                 Icon(Icons.Default.Refresh, "刷新")
             }
@@ -59,18 +59,18 @@ fun StatisticsScreen(
                 item {
                     Card(
                         modifier = Modifier.fillMaxWidth().padding(16.dp),
-                        colors = CardDefaults.defaultColors(color = MaterialTheme.colorScheme.primary.copy(alpha = 0.1f)),
+                        colors = CardDefaults.defaultColors(color = MiuixTheme.colorScheme.primary.copy(alpha = 0.1f)),
                         cornerRadius = 14.dp,
                     ) {
                         Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                            Text("累计播放", style = MaterialTheme.typography.titleMedium,
-                                color = MaterialTheme.colorScheme.primary)
-                            Text("${uiState.totalPlayCount} 次", style = MaterialTheme.typography.headlineMedium.copy(fontWeight = FontWeight.Bold),
-                                color = MaterialTheme.colorScheme.onBackground)
+                            Text("累计播放", style = MiuixTheme.textStyles.title4,
+                                color = MiuixTheme.colorScheme.primary)
+                            Text("${uiState.totalPlayCount} 次", style = MiuixTheme.textStyles.title2.copy(fontWeight = FontWeight.Bold),
+                                color = MiuixTheme.colorScheme.onBackground)
                             Text(
                                 text = "累计时长 ${formatDuration(uiState.totalPlayDurationMs)} · 本周 ${uiState.weekPlayCount} 次 · 本月 ${uiState.monthPlayCount} 次",
-                                style = MaterialTheme.typography.bodySmall,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                style = MiuixTheme.textStyles.footnote1,
+                                color = MiuixTheme.colorScheme.onSurfaceSecondary,
                             )
                         }
                     }
@@ -79,8 +79,8 @@ fun StatisticsScreen(
                 // TOP 歌曲
                 if (uiState.topSongs.isNotEmpty()) {
                     item {
-                        Text("TOP 10 歌曲", style = MaterialTheme.typography.titleMedium,
-                            color = MaterialTheme.colorScheme.onBackground,
+                        Text("TOP 10 歌曲", style = MiuixTheme.textStyles.title4,
+                            color = MiuixTheme.colorScheme.onBackground,
                             modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp))
                     }
                     items(uiState.topSongs, key = { it.id }) { song ->
@@ -98,18 +98,18 @@ fun StatisticsScreen(
                                     contentScale = androidx.compose.ui.layout.ContentScale.Crop)
                             } else {
                                 Icon(Icons.Default.MusicNote, null,
-                                    tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(24.dp))
+                                    tint = MiuixTheme.colorScheme.primary, modifier = Modifier.size(24.dp))
                             }
                             Column(modifier = Modifier.weight(1f)) {
-                                Text(song.title, style = MaterialTheme.typography.bodyLarge,
-                                    color = MaterialTheme.colorScheme.onSurface, maxLines = 1,
+                                Text(song.title, style = MiuixTheme.textStyles.body1,
+                                    color = MiuixTheme.colorScheme.onSurface, maxLines = 1,
                                     overflow = TextOverflow.Ellipsis)
-                                Text(song.artist, style = MaterialTheme.typography.bodySmall,
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant, maxLines = 1,
+                                Text(song.artist, style = MiuixTheme.textStyles.footnote1,
+                                    color = MiuixTheme.colorScheme.onSurfaceSecondary, maxLines = 1,
                                     overflow = TextOverflow.Ellipsis)
                             }
-                            Text("${song.playCount} 次", style = MaterialTheme.typography.labelMedium,
-                                color = MaterialTheme.colorScheme.primary)
+                            Text("${song.playCount} 次", style = MiuixTheme.textStyles.footnote1,
+                                color = MiuixTheme.colorScheme.primary)
                         }
                     }
                 }
@@ -117,8 +117,8 @@ fun StatisticsScreen(
                 // TOP 艺术家
                 if (uiState.topArtists.isNotEmpty()) {
                     item {
-                        Text("TOP 10 艺术家", style = MaterialTheme.typography.titleMedium,
-                            color = MaterialTheme.colorScheme.onBackground,
+                        Text("TOP 10 艺术家", style = MiuixTheme.textStyles.title4,
+                            color = MiuixTheme.colorScheme.onBackground,
                             modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp))
                     }
                     items(uiState.topArtists, key = { it.first }) { (artist, count) ->
@@ -131,18 +131,18 @@ fun StatisticsScreen(
                         ) {
                             Box(
                                 modifier = Modifier.size(36.dp)
-                                    .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.15f),
+                                    .background(MiuixTheme.colorScheme.primary.copy(alpha = 0.15f),
                                         RoundedCornerShape(8.dp)),
                                 contentAlignment = Alignment.Center,
                             ) {
                                 Icon(Icons.Default.Person, null,
-                                    tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(20.dp))
+                                    tint = MiuixTheme.colorScheme.primary, modifier = Modifier.size(20.dp))
                             }
-                            Text(artist, style = MaterialTheme.typography.bodyLarge,
-                                color = MaterialTheme.colorScheme.onSurface, modifier = Modifier.weight(1f),
+                            Text(artist, style = MiuixTheme.textStyles.body1,
+                                color = MiuixTheme.colorScheme.onSurface, modifier = Modifier.weight(1f),
                                 maxLines = 1, overflow = TextOverflow.Ellipsis)
-                            Text("$count 次", style = MaterialTheme.typography.labelMedium,
-                                color = MaterialTheme.colorScheme.primary)
+                            Text("$count 次", style = MiuixTheme.textStyles.footnote1,
+                                color = MiuixTheme.colorScheme.primary)
                         }
                     }
                 }
@@ -152,8 +152,8 @@ fun StatisticsScreen(
                         Box(modifier = Modifier.fillMaxWidth().padding(vertical = 48.dp),
                             contentAlignment = Alignment.Center) {
                             Text("还没有播放记录，去听首歌吧",
-                                style = MaterialTheme.typography.bodyLarge,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant)
+                                style = MiuixTheme.textStyles.body1,
+                                color = MiuixTheme.colorScheme.onSurfaceSecondary)
                         }
                     }
                 }

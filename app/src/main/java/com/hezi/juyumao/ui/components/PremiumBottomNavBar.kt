@@ -9,7 +9,9 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.*
+import androidx.compose.material3.Icon
+import androidx.compose.material3.Text
+import top.yukonga.miuix.kmp.theme.MiuixTheme
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -23,6 +25,7 @@ import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.unit.dp
 import com.hezi.juyumao.ui.navigation.BottomNavItem
 
+// 自绘底栏：后续可评估换 Miuix NavigationBar
 @Composable
 fun PremiumBottomNavBar(
     items: List<BottomNavItem>,
@@ -48,7 +51,7 @@ fun PremiumBottomNavBar(
                     spotColor = Color.Black.copy(alpha = 0.2f),
                 )
                 .background(
-                    color = MaterialTheme.colorScheme.surface.copy(alpha = 0.9f),
+                    color = MiuixTheme.colorScheme.surface.copy(alpha = 0.9f),
                     shape = RoundedCornerShape(34.dp),
                 )
                 .clip(RoundedCornerShape(34.dp)),
@@ -118,17 +121,17 @@ private fun BottomNavItemView(
                 Icon(
                     imageVector = if (isSelected) item.selectedIcon else item.unselectedIcon,
                     contentDescription = item.label,
-                    tint = if (isSelected) MaterialTheme.colorScheme.primary
-                           else MaterialTheme.colorScheme.onSurfaceVariant,
+                    tint = if (isSelected) MiuixTheme.colorScheme.primary
+                           else MiuixTheme.colorScheme.onSurfaceSecondary,
                     modifier = Modifier.size(24.dp),
                 )
             }
 
             Text(
                 text = item.label,
-                style = MaterialTheme.typography.labelSmall,
-                color = if (isSelected) MaterialTheme.colorScheme.primary
-                        else MaterialTheme.colorScheme.onSurfaceVariant,
+                style = MiuixTheme.textStyles.footnote2,
+                color = if (isSelected) MiuixTheme.colorScheme.primary
+                        else MiuixTheme.colorScheme.onSurfaceSecondary,
             )
 
             if (isSelected) {
@@ -140,7 +143,7 @@ private fun BottomNavItemView(
                             brush = Brush.horizontalGradient(
                                 colors = listOf(
                                     Color.Transparent,
-                                    MaterialTheme.colorScheme.primary,
+                                    MiuixTheme.colorScheme.primary,
                                     Color.Transparent,
                                 )
                             ),

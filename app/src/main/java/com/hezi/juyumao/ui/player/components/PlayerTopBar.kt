@@ -5,8 +5,8 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Visibility
 import androidx.compose.material.icons.filled.VisibilityOff
-import androidx.compose.material3.MaterialTheme
 import top.yukonga.miuix.kmp.basic.*
+import top.yukonga.miuix.kmp.theme.MiuixTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -41,7 +41,7 @@ fun PlayerTopBar(
         if (title.isNotEmpty()) {
             Text(
                 title,
-                style = MaterialTheme.typography.titleMedium,
+                style = MiuixTheme.textStyles.title4,
                 color = Color.White.copy(alpha = 0.9f),
             )
         } else {

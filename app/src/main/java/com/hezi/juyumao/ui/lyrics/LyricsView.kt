@@ -7,8 +7,8 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.lazy.rememberLazyListState
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
+import top.yukonga.miuix.kmp.theme.MiuixTheme
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -35,8 +35,8 @@ fun LyricsView(
 ) {
     if (lyricsData == null || lyricsData.lines.isEmpty()) {
         Box(modifier = modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-            Text("暂无歌词", style = MaterialTheme.typography.bodyLarge,
-                color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f))
+            Text("暂无歌词", style = MiuixTheme.textStyles.body1,
+                color = MiuixTheme.colorScheme.onSurfaceSecondary.copy(alpha = 0.6f))
         }
         return
     }
@@ -145,9 +145,9 @@ fun LyricsView(
 
             val color by animateColorAsState(
                 targetValue = when {
-                    currentIndex < 0 -> MaterialTheme.colorScheme.onSurfaceVariant
-                    isCurrent -> MaterialTheme.colorScheme.primary
-                    else -> MaterialTheme.colorScheme.onSurfaceVariant
+                    currentIndex < 0 -> MiuixTheme.colorScheme.onSurfaceSecondary
+                    isCurrent -> MiuixTheme.colorScheme.primary
+                    else -> MiuixTheme.colorScheme.onSurfaceSecondary
                 },
                 animationSpec = tween(300),
                 label = "lyric_color",

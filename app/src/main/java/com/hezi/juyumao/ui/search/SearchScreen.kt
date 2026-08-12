@@ -11,8 +11,8 @@ import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.FavoriteBorder
 import androidx.compose.material.icons.filled.MusicNote
 import androidx.compose.material.icons.filled.Search
-import androidx.compose.material3.MaterialTheme
 import top.yukonga.miuix.kmp.basic.*
+import top.yukonga.miuix.kmp.theme.MiuixTheme
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -34,8 +34,8 @@ fun SearchScreen(
 
         Text(
             text = "搜索",
-            style = MaterialTheme.typography.headlineLarge,
-            color = MaterialTheme.colorScheme.onBackground,
+            style = MiuixTheme.textStyles.title1,
+            color = MiuixTheme.colorScheme.onBackground,
             modifier = Modifier.padding(horizontal = 16.dp),
         )
 
@@ -68,8 +68,8 @@ fun SearchScreen(
             ) {
                 Text(
                     text = "输入关键词搜索音乐",
-                    style = MaterialTheme.typography.bodyLarge,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    style = MiuixTheme.textStyles.body1,
+                    color = MiuixTheme.colorScheme.onSurfaceSecondary,
                 )
             }
         } else if (results.isEmpty()) {
@@ -79,8 +79,8 @@ fun SearchScreen(
             ) {
                 Text(
                     text = "未找到匹配的歌曲",
-                    style = MaterialTheme.typography.bodyLarge,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    style = MiuixTheme.textStyles.body1,
+                    color = MiuixTheme.colorScheme.onSurfaceSecondary,
                 )
             }
         } else {
@@ -108,22 +108,22 @@ fun SearchScreen(
                             Icon(
                                 imageVector = Icons.Default.MusicNote,
                                 contentDescription = null,
-                                tint = MaterialTheme.colorScheme.primary,
+                                tint = MiuixTheme.colorScheme.primary,
                                 modifier = Modifier.size(24.dp),
                             )
                         }
                         Column(modifier = Modifier.weight(1f)) {
                             Text(
                                 text = song.title,
-                                style = MaterialTheme.typography.bodyLarge,
-                                color = MaterialTheme.colorScheme.onSurface,
+                                style = MiuixTheme.textStyles.body1,
+                                color = MiuixTheme.colorScheme.onSurface,
                                 maxLines = 1,
                                 overflow = TextOverflow.Ellipsis,
                             )
                             Text(
                                 text = "${song.artist} · ${song.album}",
-                                style = MaterialTheme.typography.bodySmall,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                style = MiuixTheme.textStyles.footnote1,
+                                color = MiuixTheme.colorScheme.onSurfaceSecondary,
                                 maxLines = 1,
                                 overflow = TextOverflow.Ellipsis,
                             )
@@ -136,8 +136,8 @@ fun SearchScreen(
                             Icon(
                                 imageVector = if (song.isFavorite) Icons.Default.Favorite else Icons.Default.FavoriteBorder,
                                 contentDescription = if (song.isFavorite) "取消收藏" else "收藏",
-                                tint = if (song.isFavorite) MaterialTheme.colorScheme.primary
-                                       else MaterialTheme.colorScheme.onSurfaceVariant,
+                                tint = if (song.isFavorite) MiuixTheme.colorScheme.primary
+                                       else MiuixTheme.colorScheme.onSurfaceSecondary,
                                 modifier = Modifier.size(18.dp),
                             )
                         }

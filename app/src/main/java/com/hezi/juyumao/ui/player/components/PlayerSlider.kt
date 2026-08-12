@@ -1,8 +1,8 @@
 package com.hezi.juyumao.ui.player.components
 
 import androidx.compose.foundation.layout.*
-import androidx.compose.material3.MaterialTheme
 import top.yukonga.miuix.kmp.basic.*
+import top.yukonga.miuix.kmp.theme.MiuixTheme
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -35,9 +35,9 @@ fun PlayerSlider(
             valueRange = 0f..durationFloat,
             modifier = Modifier.fillMaxWidth().height(32.dp),
             colors = SliderDefaults.sliderColors(
-                foregroundColor = Color.White,
-                backgroundColor = Color.White.copy(alpha = 0.2f),
-                thumbColor = Color.White,
+                foregroundColor = MiuixTheme.colorScheme.onSurface,
+                backgroundColor = MiuixTheme.colorScheme.onSurface.copy(alpha = 0.2f),
+                thumbColor = MiuixTheme.colorScheme.onSurface,
             ),
         )
 
@@ -48,13 +48,13 @@ fun PlayerSlider(
         ) {
             Text(
                 formatDuration(if (isDragging) dragValue.toLong() else position),
-                style = MaterialTheme.typography.labelSmall,
-                color = Color.White.copy(alpha = 0.7f),
+                style = MiuixTheme.textStyles.footnote2,
+                color = Color.White.copy(alpha = 0.7f), // 深色艺术背景上的前景色
             )
             Text(
                 formatDuration(duration),
-                style = MaterialTheme.typography.labelSmall,
-                color = Color.White.copy(alpha = 0.7f),
+                style = MiuixTheme.textStyles.footnote2,
+                color = Color.White.copy(alpha = 0.7f), // 深色艺术背景上的前景色
             )
         }
     }

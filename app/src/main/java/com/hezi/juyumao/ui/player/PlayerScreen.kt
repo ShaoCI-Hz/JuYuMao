@@ -6,9 +6,9 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.MaterialTheme
 import top.yukonga.miuix.kmp.basic.*
 import top.yukonga.miuix.kmp.overlay.*
+import top.yukonga.miuix.kmp.theme.MiuixTheme
 import androidx.compose.runtime.*
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.compose.ui.Alignment
@@ -128,7 +128,7 @@ fun PlayerScreen(
                 ) {
                     Text(
                         currentSong?.title ?: "未知歌曲",
-                        style = MaterialTheme.typography.headlineSmall.copy(fontWeight = FontWeight.Bold),
+                        style = MiuixTheme.textStyles.title2.copy(fontWeight = FontWeight.Bold),
                         color = Color.White,
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis,
@@ -143,7 +143,7 @@ fun PlayerScreen(
                     }
                     Text(
                         subtitle,
-                        style = MaterialTheme.typography.bodyMedium,
+                        style = MiuixTheme.textStyles.body2,
                         color = Color.White.copy(alpha = 0.7f),
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis,
@@ -177,7 +177,7 @@ fun PlayerScreen(
                         text = if (playbackSpeed == 1.0f) "1.0x" else "${playbackSpeed}x",
                         onClick = { showSpeedMenu = true },
                         modifier = Modifier,
-                        textStyle = MaterialTheme.typography.labelMedium,
+                        textStyle = MiuixTheme.textStyles.footnote1,
                         colors = ButtonDefaults.textButtonColors(textColor = Color.White.copy(alpha = 0.8f)),
                     )
                     OverlayListPopup(
@@ -196,7 +196,7 @@ fun PlayerScreen(
                                             showSpeedMenu = false
                                         }
                                         .padding(horizontal = 16.dp, vertical = 12.dp),
-                                    style = MaterialTheme.typography.bodyLarge,
+                                    style = MiuixTheme.textStyles.body1,
                                     color = Color.White,
                                 )
                             }
@@ -294,7 +294,7 @@ private fun AudioSpecRow(song: com.hezi.juyumao.data.local.db.entity.SongEntity)
             ) {
                 Text(
                     text = if (isDsd) "DSD" else "Hi-Res",
-                    style = MaterialTheme.typography.labelSmall,
+                    style = MiuixTheme.textStyles.footnote2,
                     color = com.hezi.juyumao.ui.theme.LocalExtendedColors.current.hiResGold,
                     fontWeight = FontWeight.Bold,
                 )
@@ -302,7 +302,7 @@ private fun AudioSpecRow(song: com.hezi.juyumao.data.local.db.entity.SongEntity)
         }
         Text(
             text = specs.joinToString(" · "),
-            style = MaterialTheme.typography.labelMedium,
+            style = MiuixTheme.textStyles.footnote1,
             color = Color.White.copy(alpha = 0.6f),
         )
     }

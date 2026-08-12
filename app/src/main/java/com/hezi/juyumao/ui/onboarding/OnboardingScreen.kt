@@ -20,9 +20,9 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.ButtonDefaults
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import top.yukonga.miuix.kmp.basic.*
+import top.yukonga.miuix.kmp.theme.MiuixTheme
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -69,6 +69,7 @@ fun OnboardingScreen(
         }
     }
 
+    // Onboarding 艺术化深色引导页：渐变/白字为设计意图，不随 Monet 变色
     Box(
         modifier = Modifier
             .fillMaxSize()
@@ -193,7 +194,7 @@ private fun OnboardingPage1() {
         AnimatedEntrance(delayMs = 150) {
             Text(
                 "局域猫",
-                style = MaterialTheme.typography.displaySmall.copy(fontWeight = FontWeight.Bold),
+                style = MiuixTheme.textStyles.title1.copy(fontWeight = FontWeight.Bold),
                 color = Color.White,
             )
         }
@@ -201,7 +202,7 @@ private fun OnboardingPage1() {
         AnimatedEntrance(delayMs = 300) {
             Text(
                 "局域网 NAS 音乐播放器",
-                style = MaterialTheme.typography.titleMedium,
+                style = MiuixTheme.textStyles.title4,
                 color = Color.White.copy(alpha = 0.7f),
             )
         }
@@ -209,7 +210,7 @@ private fun OnboardingPage1() {
         AnimatedEntrance(delayMs = 450) {
             Text(
                 "直连 SMB 服务器，畅享无损高音质",
-                style = MaterialTheme.typography.bodyMedium,
+                style = MiuixTheme.textStyles.body2,
                 color = Color.White.copy(alpha = 0.5f),
                 textAlign = TextAlign.Center,
             )
@@ -229,7 +230,7 @@ private fun OnboardingPage2() {
     ) {
         Text(
             "核心能力",
-            style = MaterialTheme.typography.headlineSmall.copy(fontWeight = FontWeight.Bold),
+            style = MiuixTheme.textStyles.title2.copy(fontWeight = FontWeight.Bold),
             color = Color.White,
             modifier = Modifier.padding(bottom = 24.dp),
         )
@@ -276,8 +277,8 @@ private fun FeatureCard(icon: androidx.compose.ui.graphics.vector.ImageVector, t
                     modifier = Modifier.size(24.dp))
             }
             Column {
-                Text(title, style = MaterialTheme.typography.titleSmall, color = Color.White)
-                Text(desc, style = MaterialTheme.typography.bodySmall,
+                Text(title, style = MiuixTheme.textStyles.subtitle, color = Color.White)
+                Text(desc, style = MiuixTheme.textStyles.footnote1,
                     color = Color.White.copy(alpha = 0.6f))
             }
         }
@@ -296,7 +297,7 @@ private fun OnboardingPage3() {
     ) {
         Text(
             "权限说明",
-            style = MaterialTheme.typography.headlineSmall.copy(fontWeight = FontWeight.Bold),
+            style = MiuixTheme.textStyles.title2.copy(fontWeight = FontWeight.Bold),
             color = Color.White,
             modifier = Modifier.padding(bottom = 24.dp),
         )
@@ -311,7 +312,7 @@ private fun OnboardingPage3() {
         AnimatedEntrance(delayMs = 400) {
             Text(
                 "所有权限仅用于本地功能，不上传任何数据",
-                style = MaterialTheme.typography.bodySmall,
+                style = MiuixTheme.textStyles.footnote1,
                 color = Color.White.copy(alpha = 0.5f),
                 textAlign = TextAlign.Center,
             )
@@ -333,8 +334,8 @@ private fun PermissionExplainCard(icon: androidx.compose.ui.graphics.vector.Imag
         ) {
             Icon(icon, null, tint = Color.White.copy(alpha = 0.8f), modifier = Modifier.size(28.dp))
             Column {
-                Text(title, style = MaterialTheme.typography.titleSmall, color = Color.White)
-                Text(desc, style = MaterialTheme.typography.bodySmall,
+                Text(title, style = MiuixTheme.textStyles.subtitle, color = Color.White)
+                Text(desc, style = MiuixTheme.textStyles.footnote1,
                     color = Color.White.copy(alpha = 0.6f))
             }
         }
@@ -359,7 +360,7 @@ private fun OnboardingPage4(
         AnimatedEntrance(delayMs = 0) {
             Text(
                 "准备好了吗？",
-                style = MaterialTheme.typography.headlineSmall.copy(fontWeight = FontWeight.Bold),
+                style = MiuixTheme.textStyles.title2.copy(fontWeight = FontWeight.Bold),
                 color = Color.White,
             )
         }
@@ -391,13 +392,13 @@ private fun OnboardingPage4(
                         )
                         Text(
                             OnboardingPermissions.permissionLabel(permission),
-                            style = MaterialTheme.typography.bodyMedium,
+                            style = MiuixTheme.textStyles.body2,
                             color = Color.White.copy(alpha = 0.9f),
                             modifier = Modifier.weight(1f),
                         )
                         Text(
                             if (granted) "已授权" else "未授权",
-                            style = MaterialTheme.typography.labelSmall,
+                            style = MiuixTheme.textStyles.footnote2,
                             color = if (granted) com.hezi.juyumao.ui.theme.LocalExtendedColors.current.hiResGold
                                     else Color.White.copy(alpha = 0.4f),
                         )
@@ -446,7 +447,7 @@ private fun OnboardingPage4(
                 ),
                 cornerRadius = 14.dp,
             ) {
-                Text("开始使用", style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold))
+                Text("开始使用", style = MiuixTheme.textStyles.title4.copy(fontWeight = FontWeight.Bold))
             }
         }
     }

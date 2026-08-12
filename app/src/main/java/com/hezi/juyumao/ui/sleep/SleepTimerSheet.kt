@@ -5,9 +5,9 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Timer
-import androidx.compose.material3.MaterialTheme
 import top.yukonga.miuix.kmp.basic.*
 import top.yukonga.miuix.kmp.overlay.*
+import top.yukonga.miuix.kmp.theme.MiuixTheme
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -49,13 +49,13 @@ fun SleepTimerSheet(
             Icon(
                 imageVector = Icons.Default.Timer,
                 contentDescription = null,
-                tint = MaterialTheme.colorScheme.primary,
+                tint = MiuixTheme.colorScheme.primary,
                 modifier = Modifier.size(32.dp),
             )
             Spacer(modifier = Modifier.height(8.dp))
             Text(
                 text = "定时关闭",
-                style = MaterialTheme.typography.headlineSmall.copy(fontWeight = FontWeight.Bold),
+                style = MiuixTheme.textStyles.title2.copy(fontWeight = FontWeight.Bold),
             )
 
             Spacer(modifier = Modifier.height(24.dp))
@@ -68,13 +68,13 @@ fun SleepTimerSheet(
                     text = String.format(java.util.Locale.US, "%02d:%02d", minutes, seconds),
                     fontSize = 48.sp,
                     fontWeight = FontWeight.Bold,
-                    color = MaterialTheme.colorScheme.primary,
+                    color = MiuixTheme.colorScheme.primary,
                 )
                 Spacer(modifier = Modifier.height(16.dp))
                 Button(
                     onClick = { viewModel.cancelTimer() },
                     colors = ButtonDefaults.buttonColors(
-                        color = MaterialTheme.colorScheme.error,
+                        color = MiuixTheme.colorScheme.error,
                     ),
                     cornerRadius = 12.dp,
                 ) {
@@ -89,13 +89,13 @@ fun SleepTimerSheet(
                             .padding(vertical = 4.dp)
                             .clickable { viewModel.setTimer(option.minutes) },
                         colors = CardDefaults.defaultColors(
-                            color = MaterialTheme.colorScheme.surfaceVariant,
+                            color = MiuixTheme.colorScheme.surfaceVariant,
                         ),
                         cornerRadius = 12.dp,
                     ) {
                         Text(
                             text = option.label,
-                            style = MaterialTheme.typography.bodyLarge,
+                            style = MiuixTheme.textStyles.body1,
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .padding(16.dp),

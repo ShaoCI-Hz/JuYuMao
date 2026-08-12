@@ -10,7 +10,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.MusicNote
 import androidx.compose.material3.Icon
-import androidx.compose.material3.MaterialTheme
+import top.yukonga.miuix.kmp.theme.MiuixTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
@@ -57,7 +57,7 @@ fun AlbumArtPager(
             }
             .shadow(24.dp, shape)
             .clip(shape)
-            .background(MaterialTheme.colorScheme.surfaceVariant),
+            .background(MiuixTheme.colorScheme.surfaceVariant),
         contentAlignment = Alignment.Center,
     ) {
         if (artworkUri != null) {
@@ -72,9 +72,8 @@ fun AlbumArtPager(
                 modifier = Modifier.fillMaxSize().background(
                     Brush.linearGradient(
                         listOf(
-                            MaterialTheme.colorScheme.primary.copy(alpha = 0.3f),
-                            MaterialTheme.colorScheme.secondary?.copy(alpha = 0.3f)
-                                ?: MaterialTheme.colorScheme.primary.copy(alpha = 0.15f),
+                            MiuixTheme.colorScheme.primary.copy(alpha = 0.3f),
+                            MiuixTheme.colorScheme.secondary.copy(alpha = 0.3f),
                         )
                     )
                 ),

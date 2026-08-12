@@ -14,7 +14,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.MusicNote
 import androidx.compose.material.icons.filled.Pause
 import androidx.compose.material.icons.filled.PlayArrow
-import androidx.compose.material3.MaterialTheme
+import top.yukonga.miuix.kmp.theme.MiuixTheme
 import top.yukonga.miuix.kmp.basic.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -58,7 +58,7 @@ fun MiniPlayerBar(
                 ambientColor = androidx.compose.ui.graphics.Color.Black.copy(alpha = 0.2f),
             )
             .background(
-                color = MaterialTheme.colorScheme.surfaceVariant,
+                color = MiuixTheme.colorScheme.surfaceVariant,
                 shape = RoundedCornerShape(16.dp),
             )
             .clip(RoundedCornerShape(16.dp))
@@ -94,7 +94,7 @@ fun MiniPlayerBar(
                             modifier = Modifier
                                 .size(40.dp)
                                 .background(
-                                    color = MaterialTheme.colorScheme.primary.copy(alpha = 0.2f),
+                                    color = MiuixTheme.colorScheme.primary.copy(alpha = 0.2f),
                                     shape = RoundedCornerShape(8.dp),
                                 ),
                             contentAlignment = Alignment.Center,
@@ -102,7 +102,7 @@ fun MiniPlayerBar(
                             Icon(
                                 imageVector = Icons.Default.MusicNote,
                                 contentDescription = null,
-                                tint = MaterialTheme.colorScheme.primary,
+                                tint = MiuixTheme.colorScheme.primary,
                                 modifier = Modifier.size(20.dp),
                             )
                         }
@@ -121,8 +121,8 @@ fun MiniPlayerBar(
                     ) { title ->
                         Text(
                             text = title ?: "未在播放",
-                            style = MaterialTheme.typography.bodyMedium,
-                            color = MaterialTheme.colorScheme.onSurface,
+                            style = MiuixTheme.textStyles.body2,
+                            color = MiuixTheme.colorScheme.onSurface,
                             maxLines = 1,
                             overflow = TextOverflow.Ellipsis,
                         )
@@ -130,8 +130,8 @@ fun MiniPlayerBar(
                     if (!songArtist.isNullOrEmpty()) {
                         Text(
                             text = songArtist,
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            style = MiuixTheme.textStyles.footnote1,
+                            color = MiuixTheme.colorScheme.onSurfaceSecondary,
                             maxLines = 1,
                             overflow = TextOverflow.Ellipsis,
                         )
@@ -146,7 +146,7 @@ fun MiniPlayerBar(
                     Icon(
                         imageVector = if (isPlaying) Icons.Default.Pause else Icons.Default.PlayArrow,
                         contentDescription = if (isPlaying) "暂停" else "播放",
-                        tint = MaterialTheme.colorScheme.primary,
+                        tint = MiuixTheme.colorScheme.primary,
                         modifier = Modifier.size(28.dp),
                     )
                 }
@@ -161,8 +161,8 @@ fun MiniPlayerBar(
                     .height(2.dp)
                     .clip(RoundedCornerShape(1.dp)),
                 colors = ProgressIndicatorDefaults.progressIndicatorColors(
-                    foregroundColor = MaterialTheme.colorScheme.primary,
-                    backgroundColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.15f),
+                    foregroundColor = MiuixTheme.colorScheme.primary,
+                    backgroundColor = MiuixTheme.colorScheme.primary.copy(alpha = 0.15f),
                 ),
             )
         }

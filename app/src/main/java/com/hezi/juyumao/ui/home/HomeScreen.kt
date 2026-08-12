@@ -15,8 +15,8 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.QueueMusic
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.FilledTonalButton
-import androidx.compose.material3.MaterialTheme
 import top.yukonga.miuix.kmp.basic.*
+import top.yukonga.miuix.kmp.theme.MiuixTheme
 import androidx.compose.runtime.*
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.compose.ui.Alignment
@@ -64,8 +64,8 @@ fun HomeScreen(
         // Header + 统计卡片
         item {
             Spacer(modifier = Modifier.height(48.dp))
-            Text("局域猫播放器", style = MaterialTheme.typography.headlineLarge,
-                color = MaterialTheme.colorScheme.onBackground, modifier = Modifier.padding(horizontal = 16.dp))
+            Text("局域猫播放器", style = MiuixTheme.textStyles.title1,
+                color = MiuixTheme.colorScheme.onBackground, modifier = Modifier.padding(horizontal = 16.dp))
             Spacer(modifier = Modifier.height(24.dp))
             Row(modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp),
                 horizontalArrangement = Arrangement.spacedBy(12.dp)) {
@@ -80,19 +80,19 @@ fun HomeScreen(
         item {
             Spacer(modifier = Modifier.height(24.dp))
             Card(modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp),
-                colors = CardDefaults.defaultColors(color = MaterialTheme.colorScheme.surfaceVariant),
+                colors = CardDefaults.defaultColors(color = MiuixTheme.colorScheme.surfaceVariant),
                 cornerRadius = 14.dp) {
                 Row(modifier = Modifier.fillMaxWidth().padding(16.dp),
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                    Icon(Icons.Default.PhoneAndroid, null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(28.dp))
+                    Icon(Icons.Default.PhoneAndroid, null, tint = MiuixTheme.colorScheme.primary, modifier = Modifier.size(28.dp))
                     Column(modifier = Modifier.weight(1f)) {
-                        Text("本地音乐", style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.onSurface)
+                        Text("本地音乐", style = MiuixTheme.textStyles.title4, color = MiuixTheme.colorScheme.onSurface)
                         Text(
                             text = if (uiState.isScanning) uiState.scanMessage
                                    else if (uiState.songCount > 0) "已收录 ${uiState.songCount} 首"
                                    else "点击扫描设备音乐",
-                            style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                            style = MiuixTheme.textStyles.footnote1, color = MiuixTheme.colorScheme.onSurfaceSecondary)
                     }
                     if (uiState.isScanning) {
                         CircularProgressIndicator(Modifier.size(24.dp), strokeWidth = 2.dp)
@@ -107,19 +107,19 @@ fun HomeScreen(
         item {
             Spacer(modifier = Modifier.height(12.dp))
             Card(modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp),
-                colors = CardDefaults.defaultColors(color = MaterialTheme.colorScheme.surfaceVariant),
+                colors = CardDefaults.defaultColors(color = MiuixTheme.colorScheme.surfaceVariant),
                 cornerRadius = 14.dp) {
                 Row(modifier = Modifier.fillMaxWidth().padding(16.dp),
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                    Icon(Icons.Default.Cloud, null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(28.dp))
+                    Icon(Icons.Default.Cloud, null, tint = MiuixTheme.colorScheme.primary, modifier = Modifier.size(28.dp))
                     Column(modifier = Modifier.weight(1f)) {
-                        Text("NAS 连接", style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.onSurface)
+                        Text("NAS 连接", style = MiuixTheme.textStyles.title4, color = MiuixTheme.colorScheme.onSurface)
                         Text(
                             if (uiState.nasConnected) "已连接" else "未连接",
-                            style = MaterialTheme.typography.bodySmall,
-                            color = if (uiState.nasConnected) MaterialTheme.colorScheme.primary
-                                    else MaterialTheme.colorScheme.onSurfaceVariant,
+                            style = MiuixTheme.textStyles.footnote1,
+                            color = if (uiState.nasConnected) MiuixTheme.colorScheme.primary
+                                    else MiuixTheme.colorScheme.onSurfaceSecondary,
                         )
                     }
                     FilledTonalButton(onClick = onNavigateToSmb) {
@@ -132,8 +132,8 @@ fun HomeScreen(
         // 快捷操作
         item {
             Spacer(modifier = Modifier.height(24.dp))
-            Text("快捷操作", style = MaterialTheme.typography.titleMedium,
-                color = MaterialTheme.colorScheme.onBackground, modifier = Modifier.padding(horizontal = 16.dp))
+            Text("快捷操作", style = MiuixTheme.textStyles.title4,
+                color = MiuixTheme.colorScheme.onBackground, modifier = Modifier.padding(horizontal = 16.dp))
             Spacer(modifier = Modifier.height(12.dp))
             Row(modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp),
                 horizontalArrangement = Arrangement.spacedBy(12.dp)) {
@@ -155,7 +155,7 @@ fun HomeScreen(
             Spacer(modifier = Modifier.height(24.dp))
             val dailyCard = uiState.dailyCard
             Card(modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp),
-                colors = CardDefaults.defaultColors(color = MaterialTheme.colorScheme.primary.copy(alpha = 0.1f)),
+                colors = CardDefaults.defaultColors(color = MiuixTheme.colorScheme.primary.copy(alpha = 0.1f)),
                 cornerRadius = 14.dp) {
                 Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
                     Row(modifier = Modifier.fillMaxWidth(),
@@ -164,19 +164,19 @@ fun HomeScreen(
                         Row(verticalAlignment = Alignment.CenterVertically,
                             horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                             Icon(Icons.Default.AutoAwesome, null,
-                                tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(20.dp))
+                                tint = MiuixTheme.colorScheme.primary, modifier = Modifier.size(20.dp))
                             Text("${dailyCard.greeting}，${dailyCard.dateText}",
-                                style = MaterialTheme.typography.titleSmall, color = MaterialTheme.colorScheme.primary)
+                                style = MiuixTheme.textStyles.subtitle, color = MiuixTheme.colorScheme.primary)
                         }
                         dailyCard.weatherText?.let { weather ->
-                            Text(weather, style = MaterialTheme.typography.labelSmall,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant)
+                            Text(weather, style = MiuixTheme.textStyles.footnote2,
+                                color = MiuixTheme.colorScheme.onSurfaceSecondary)
                         }
                     }
-                    Text(dailyCard.quote, style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.onSurface)
-                    Text("—— ${dailyCard.quoteAuthor}", style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    Text(dailyCard.quote, style = MiuixTheme.textStyles.body2,
+                        color = MiuixTheme.colorScheme.onSurface)
+                    Text("—— ${dailyCard.quoteAuthor}", style = MiuixTheme.textStyles.footnote1,
+                        color = MiuixTheme.colorScheme.onSurfaceSecondary,
                         modifier = Modifier.align(Alignment.End))
                 }
             }
@@ -185,13 +185,13 @@ fun HomeScreen(
         // 最近播放（BUG-2 修复）
         item {
             Spacer(modifier = Modifier.height(24.dp))
-            Text("最近播放", style = MaterialTheme.typography.titleMedium,
-                color = MaterialTheme.colorScheme.onBackground, modifier = Modifier.padding(horizontal = 16.dp))
+            Text("最近播放", style = MiuixTheme.textStyles.title4,
+                color = MiuixTheme.colorScheme.onBackground, modifier = Modifier.padding(horizontal = 16.dp))
             Spacer(modifier = Modifier.height(12.dp))
             if (uiState.recentlyPlayed.isEmpty()) {
                 Box(modifier = Modifier.fillMaxWidth().height(120.dp), contentAlignment = Alignment.Center) {
-                    Text("暂无播放记录", style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    Text("暂无播放记录", style = MiuixTheme.textStyles.body2,
+                        color = MiuixTheme.colorScheme.onSurfaceSecondary)
                 }
             } else {
                 LazyRow(modifier = Modifier.fillMaxWidth(),
@@ -215,7 +215,7 @@ fun HomeScreen(
 @Composable
 private fun RecentSongCard(song: SongEntity, onClick: () -> Unit) {
     Card(modifier = Modifier.width(120.dp).clickable(onClick = onClick),
-        colors = CardDefaults.defaultColors(color = MaterialTheme.colorScheme.surfaceVariant),
+        colors = CardDefaults.defaultColors(color = MiuixTheme.colorScheme.surfaceVariant),
         cornerRadius = 12.dp) {
         Column(modifier = Modifier.padding(12.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
@@ -226,30 +226,30 @@ private fun RecentSongCard(song: SongEntity, onClick: () -> Unit) {
                     contentScale = ContentScale.Crop)
             } else {
                 Box(modifier = Modifier.size(80.dp)
-                    .background(MaterialTheme.colorScheme.primary.copy(0.1f), RoundedCornerShape(8.dp)),
+                    .background(MiuixTheme.colorScheme.primary.copy(0.1f), RoundedCornerShape(8.dp)),
                     contentAlignment = Alignment.Center) {
                     Icon(Icons.Default.MusicNote, null,
-                        tint = MaterialTheme.colorScheme.primary.copy(0.5f), modifier = Modifier.size(32.dp))
+                        tint = MiuixTheme.colorScheme.primary.copy(0.5f), modifier = Modifier.size(32.dp))
                 }
             }
-            Text(song.title, style = MaterialTheme.typography.bodySmall,
-                maxLines = 1, overflow = TextOverflow.Ellipsis, color = MaterialTheme.colorScheme.onSurface)
-            Text(song.artist, style = MaterialTheme.typography.labelSmall,
-                maxLines = 1, overflow = TextOverflow.Ellipsis, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            Text(song.title, style = MiuixTheme.textStyles.footnote1,
+                maxLines = 1, overflow = TextOverflow.Ellipsis, color = MiuixTheme.colorScheme.onSurface)
+            Text(song.artist, style = MiuixTheme.textStyles.footnote2,
+                maxLines = 1, overflow = TextOverflow.Ellipsis, color = MiuixTheme.colorScheme.onSurfaceSecondary)
         }
     }
 }
 
 @Composable
 private fun StatCard(icon: ImageVector, value: String, label: String, modifier: Modifier = Modifier) {
-    Card(modifier = modifier, colors = CardDefaults.defaultColors(color = MaterialTheme.colorScheme.surfaceVariant),
+    Card(modifier = modifier, colors = CardDefaults.defaultColors(color = MiuixTheme.colorScheme.surfaceVariant),
         cornerRadius = 12.dp) {
         Column(modifier = Modifier.padding(12.dp), horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.spacedBy(4.dp)) {
-            Icon(icon, null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(22.dp))
-            Text(value, style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
-                color = MaterialTheme.colorScheme.onSurface)
-            Text(label, style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            Icon(icon, null, tint = MiuixTheme.colorScheme.primary, modifier = Modifier.size(22.dp))
+            Text(value, style = MiuixTheme.textStyles.title4.copy(fontWeight = FontWeight.Bold),
+                color = MiuixTheme.colorScheme.onSurface)
+            Text(label, style = MiuixTheme.textStyles.footnote2, color = MiuixTheme.colorScheme.onSurfaceSecondary)
         }
     }
 }
@@ -257,13 +257,13 @@ private fun StatCard(icon: ImageVector, value: String, label: String, modifier: 
 @Composable
 private fun QuickActionCard(icon: ImageVector, title: String, onClick: () -> Unit, modifier: Modifier = Modifier) {
     Card(modifier = modifier.clickable(onClick = onClick),
-        colors = CardDefaults.defaultColors(color = MaterialTheme.colorScheme.surfaceVariant),
+        colors = CardDefaults.defaultColors(color = MiuixTheme.colorScheme.surfaceVariant),
         cornerRadius = 12.dp) {
         Column(modifier = Modifier.fillMaxWidth().padding(16.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.spacedBy(8.dp)) {
-            Icon(icon, null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(28.dp))
-            Text(title, style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurface)
+            Icon(icon, null, tint = MiuixTheme.colorScheme.primary, modifier = Modifier.size(28.dp))
+            Text(title, style = MiuixTheme.textStyles.footnote1, color = MiuixTheme.colorScheme.onSurface)
         }
     }
 }
