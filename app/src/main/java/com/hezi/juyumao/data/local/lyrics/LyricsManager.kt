@@ -70,7 +70,9 @@ class LyricsManager @Inject constructor(
                     tempFile.outputStream().use { output ->
                         val buffer = ByteArray(64 * 1024)
                         var total = 0L
-                        val maxRead = 8L * 1024 * 1024
+                        // 只读头部 1MB 足够提取 ID3/FLAC 内嵌歌词（原 8MB 导致首页每首 SMB 歌
+                        // 大流量下载 + 临时文件 IO，拖慢 UI）
+                        val maxRead = 1L * 1024 * 1024
                         while (total < maxRead) {
                             val n = input.read(buffer)
                             if (n < 0) break

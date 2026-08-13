@@ -31,13 +31,13 @@ fun PlayerScreen(
     val artworkUri by viewModel.artworkUri.collectAsStateWithLifecycle()
     val lyrics by viewModel.lyrics.collectAsStateWithLifecycle()
     val isPlaying by viewModel.isPlaying.collectAsStateWithLifecycle()
-    val position by viewModel.position.collectAsStateWithLifecycle()
-    val duration by viewModel.duration.collectAsStateWithLifecycle()
     val lyricsFontSize by viewModel.lyricsFontSize.collectAsStateWithLifecycle()
     val lyricsFontBold by viewModel.lyricsFontBold.collectAsStateWithLifecycle()
     val isFavorite by viewModel.isFavorite.collectAsStateWithLifecycle()
     val spectrumEnabled by viewModel.spectrumEnabled.collectAsStateWithLifecycle()
-    val spectrum by viewModel.spectrum.collectAsStateWithLifecycle()
+    // 注意：position/duration/spectrum 为高频数据（200ms / FFT 帧率），
+    // 不在此顶层 collect，而是在 PlayerSlider / LyricsView / SpectrumBars 组件内部订阅，
+    // 避免播放页整体每 200ms 重组导致掉帧。
 
     var isImmersive by remember { mutableStateOf(false) }
     var shuffleEnabled by remember { mutableStateOf(false) }
@@ -97,7 +97,7 @@ fun PlayerScreen(
                 CoverLyricsPager(
                     artworkUri = artworkUri,
                     lyricsData = lyrics,
-                    currentPositionMs = position,
+                    positionFlow = viewModel.position,
                     isPlaying = isPlaying,
                     showLyrics = showLyrics,
                     lyricsFontSize = lyricsFontSize,
@@ -110,7 +110,7 @@ fun PlayerScreen(
             // 频谱可视化（仅播放时显示）
             if (spectrumEnabled && isPlaying) {
                 SpectrumBars(
-                    bars = spectrum,
+                    spectrumFlow = viewModel.spectrum,
                     color = Color.White.copy(alpha = 0.8f),
                     modifier = Modifier.padding(top = 4.dp),
                 )
@@ -143,7 +143,7 @@ fun PlayerScreen(
                     }
                     Text(
                         subtitle,
-                        style = MiuixTheme.textStyles.body2,
+                        style = MiuixTheme.textStyles.footnote1,
                         color = Color.White.copy(alpha = 0.7f),
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis,
@@ -166,8 +166,7 @@ fun PlayerScreen(
                 verticalAlignment = Alignment.CenterVertically,
             ) {
                 PlayerSlider(
-                    position = position,
-                    duration = duration,
+                    viewModel = viewModel,
                     onSeek = { viewModel.seekTo(it) },
                     modifier = Modifier.weight(1f),
                 )
@@ -177,7 +176,7 @@ fun PlayerScreen(
                         text = if (playbackSpeed == 1.0f) "1.0x" else "${playbackSpeed}x",
                         onClick = { showSpeedMenu = true },
                         modifier = Modifier,
-                        textStyle = MiuixTheme.textStyles.footnote1,
+                        textStyle = MiuixTheme.textStyles.body1,
                         colors = ButtonDefaults.textButtonColors(textColor = Color.White.copy(alpha = 0.8f)),
                     )
                     OverlayListPopup(
@@ -296,7 +295,6 @@ private fun AudioSpecRow(song: com.hezi.juyumao.data.local.db.entity.SongEntity)
                     text = if (isDsd) "DSD" else "Hi-Res",
                     style = MiuixTheme.textStyles.footnote2,
                     color = com.hezi.juyumao.ui.theme.LocalExtendedColors.current.hiResGold,
-                    fontWeight = FontWeight.Bold,
                 )
             }
         }

@@ -9,16 +9,21 @@ import com.hezi.juyumao.data.local.db.dao.SongDao
 import com.hezi.juyumao.data.local.db.entity.SongEntity
 import com.hezi.juyumao.data.local.metadata.MetadataBatchProcessor
 import com.hezi.juyumao.data.remote.smb.SmbConnectionPool
+import com.hezi.juyumao.data.repository.MetadataRepository
 import com.hezi.juyumao.data.repository.SettingsRepository
 import com.hezi.juyumao.player.PlaybackController
 import com.hezi.juyumao.player.PlaybackStateHolder
 import com.hezi.juyumao.ui.theme.ThemeMode
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.async
+import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withTimeoutOrNull
@@ -40,6 +45,7 @@ class AppViewModel @Inject constructor(
     private val connectionPool: SmbConnectionPool,
     private val songDao: SongDao,
     private val metadataBatchProcessor: MetadataBatchProcessor,
+    private val metadataRepository: MetadataRepository,
 ) : ViewModel() {
 
     val themeMode: StateFlow<ThemeMode> = settingsRepository.themeMode
@@ -50,6 +56,21 @@ class AppViewModel @Inject constructor(
         .stateIn(viewModelScope, SharingStarted.Eagerly, false)
 
     val currentSong: StateFlow<SongEntity?> = playbackStateHolder.currentSong
+
+    /** 最后播放的歌曲（最近播放列表第一首）：无播放中歌曲时供"播放"tab 回退使用 */
+    val lastPlayedSong: StateFlow<SongEntity?> = songDao.getRecentlyPlayed()
+        .map { it.firstOrNull() }
+        .stateIn(viewModelScope, SharingStarted.Eagerly, null)
+
+    /**
+     * 解析"播放"tab 目标歌曲：优先当前播放，其次缓存的最新历史；
+     * 两者都未就绪（冷启动 Room 首次发射前）时直接查库兜底。
+     */
+    suspend fun resolvePlayTabSongId(): Long? {
+        currentSong.value?.let { return it.id }
+        lastPlayedSong.value?.let { return it.id }
+        return songDao.getRecentlyPlayed().first().firstOrNull()?.id
+    }
     val artworkUri: StateFlow<String?> = playbackStateHolder.artworkUri
     val isPlaying: StateFlow<Boolean> = playbackStateHolder.isPlaying
     val position: StateFlow<Long> = playbackStateHolder.position
@@ -65,6 +86,8 @@ class AppViewModel @Inject constructor(
     init {
         // 启动时自动重连已保存的 SMB 服务器
         autoReconnectSavedServers()
+        // 启动后延迟预热本地音乐缺失的封面（解决首次进入列表/专辑卡/播放页无图）
+        preheatLocalArtworks()
         // 播放错误转发为全局提示
         viewModelScope.launch {
             playbackStateHolder.errorMessage.collect { msg ->
@@ -82,6 +105,43 @@ class AppViewModel @Inject constructor(
     /** 清空重连提示（提示消失后调用） */
     fun clearReconnectMessage() {
         _reconnectState.value = _reconnectState.value.copy(message = null)
+    }
+
+    /**
+     * 启动后台预热本地音乐封面：本地扫描只记录基本标签不提取封面（albumArtUri 为空），
+     * 封面为播放时懒提取 → 首次打开列表/专辑卡/播放页全是占位图。
+     * 启动后延迟 3 秒批量提取（并发 8，每次启动最多 300 首、最新添加优先），
+     * 提取后写回数据库，各界面 Flow 自动刷新出图。
+     * SMB 歌曲封面由重连成功后的 MetadataBatchProcessor 批量缓存覆盖（此处不重复处理）。
+     */
+    private fun preheatLocalArtworks() {
+        viewModelScope.launch {
+            // 延迟：避让启动时的自动重连与首屏加载，避免启动风暴
+            kotlinx.coroutines.delay(3000)
+            val songs = songDao.getAllSongs().first()
+            val needArt = songs
+                .filter { it.source == "LOCAL" && it.albumArtUri.isNullOrEmpty() }
+                .sortedByDescending { it.addedAt }
+                .take(300)
+            if (needArt.isEmpty()) return@launch
+            Log.d("AppVM", "预热封面 ${needArt.size} 首本地歌曲")
+            // 并发 2 串批处理：并发过高会与 UI 抢 IO/CPU 导致启动卡顿（掉帧）
+            needArt.chunked(2).forEach { batch ->
+                batch.map { song ->
+                    async(Dispatchers.IO) {
+                        try {
+                            val enriched = metadataRepository.extractAndUpdateSong(song)
+                            if (enriched.albumArtUri != song.albumArtUri) songDao.update(enriched)
+                        } catch (e: kotlinx.coroutines.CancellationException) {
+                            throw e // 协程取消必须向上传播
+                        } catch (e: Exception) {
+                            Log.w("AppVM", "预热封面失败: ${song.title}", e)
+                        }
+                    }
+                }.awaitAll()
+            }
+            Log.d("AppVM", "封面预热完成")
+        }
     }
 
     private fun autoReconnectSavedServers() {

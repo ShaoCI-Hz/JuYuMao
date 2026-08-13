@@ -8,7 +8,3 @@ import androidx.compose.ui.graphics.Color
 
 // Hi-Res 金色徽标（功能标识：Hi-Res 音频认证色）
 val HiResGold = Color(0xFFFFD700)
-
-// 卡片底色（ExtendedColors 深/浅卡色，供特殊场景使用）
-val CardDark = Color(0xFF252525)
-val CardLight = Color(0xFFE8E8E8)

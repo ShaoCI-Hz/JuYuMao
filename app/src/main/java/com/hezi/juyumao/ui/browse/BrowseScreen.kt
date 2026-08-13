@@ -20,7 +20,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
@@ -30,6 +29,7 @@ import com.hezi.juyumao.data.local.db.entity.SongEntity
 @Composable
 fun BrowseScreen(
     onSongClick: (Long) -> Unit = {},
+    onNavigateToSearch: () -> Unit = {},
     viewModel: BrowseViewModel = hiltViewModel(),
 ) {
     val allSongs by viewModel.allSongs.collectAsStateWithLifecycle()
@@ -62,7 +62,15 @@ fun BrowseScreen(
     val favoriteCount by remember { derivedStateOf { favorites.size } }
 
     Column(modifier = Modifier.fillMaxSize()) {
-        TopAppBar(title = "浏览")
+        TopAppBar(
+            title = "浏览",
+            actions = {
+                // 搜索入口（悬浮底栏已无搜索 tab，移至目录页顶栏）
+                IconButton(onClick = onNavigateToSearch) {
+                    Icon(MiuixIcons.Search, "搜索")
+                }
+            },
+        )
 
         Spacer(modifier = Modifier.height(16.dp))
 
@@ -317,13 +325,9 @@ private fun SongListItem(
     }
 }
 
-private fun formatDuration(ms: Long): String {
-    if (ms <= 0) return ""
-    val totalSeconds = ms / 1000
-    val minutes = totalSeconds / 60
-    val seconds = totalSeconds % 60
-    return "%d:%02d".format(minutes, seconds)
-}
+/** 毫秒 → m:ss（原私有实现已合并入 FormatUtils；此处零值回退空串保持原行为） */
+private fun formatDuration(ms: Long): String =
+    com.hezi.juyumao.ui.theme.FormatUtils.formatDuration(ms, zeroText = "")
 
 /** 金色 Hi-Res / DSD 徽标 */
 @Composable
@@ -340,7 +344,6 @@ private fun HiResBadge(text: String) {
             text = text,
             style = MiuixTheme.textStyles.footnote2,
             color = com.hezi.juyumao.ui.theme.LocalExtendedColors.current.hiResGold,
-            fontWeight = FontWeight.Bold,
         )
     }
 }
@@ -433,7 +436,6 @@ private fun DimensionBrowse(
                         Icon(MiuixIcons.Back, "返回")
                     }
                 },
-                defaultWindowInsetsPadding = false,
             )
             if (dimensionSongs.isEmpty()) {
                 Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {

@@ -18,7 +18,6 @@ import top.yukonga.miuix.kmp.utils.SinkFeedback
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
@@ -65,9 +64,9 @@ fun StatisticsScreen(
                         cornerRadius = 14.dp,
                     ) {
                         Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                            Text("累计播放", style = MiuixTheme.textStyles.title4,
+                            Text("累计播放", style = MiuixTheme.textStyles.headline1,
                                 color = MiuixTheme.colorScheme.primary)
-                            Text("${uiState.totalPlayCount} 次", style = MiuixTheme.textStyles.title2.copy(fontWeight = FontWeight.Bold),
+                            Text("${uiState.totalPlayCount} 次", style = MiuixTheme.textStyles.title3,
                                 color = MiuixTheme.colorScheme.onBackground)
                             Text(
                                 text = "累计时长 ${formatDuration(uiState.totalPlayDurationMs)} · 本周 ${uiState.weekPlayCount} 次 · 本月 ${uiState.monthPlayCount} 次",
@@ -81,7 +80,7 @@ fun StatisticsScreen(
                 // TOP 歌曲
                 if (uiState.topSongs.isNotEmpty()) {
                     item {
-                        Text("TOP 10 歌曲", style = MiuixTheme.textStyles.title4,
+                        Text("TOP 10 歌曲", style = MiuixTheme.textStyles.headline1,
                             color = MiuixTheme.colorScheme.onBackground,
                             modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp))
                     }
@@ -125,7 +124,7 @@ fun StatisticsScreen(
                 // TOP 艺术家
                 if (uiState.topArtists.isNotEmpty()) {
                     item {
-                        Text("TOP 10 艺术家", style = MiuixTheme.textStyles.title4,
+                        Text("TOP 10 艺术家", style = MiuixTheme.textStyles.headline1,
                             color = MiuixTheme.colorScheme.onBackground,
                             modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp))
                     }

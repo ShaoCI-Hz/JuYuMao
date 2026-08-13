@@ -16,10 +16,8 @@ import androidx.compose.ui.Alignment
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import top.yukonga.miuix.kmp.basic.Icon
 import top.yukonga.miuix.kmp.basic.SmallTopAppBar
@@ -35,7 +33,6 @@ fun EqualizerScreen(
     viewModel: EqualizerViewModel = hiltViewModel(),
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
-    val spectrum by viewModel.spectrum.collectAsStateWithLifecycle()
     // 选中态完全由 AudioEffectsManager 的 state.currentPreset 派生（本地副本与真实预设脱节
     // 会导致"自定义"chip 不通知管理器、退出重进后高亮回旧预设）
     val currentPreset = state.currentPreset.toInt()
@@ -56,9 +53,9 @@ fun EqualizerScreen(
 
         Spacer(modifier = Modifier.height(16.dp))
 
-        // 频谱可视化（复用 SpectrumAnalyzer 数据）
+        // 频谱可视化（复用 SpectrumAnalyzer 数据，数据在 SpectrumBars 内部订阅避免高频重组）
         com.hezi.juyumao.ui.player.components.SpectrumBars(
-            bars = spectrum,
+            spectrumFlow = viewModel.spectrum,
             color = MiuixTheme.colorScheme.primary,
             modifier = Modifier.padding(horizontal = 16.dp),
         )
@@ -84,7 +81,7 @@ fun EqualizerScreen(
             ) {
                 Text(
                     text = "均衡器",
-                    style = MiuixTheme.textStyles.title4,
+                    style = MiuixTheme.textStyles.body1,
                 )
                 Switch(
                     checked = state.enabled,
@@ -99,7 +96,7 @@ fun EqualizerScreen(
         if (state.presets.isNotEmpty()) {
             Text(
                 text = "预设",
-                style = MiuixTheme.textStyles.subtitle,
+                style = MiuixTheme.textStyles.headline1,
                 color = MiuixTheme.colorScheme.primary,
                 modifier = Modifier.padding(horizontal = 16.dp),
             )
@@ -132,7 +129,7 @@ fun EqualizerScreen(
         if (state.bands.isNotEmpty()) {
             Text(
                 text = "频段调节",
-                style = MiuixTheme.textStyles.subtitle,
+                style = MiuixTheme.textStyles.headline1,
                 color = MiuixTheme.colorScheme.primary,
                 modifier = Modifier.padding(horizontal = 16.dp),
             )
@@ -195,7 +192,7 @@ fun EqualizerScreen(
         // ── 音效增强（T10.7）：低音/虚拟环绕/响度 ──
         Text(
             text = "音效增强",
-            style = MiuixTheme.textStyles.subtitle,
+            style = MiuixTheme.textStyles.headline1,
             color = MiuixTheme.colorScheme.primary,
             modifier = Modifier.padding(horizontal = 16.dp),
         )

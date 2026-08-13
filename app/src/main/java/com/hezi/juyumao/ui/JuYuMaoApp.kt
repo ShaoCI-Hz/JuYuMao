@@ -3,6 +3,7 @@ package com.hezi.juyumao.ui
 import androidx.compose.animation.*
 import androidx.compose.animation.core.spring
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import top.yukonga.miuix.kmp.basic.*
@@ -12,8 +13,8 @@ import androidx.compose.ui.Modifier
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
-import com.hezi.juyumao.ui.components.MiniPlayerBar
-import com.hezi.juyumao.ui.components.PremiumBottomNavBar
+import kotlinx.coroutines.launch
+import com.hezi.juyumao.ui.components.FloatingNavBar
 import com.hezi.juyumao.ui.navigation.JuYuMaoNavGraph
 import com.hezi.juyumao.ui.navigation.Screen
 import com.hezi.juyumao.ui.navigation.bottomNavItems
@@ -68,6 +69,8 @@ private fun JuYuMaoAppContent(
     val navController = rememberNavController()
     val navBackStackEntry by navController.currentBackStackEntryAsState()
     val currentRoute = navBackStackEntry?.destination?.route
+    // 播放 tab 冷启动兜底查询用协程作用域
+    val navScope = rememberCoroutineScope()
 
     // 引导「连接 NAS」后直达 SMB 页（带引导提示）
     LaunchedEffect(startAtSmb) {
@@ -76,18 +79,16 @@ private fun JuYuMaoAppContent(
         }
     }
 
+    // 悬浮底栏仅显示在三个主页面（播放器页全屏沉浸）；搜索页从目录页进入
     val showBottomBar = currentRoute in listOf(
         Screen.Home.route,
         Screen.Browse.route,
-        Screen.Search.route,
         Screen.Settings.route,
     )
 
     val currentSong by appViewModel.currentSong.collectAsStateWithLifecycle()
     val artworkUri by appViewModel.artworkUri.collectAsStateWithLifecycle()
     val isPlaying by appViewModel.isPlaying.collectAsStateWithLifecycle()
-    val position by appViewModel.position.collectAsStateWithLifecycle()
-    val duration by appViewModel.duration.collectAsStateWithLifecycle()
     val reconnectState by appViewModel.reconnectState.collectAsStateWithLifecycle()
     val playbackError by appViewModel.playbackError.collectAsStateWithLifecycle()
     val snackbarHostState = remember { SnackbarHostState() }
@@ -109,6 +110,10 @@ private fun JuYuMaoAppContent(
     }
 
     Scaffold(
+        // 关闭 Scaffold 的系统栏 inset 处理：本项目所有页面/组件各自处理状态栏
+        // （TopAppBar 无条件加 systemBars.top；主页标题 statusBarsPadding；播放器页全屏自管理），
+        // 避免 Scaffold 与组件叠加造成双倍状态栏间距（顶栏/标题下沉）
+        contentWindowInsets = WindowInsets(0, 0, 0, 0),
         snackbarHost = { SnackbarHost(snackbarHostState) },
         bottomBar = {
             AnimatedVisibility(
@@ -122,33 +127,47 @@ private fun JuYuMaoAppContent(
                     targetOffsetY = { it }
                 ) + fadeOut(),
             ) {
-                androidx.compose.foundation.layout.Column {
-                    MiniPlayerBar(
-                        onPlayerClick = {
-                            val songId = currentSong?.id ?: return@MiniPlayerBar
-                            navController.navigate(Screen.Player.createRoute(songId))
-                        },
-                        songTitle = currentSong?.title,
-                        songArtist = currentSong?.artist,
-                        artworkUri = artworkUri,
-                        isPlaying = isPlaying,
-                        progress = if (duration > 0) (position.toFloat() / duration.toFloat()).coerceIn(0f, 1f) else 0f,
-                        onPlayPauseClick = { appViewModel.togglePlay() },
-                    )
-                    PremiumBottomNavBar(
-                        items = bottomNavItems,
-                        currentRoute = currentRoute ?: Screen.Home.route,
-                        onItemSelected = { item ->
-                            if (item.screen.route != currentRoute) {
-                                navController.navigate(item.screen.route) {
-                                    popUpTo(Screen.Home.route) { saveState = true }
-                                    launchSingleTop = true
-                                    restoreState = true
+                FloatingNavBar(
+                    items = bottomNavItems,
+                    currentRoute = currentRoute ?: Screen.Home.route,
+                    onItemSelected = { item ->
+                        when (item.screen) {
+                            // 播放 tab：优先当前播放歌曲，无则回退到最后播放的历史歌曲；
+                            // 冷启动时缓存未就绪 → 异步查库兜底，避免点击无反应
+                            is Screen.Player -> {
+                                val songId = currentSong?.id
+                                    ?: appViewModel.lastPlayedSong.value?.id
+                                if (songId != null) {
+                                    if (!(currentRoute?.startsWith("player/") == true)) {
+                                        navController.navigate(Screen.Player.createRoute(songId)) {
+                                            popUpTo(Screen.Home.route) { saveState = true }
+                                            launchSingleTop = true
+                                        }
+                                    }
+                                } else {
+                                    navScope.launch {
+                                        val id = appViewModel.resolvePlayTabSongId() ?: return@launch
+                                        if (!(currentRoute?.startsWith("player/") == true)) {
+                                            navController.navigate(Screen.Player.createRoute(id)) {
+                                                popUpTo(Screen.Home.route) { saveState = true }
+                                                launchSingleTop = true
+                                            }
+                                        }
+                                    }
                                 }
                             }
-                        },
-                    )
-                }
+                            else -> {
+                                if (item.screen.route != currentRoute) {
+                                    navController.navigate(item.screen.route) {
+                                        popUpTo(Screen.Home.route) { saveState = true }
+                                        launchSingleTop = true
+                                        restoreState = true
+                                    }
+                                }
+                            }
+                        }
+                    },
+                )
             }
         },
     ) { paddingValues ->

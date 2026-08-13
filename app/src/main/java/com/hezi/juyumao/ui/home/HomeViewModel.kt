@@ -3,6 +3,7 @@ package com.hezi.juyumao.ui.home
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.hezi.juyumao.data.local.db.entity.SongEntity
+import com.hezi.juyumao.data.local.lyrics.LyricsManager
 import com.hezi.juyumao.data.remote.smb.SmbConnectionState
 import com.hezi.juyumao.data.repository.MusicRepository
 import com.hezi.juyumao.data.repository.SmbRepository
@@ -13,6 +14,8 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.sync.Semaphore
+import kotlinx.coroutines.sync.withPermit
 import java.time.LocalDateTime
 import javax.inject.Inject
 
@@ -41,10 +44,18 @@ data class HomeUiState(
 class HomeViewModel @Inject constructor(
     private val musicRepository: MusicRepository,
     smbRepository: SmbRepository,
+    private val lyricsManager: LyricsManager,
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(HomeUiState())
     val uiState: StateFlow<HomeUiState> = _uiState
+
+    /** 首页动态推荐歌曲：启动随机选一首，之后每 10 秒自动切换（动态推荐感） */
+    private val _featuredSong = MutableStateFlow<SongEntity?>(null)
+    val featuredSong: StateFlow<SongEntity?> = _featuredSong
+
+    /** 全量歌曲缓存（随机推荐的数据池，随数据库变化更新） */
+    private var allSongs: List<SongEntity> = emptyList()
 
     private var lastWeatherFetchDay: Long = -1
 
@@ -77,11 +88,45 @@ class HomeViewModel @Inject constructor(
                 _uiState.value = _uiState.value.copy(recentlyPlayed = songs)
             }
         }
+        // 动态推荐：全量歌曲随机选一首作为首页推荐（打开即推荐）。
+        // 仅在歌曲总数变化时重选：封面预热等逐首 update 不改数量，避免推荐卡频繁闪烁
+        viewModelScope.launch {
+            musicRepository.getAllSongs().collect { songs ->
+                val sizeChanged = songs.size != allSongs.size
+                allSongs = songs
+                if (sizeChanged && songs.isNotEmpty()) _featuredSong.value = songs.random()
+            }
+        }
+        // 动态推荐：每 10 秒自动切换一首
+        viewModelScope.launch {
+            while (true) {
+                kotlinx.coroutines.delay(10_000)
+                if (allSongs.isNotEmpty()) _featuredSong.value = allSongs.random()
+            }
+        }
         // 异步获取天气
         refreshWeather()
     }
 
+    /** 歌词加载并发限制：最近播放列表多首歌同时 produceState 加载歌词，
+     *  SMB 歌词需下载文件，无限制并发会造成网络/IO 风暴拖慢 UI */
+    private val lyricLoadSemaphore = Semaphore(3)
+
+    /**
+     * 加载歌曲歌词并返回"避开首尾"的歌词行（供最近播放列表 10 秒随机刷新一句）。
+     * 无歌词或歌词行过短时返回空列表（UI 隐藏歌词行）。
+     */
+    suspend fun loadLyricLines(song: SongEntity): List<String> = lyricLoadSemaphore.withPermit {
+        val data = lyricsManager.getLyrics(song) ?: return@withPermit emptyList()
+        val lines = data.lines.map { it.text }.filter { it.isNotBlank() }
+        if (lines.size <= 2) return@withPermit emptyList()
+        // 避开首尾歌词（各去 1 句，保证是"中段"歌词）
+        lines.drop(1).dropLast(1)
+    }
+
     fun scanLocalMusic() {
+        // 防重入：扫描中重复点击直接忽略（避免并行扫描、状态被旧任务覆盖）
+        if (_uiState.value.isScanning) return
         viewModelScope.launch {
             _uiState.value = _uiState.value.copy(isScanning = true, scanMessage = "扫描中...")
             val result = musicRepository.scanLocalMusic()

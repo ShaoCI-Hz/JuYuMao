@@ -1,6 +1,5 @@
 package com.hezi.juyumao.data.local.db.dao
 
-import androidx.paging.PagingSource
 import androidx.room.*
 import com.hezi.juyumao.data.local.db.entity.SongEntity
 import kotlinx.coroutines.flow.Flow
@@ -10,9 +9,6 @@ private fun String.escapeLike(): String = replace("\\", "\\\\").replace("%", "\\
 
 @Dao
 interface SongDao {
-    @Query("SELECT * FROM songs ORDER BY addedAt DESC")
-    fun getAllSongsPaged(): PagingSource<Int, SongEntity>
-
     @Query("SELECT * FROM songs ORDER BY addedAt DESC")
     fun getAllSongs(): Flow<List<SongEntity>>
 

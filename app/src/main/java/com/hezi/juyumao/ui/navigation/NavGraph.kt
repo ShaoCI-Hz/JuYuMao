@@ -63,6 +63,11 @@ fun JuYuMaoNavGraph(
                 onSongClick = { songId ->
                     navController.navigate(Screen.Player.createRoute(songId))
                 },
+                onNavigateToSearch = {
+                    navController.navigate(Screen.Search.route) {
+                        launchSingleTop = true
+                    }
+                },
             )
         }
         composable(Screen.Search.route) {

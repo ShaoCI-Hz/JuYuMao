@@ -16,13 +16,14 @@ import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.unit.dp
 import com.hezi.juyumao.player.audio.LyricsData
 import com.hezi.juyumao.ui.lyrics.LyricsView
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.launch
 
 @Composable
 fun CoverLyricsPager(
     artworkUri: String?,
     lyricsData: LyricsData?,
-    currentPositionMs: Long,
+    positionFlow: Flow<Long>,
     isPlaying: Boolean,
     showLyrics: Boolean = false,
     lyricsFontSize: Float = 18f,
@@ -31,14 +32,14 @@ fun CoverLyricsPager(
     modifier: Modifier = Modifier,
 ) {
     val pagerState = rememberPagerState(pageCount = { 2 })
-    val coroutineScope = rememberCoroutineScope()
 
-    // 当外部 showLyrics 变化时，切换到歌词页
+    // 当外部 showLyrics 变化时，切换到歌词页（直接在 LaunchedEffect 内挂起，
+    // effect 重启/取消时动画自动取消，避免快速连点叠加多个滚动协程）
     LaunchedEffect(showLyrics) {
         if (showLyrics && pagerState.currentPage == 0) {
-            coroutineScope.launch { pagerState.animateScrollToPage(1) }
+            pagerState.animateScrollToPage(1)
         } else if (!showLyrics && pagerState.currentPage == 1) {
-            coroutineScope.launch { pagerState.animateScrollToPage(0) }
+            pagerState.animateScrollToPage(0)
         }
     }
 
@@ -98,7 +99,7 @@ fun CoverLyricsPager(
                     ) {
                         LyricsView(
                             lyricsData = lyricsData,
-                            currentPositionMs = currentPositionMs,
+                            positionFlow = positionFlow,
                             fontSize = lyricsFontSize,
                             fontBold = lyricsFontBold,
                             onLineClick = onLineClick,

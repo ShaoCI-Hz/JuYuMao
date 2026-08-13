@@ -405,7 +405,7 @@ private fun SettingsSection(
     ) {
         Text(
             text = title,
-            style = MiuixTheme.textStyles.subtitle,
+            style = MiuixTheme.textStyles.headline1,
             color = MiuixTheme.colorScheme.primary,
             modifier = Modifier.padding(vertical = 8.dp),
         )

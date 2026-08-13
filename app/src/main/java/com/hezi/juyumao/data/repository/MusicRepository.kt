@@ -20,7 +20,8 @@ class MusicRepository @Inject constructor(
     private val smbScanner: SmbFileScanner,
 ) {
 
-    fun getAllSongsPaged() = songDao.getAllSongsPaged()
+    /** 全量歌曲列表（首页随机推荐用） */
+    fun getAllSongs() = songDao.getAllSongs()
 
     fun getRecentlyPlayed() = songDao.getRecentlyPlayed()
 

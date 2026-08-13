@@ -72,14 +72,14 @@ try {
     # ── 4. 编译（AGP 9.2.1 要求 Gradle >= 9.4.1，不能用旧版 8.11.1） ──
     Write-Host "编译中..." -ForegroundColor Cyan
     Push-Location $repo
-    & "D:\RuanJian\Android tool\Gradle\gradle-9.4.1\bin\gradle.bat" assembleDebug 2>&1 | Select-Object -Last 30
+    & "D:\RuanJian\Android tool\Gradle\gradle-9.4.1\bin\gradle.bat" assembleRelease 2>&1 | Select-Object -Last 30
     $buildOk = $LASTEXITCODE -eq 0
     Pop-Location
     if (-not $buildOk) {
         Write-Host "编译失败，中止发布" -ForegroundColor Red
         exit 1
     }
-    Copy-Item (Join-Path $repo "app\build\outputs\apk\debug\app-debug.apk") $apkPath -Force
+    Copy-Item (Join-Path $repo "app\build\outputs\apk\release\app-release-unsigned.apk") $apkPath -Force
     Write-Host "APK 已打包: $apkPath" -ForegroundColor Green
 
     # ── 5. 提交 + 推送（推 HEAD 到远程 main，避免推错旧 master 分支；失败即中止） ──

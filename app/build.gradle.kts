@@ -91,14 +91,12 @@ dependencies {
     // Room
     implementation(libs.room.runtime)
     implementation(libs.room.ktx)
-    implementation(libs.room.paging)
     ksp(libs.room.compiler)
 
     // Media3（FFmpeg 扩展未发布到 Maven，DSD/APE/WavPack 由解码失败兜底处理）
     implementation(libs.media3.exoplayer)
     implementation(libs.media3.session)
     implementation(libs.media3.ui)
-    implementation(libs.media3.effect)
 
     // Coroutines
     implementation(libs.coroutines.core)
@@ -106,10 +104,6 @@ dependencies {
 
     // DataStore
     implementation(libs.datastore.preferences)
-
-    // Paging
-    implementation(libs.paging.runtime)
-    implementation(libs.paging.compose)
 
     // Coil
     implementation(libs.coil.compose)
@@ -119,7 +113,6 @@ dependencies {
 
     // Glance (Widget)
     implementation(libs.glance.appwidget)
-    implementation(libs.glance.material3)
 
     // SMB
     implementation(libs.smbj) {

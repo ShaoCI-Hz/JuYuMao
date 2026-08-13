@@ -1,16 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
+<!-- 桌面小组件初始/占位布局（Glance 用 Compose 渲染真实内容，此布局仅作为 AppWidgetProviderInfo.initialLayout 的加载占位） -->
 <FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="#121212"
-    android:padding="12dp">
-
-    <TextView
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_gravity="center"
-        android:text="局域猫播放器"
-        android:textColor="#FFFFFF"
-        android:textSize="14sp" />
-
-</FrameLayout>
+    android:background="@android:color/transparent" />

@@ -58,7 +58,7 @@ fun SleepTimerSheet(
             Spacer(modifier = Modifier.height(8.dp))
             Text(
                 text = "定时关闭",
-                style = MiuixTheme.textStyles.title2.copy(fontWeight = FontWeight.Bold),
+                style = MiuixTheme.textStyles.title4,
             )
 
             Spacer(modifier = Modifier.height(24.dp))

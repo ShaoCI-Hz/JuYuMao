@@ -4,25 +4,30 @@ import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import kotlinx.coroutines.flow.Flow
 
 /**
  * 实时频谱柱状图（T11.4）
  * 数据来自 SpectrumAnalyzer（Visualizer FFT），播放页/均衡器页复用。
- * @param bars 归一化 0..1 的柱状数据
+ * @param spectrumFlow 归一化 0..1 的柱状数据流（FFT 高频更新，在此组件内订阅，
+ *   避免父级组合因频谱数据每帧重组导致掉帧）
  */
 @Composable
 fun SpectrumBars(
-    bars: FloatArray,
+    spectrumFlow: Flow<FloatArray>,
     color: Color,
     modifier: Modifier = Modifier,
     barWidth: Dp = 4.dp,
     gap: Dp = 3.dp,
 ) {
+    val bars by spectrumFlow.collectAsStateWithLifecycle(initialValue = floatArrayOf())
     Canvas(
         modifier = modifier
             .fillMaxWidth()

@@ -15,4 +15,12 @@ object FormatUtils {
             units[safeGroup]
         )
     }
+
+    /** 毫秒 → m:ss（零值/负值回退 [zeroText]） */
+    fun formatDuration(ms: Long, zeroText: String = "--:--"): String {
+        if (ms <= 0) return zeroText
+        val totalSeconds = ms / 1000
+        // 指定 Locale，避免阿拉伯语等系统 locale 下输出非拉丁数字
+        return String.format(Locale.US, "%d:%02d", totalSeconds / 60, totalSeconds % 60)
+    }
 }

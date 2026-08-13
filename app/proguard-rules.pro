@@ -20,6 +20,10 @@
 -keep class javax.jmdns.** { *; }
 -keep class org.jmdns.** { *; }
 
+# jcifs-ng (SMB 共享枚举/认证：配置驱动反射实例化 transport/resolver，纯 jar 无 consumer rules)
+-keep class jcifs.** { *; }
+-keep class eu.agno3.jcifs.** { *; }
+
 # jaudiotagger (audio metadata, uses reflection)
 -keep class org.jaudiotagger.** { *; }
 

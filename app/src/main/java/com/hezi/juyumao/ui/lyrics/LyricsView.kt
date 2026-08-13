@@ -12,6 +12,7 @@ import top.yukonga.miuix.kmp.basic.Text
 import top.yukonga.miuix.kmp.theme.MiuixTheme
 import top.yukonga.miuix.kmp.utils.SinkFeedback
 import androidx.compose.runtime.*
+import kotlinx.coroutines.flow.Flow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
@@ -29,12 +30,20 @@ import kotlinx.coroutines.launch
 @Composable
 fun LyricsView(
     lyricsData: LyricsData?,
-    currentPositionMs: Long,
+    positionFlow: Flow<Long>,
     modifier: Modifier = Modifier,
     fontSize: Float = 18f,
     fontBold: Boolean = true,
     onLineClick: ((Long) -> Unit)? = null,
 ) {
+    // 播放进度订阅（歌词高亮需要）：只在此组件内读取，避免播放页因 200ms 进度更新整体重组；
+    // 纯文本歌词（无时间戳）或空歌词时不订阅，零重组开销
+    val hasTimestamps = lyricsData?.lines?.any { it.timeMs > 0 } == true
+    val currentPositionMs by produceState(0L, positionFlow, hasTimestamps) {
+        if (hasTimestamps) {
+            positionFlow.collect { value = it }
+        }
+    }
     if (lyricsData == null || lyricsData.lines.isEmpty()) {
         Box(modifier = modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
             Text("暂无歌词", style = MiuixTheme.textStyles.body1,
@@ -45,7 +54,6 @@ fun LyricsView(
 
     // 纯文本歌词（全部行 timeMs == 0）不计算高亮行：findCurrentLineIndex 对 positionMs >= 0
     // 恒返回最后一行，会让纯文本歌词永远高亮末行并滚到底部
-    val hasTimestamps = lyricsData.lines.any { it.timeMs > 0 }
     val currentIndex = remember(lyricsData, currentPositionMs) {
         if (!hasTimestamps) -1
         else LrcParser.findCurrentLineIndex(lyricsData.lines, currentPositionMs)

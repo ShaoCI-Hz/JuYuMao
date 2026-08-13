@@ -9,7 +9,6 @@ import androidx.compose.material.icons.filled.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -46,10 +45,10 @@ fun CacheScreen(
                 Card(colors = CardDefaults.defaultColors(color = MiuixTheme.colorScheme.primaryContainer),
                     cornerRadius = 14.dp) {
                     Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                        Text("缓存占用", style = MiuixTheme.textStyles.title4,
+                        Text("缓存占用", style = MiuixTheme.textStyles.headline1,
                             color = MiuixTheme.colorScheme.onPrimaryContainer)
                         Text(CacheManager.formatSize(uiState.totalSize),
-                            style = MiuixTheme.textStyles.title1,
+                            style = MiuixTheme.textStyles.title3,
                             color = MiuixTheme.colorScheme.onPrimaryContainer)
                         Text("封面 ${CacheManager.formatSize(uiState.albumArtSize)} · NAS下载 ${CacheManager.formatSize(uiState.nasDownloadSize)} · 歌词 ${CacheManager.formatSize(uiState.lyricsSize)} · 临时 ${CacheManager.formatSize(uiState.tempSize)}",
                             style = MiuixTheme.textStyles.footnote1,
@@ -94,7 +93,7 @@ fun CacheScreen(
             // 已下载的 NAS 歌曲
             item {
                 Text("已下载的 NAS 歌曲 (${uiState.cachedNasSongs.size})",
-                    style = MiuixTheme.textStyles.subtitle, color = MiuixTheme.colorScheme.primary)
+                    style = MiuixTheme.textStyles.headline1, color = MiuixTheme.colorScheme.primary)
             }
 
             if (uiState.cachedNasSongs.isEmpty()) {
@@ -118,7 +117,7 @@ fun CacheScreen(
                             Icon(Icons.Default.AudioFile, null, tint = MiuixTheme.colorScheme.primary) // miuix-icons 无对应，语义近似
                             Column(modifier = Modifier.weight(1f)) {
                                 Text(cachedSong.fileName, style = MiuixTheme.textStyles.body1,
-                                    fontWeight = FontWeight.Medium, maxLines = 1)
+                                    maxLines = 1)
                                 Text(CacheManager.formatSize(cachedSong.file.length()),
                                     style = MiuixTheme.textStyles.footnote1,
                                     color = MiuixTheme.colorScheme.onSurfaceVariantSummary)
