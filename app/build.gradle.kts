@@ -138,7 +138,7 @@ dependencies {
     implementation(libs.miuix.ui)
     implementation(libs.miuix.squircle)
     implementation(libs.miuix.icons)
-    implementation(libs.miuix.preference)
+    // miuix-preference 未使用（设置页用 Miuix basic 组件 + 自定义 SettingsItem），已移除
 
     // Miuix Overlay 组件（OverlayDialog/OverlayBottomSheet/OverlayListPopup）内部使用
     // NavigationBackHandler（androidx.navigationevent 预测性返回），需要显式提供

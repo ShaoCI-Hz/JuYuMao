@@ -17,10 +17,9 @@ enum class ThemeMode {
     DARK, LIGHT, SYSTEM
 }
 
-/** 品牌扩展色：HiRes 金色徽标是功能标识，MIUI 配色下继续使用 */
+/** 品牌扩展色：仅 HiRes 金色徽标（功能标识，MIUI 配色下继续使用） */
 data class ExtendedColors(
     val hiResGold: Color = HiResGold,
-    val cardBackground: Color = CardDark,
 )
 
 private val DefaultExtendedColors = ExtendedColors()
@@ -28,11 +27,11 @@ private val DefaultExtendedColors = ExtendedColors()
 val LocalExtendedColors = compositionLocalOf { DefaultExtendedColors }
 
 /**
- * 主题：MIUI 风格（按 Miuix README 官方推荐用法）。
- * - ThemeController + Monet 动态取色 + keyColor = MIUI 蓝(0xFF3482FF)
- * - 主色恒为 MIUI 蓝（非壁纸 MD3 紫罗兰），Monet 算法保留色调层次
- * - theme_mode 三模式（深/浅/跟随系统）映射 ColorSchemeMode.MonetDark/Light/System
- * - 保留 LocalExtendedColors（HiRes 金色徽标）
+ * 主题：MIUI 风格（Miuix 默认配色）。
+ * - ColorSchemeMode.Dark/Light/System → Miuix lightColorScheme(0xFF3482FF)/darkColorScheme(0xFF277AF7)
+ *   鲜亮 MIUI 蓝 + 白/近黑/灰 层次（真机验证否决 Monet：其 MD3 tonal 变换产出低饱和灰蓝，非 MIUI 观感）。
+ * - theme_mode 三模式（深/浅/跟随系统）映射 ColorSchemeMode。
+ * - 保留 LocalExtendedColors（HiRes 金色徽标）。
  */
 @Composable
 fun JuYuMaoTheme(
@@ -62,7 +61,6 @@ fun JuYuMaoTheme(
 
     val extendedColors = ExtendedColors(
         hiResGold = HiResGold,
-        cardBackground = if (isDark) CardDark else CardLight,
     )
 
     val view = LocalView.current

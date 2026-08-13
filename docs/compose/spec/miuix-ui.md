@@ -8,31 +8,31 @@ updated: 2026-08-03
 
 ## Report
 
-**v4.0.3 交付状态（2026-08-03）**：
-- 工具链升级完成：Kotlin 2.4.0 / Gradle 9.4.1 / AGP 9.2.1 / KSP 2.3.11 / Hilt 2.60.1 / Room 2.8.4 / Compose BOM 2026.06.01（androidx 1.11.4，与 CMP 1.11.1 对齐）。AGP 9 内置 Kotlin（移除 org.jetbrains.kotlin.android 插件）、kotlinOptions→compilerOptions 迁移。
-- 依赖：accompanist-permissions 移除（零引用）；Room 升 2.8.4 修复 KSP2 `unexpected jvm signature V`；Hilt 升 2.60.1 修复 AGP 9 `BaseExtension not found`。
-- Miuix 0.9.3 引入：miuix-ui / miuix-squircle / miuix-icons / miuix-preference。**miuix-blur 未引入**（要求 minSdk 33，本项目 minSdk 29），GlassMorphism 自绘保留→后续确认死代码已删除。
-- 主题：MiuixTheme + ThemeController，MonetDark/MonetLight/MonetSystem 三模式映射 theme_mode；LocalExtendedColors（hiResGold）保留。
-- 组件替换：17 文件 M3→Miuix；缺件保留 FilterChip / FilledTonalButton / OutlinedButton（Miuix 无对应）。
-- compileSdk 35→37（Miuix 0.9.3 要求），Android SDK 安装 android-37.0 平台。
-- APK 体积：Debug 91.1MB（原 78.4MB，Miuix+Compose 1.11 增量约 12.7MB）；Release 17.7MB。
-- 验证：assembleDebug + assembleRelease（minify）均 BUILD SUCCESSFUL；proguard 加 `-keep class top.yukonga.miuix.**`。
+**v4.0.3 交付状态（2026-08-03 初版；2026-08-13 全面 Miuix 化完成，见下方更新）**：
+- 工具链升级完成：Kotlin 2.4.0 / Gradle 9.4.1 / AGP 9.2.1 / KSP 2.3.11 / Hilt 2.60.1 / Room 2.8.4 / Compose BOM 2026.06.01（androidx 1.11.4，与 CMP 1.11.1 对齐）。
+- 依赖：accompanist-permissions 移除；miuix-ui / miuix-squircle / miuix-icons 引入；**miuix-blur 未引入**（minSdk 33>29）；**miuix-preference 已移除**（零使用）。
+- compileSdk 35→37（Miuix 0.9.3 要求）。
+- APK 体积：Debug 约 92MB；Release 17.7MB。
+
+### 2026-08-13 全面 Miuix 化完成（真机验证修正）
+- **主题配色**：真机验证否决 Monet（其 MD3 tonal 变换把 MIUI 蓝 seed 0xFF3482FF 转成低饱和灰蓝 #707EA4，观感仍 MD3）。改回 **Miuix 默认配色 ColorSchemeMode.Dark/Light/System**：primary 直接取 lightColorScheme(0xFF3482FF)/darkColorScheme(0xFF277AF7) 鲜亮 MIUI 蓝 + 白/近黑/灰层次。
+- **彻底移除 MD3**：`compose.material3` 依赖已删除（全项目 material3 引用 0 处）；`MaterialTheme` 残留 0 处；原「缺件保留」的 FilterChip 改自绘 `MiuixFilterChip`、FilledTonalButton/OutlinedButton 改 Miuix `Button`（secondaryContainer/surfaceVariant）。
+- **图标**：material icons → MiuixIcons 线性图标（28 处可换全换）；21 处 miuix-icons 无对应（Shuffle/跳过/循环/HighQuality 等）保留 material.icons 并注释。
+- **组件统一**：底栏自绘 → Miuix NavigationBar + NavigationBarItem；13 处手搓顶栏 → Miuix TopAppBar/SmallTopAppBar；自绘圆角 RoundedCornerShape → squircleBackground/squircleClip；裸 clickable → Miuix SinkFeedback 按压反馈。
+- **闪退修复**：Miuix OverlayDialog/OverlayBottomSheet/OverlayListPopup 内部用 NavigationBackHandler（androidx.navigationevent），弹窗组合在 Scaffold popup 层（NavHost 外）读不到 LocalNavigationEventDispatcherOwner → 闪退；已在 App 根提供 rememberNavigationEventDispatcherOwner(parent=null) + 依赖 navigationevent-compose-android:1.1.2。
 
 ### Miuix API 使用清单
-- basic: Button / TextButton / OutlinedButton(保留M3) / Card / IconButton / Checkbox / Slider / Switch / TextField / LinearProgressIndicator / CircularProgressIndicator / TabRow(tabs:List<String>, selectedTabIndex, onTabSelected) / Scaffold / Snackbar / TopAppBar / Icon / Text
-- overlay: OverlayDialog / OverlayBottomSheet / OverlayListPopup（+ ListPopupColumn）
-- theme: MiuixTheme(controller=, content=) / ThemeController(colorSchemeMode=) / ColorSchemeMode.Monet* / ColorsKt.lightColorScheme()/darkColorScheme()
-- 差异：Card 用 cornerRadius 非 shape；Slider 无 thumb/track 槽（PlayerSlider 自定义拖拽放大动画移除）；TextButton 文本为 String 参数非 content lambda；TabRow 无 content lambda
+- basic: Button / TextButton / Card / IconButton / Checkbox / Slider / Switch / TextField / LinearProgressIndicator / CircularProgressIndicator / TabRow / Scaffold / Snackbar / TopAppBar / SmallTopAppBar / NavigationBar / NavigationBarItem / Icon / Text
+- overlay: OverlayDialog / OverlayBottomSheet / OverlayListPopup
+- theme: MiuixTheme(controller=) / ThemeController(colorSchemeMode=) / ColorSchemeMode.Dark/Light/System / lightColorScheme()/darkColorScheme()
+- squircle: squircleBackground / squircleClip；utils: SinkFeedback（按压反馈）
+- 差异：Card 用 cornerRadius 非 shape；Slider 无 thumb/track 槽；TextButton 文本为 String 参数非 content lambda；TabRow 无 content lambda
 
-### 缺件保留项（M3）
-- FilterChip（浏览/均衡器筛选）— Miuix 无对应
-- FilledTonalButton（首页/歌单/缓存/SMB 等次级按钮）— Miuix 无对应变体
-- OutlinedButton（引导/SMB 等描边按钮）— Miuix 无对应
-- MaterialTheme.colorScheme 仅作 token 访问器（值来自 MiuixTheme 兼容）
-
-### 遗留
-- 真机冒烟与 Monet 壁纸变色验证待手机连接后执行
-- player-animations.md 共享元素转场等动效待 Miuix 基座复核（合并验收）
+### 遗留（2026-08-13）
+- 21 处 miuix-icons 无对应图标保留 material.icons（Shuffle/SkipPrevious/SkipNext/Repeat/RepeatOne/HighQuality/Speed/Memory/WifiFind/PhoneAndroid/Notifications/RadioButtonUnchecked 等），已加注释
+- OnboardingScreen 深色艺术渐变/白字保留（引导页设计意图）
+- 真机冒烟（三模式走查）待手机连接后执行
+- player-animations.md 共享元素转场等动效待 Miuix 基座复核
 
 ## [S1] Problem
 
