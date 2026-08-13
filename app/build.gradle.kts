@@ -64,7 +64,8 @@ dependencies {
     implementation(libs.compose.ui)
     implementation(libs.compose.ui.graphics)
     implementation(libs.compose.ui.tooling.preview)
-    implementation(libs.compose.material3)
+    // compose.material3 已彻底移除（全项目 0 处 material3 引用，Miuix 化完成）
+    // compose.material.icons 仍保留：21 处 miuix-icons 无对应的播放器/功能图标（Shuffle/跳过/循环等）
     implementation(libs.compose.material.icons)
     implementation(libs.compose.animation)
     implementation(libs.compose.foundation)

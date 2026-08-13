@@ -14,6 +14,8 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.hezi.juyumao.data.local.cache.CacheManager
+import top.yukonga.miuix.kmp.basic.Icon
+import top.yukonga.miuix.kmp.basic.SmallTopAppBar
 import top.yukonga.miuix.kmp.basic.*
 import top.yukonga.miuix.kmp.icon.MiuixIcons
 import top.yukonga.miuix.kmp.icon.extended.*
@@ -29,14 +31,12 @@ fun CacheScreen(
     var showClearDialog by remember { mutableStateOf(false) }
 
     Column(modifier = Modifier.fillMaxSize()) {
-        Spacer(modifier = Modifier.height(48.dp))
-        Row(modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically) {
-            IconButton(onClick = onBack) { Icon(MiuixIcons.Back, "返回") }
-            Text("缓存管理", style = MiuixTheme.textStyles.title3)
-            Spacer(Modifier.size(48.dp))
-        }
+        SmallTopAppBar(
+            title = "缓存管理",
+            navigationIcon = {
+                IconButton(onClick = onBack) { Icon(MiuixIcons.Back, "返回") }
+            },
+        )
 
         LazyColumn(modifier = Modifier.fillMaxSize(), contentPadding = PaddingValues(16.dp),
             verticalArrangement = Arrangement.spacedBy(12.dp)) {

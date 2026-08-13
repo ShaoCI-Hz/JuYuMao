@@ -7,6 +7,7 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
@@ -20,10 +21,13 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
+import top.yukonga.miuix.kmp.basic.Icon
+import top.yukonga.miuix.kmp.basic.SmallTopAppBar
 import top.yukonga.miuix.kmp.basic.*
 import top.yukonga.miuix.kmp.icon.MiuixIcons
 import top.yukonga.miuix.kmp.icon.extended.*
 import top.yukonga.miuix.kmp.theme.MiuixTheme
+import top.yukonga.miuix.kmp.utils.SinkFeedback
 
 @Composable
 fun EqualizerScreen(
@@ -41,24 +45,14 @@ fun EqualizerScreen(
             .fillMaxSize()
             .verticalScroll(rememberScrollState()),
     ) {
-        Spacer(modifier = Modifier.height(48.dp))
-
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 16.dp),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            IconButton(onClick = onBack) {
-                Icon(MiuixIcons.Back, contentDescription = "返回")
-            }
-            Text(
-                text = "均衡器",
-                style = MiuixTheme.textStyles.title3,
-            )
-            Spacer(modifier = Modifier.size(48.dp))
-        }
+        SmallTopAppBar(
+            title = "均衡器",
+            navigationIcon = {
+                IconButton(onClick = onBack) {
+                    Icon(MiuixIcons.Back, contentDescription = "返回")
+                }
+            },
+        )
 
         Spacer(modifier = Modifier.height(16.dp))
 
@@ -334,7 +328,14 @@ private fun MiuixFilterChip(selected: Boolean, onClick: () -> Unit, label: Strin
         modifier = Modifier
             .clip(RoundedCornerShape(50))
             .background(if (selected) MiuixTheme.colorScheme.primaryContainer else MiuixTheme.colorScheme.surfaceVariant)
-            .clickable(onClick = onClick)
+            .clickable(
+                interactionSource = remember { MutableInteractionSource() },
+                indication = SinkFeedback(
+                    sinkAmount = 0.85f,
+                    animationSpec = spring(dampingRatio = 0.99f, stiffness = 986.96f),
+                ),
+                onClick = onClick,
+            )
             .padding(horizontal = 14.dp, vertical = 8.dp),
     ) {
         Text(

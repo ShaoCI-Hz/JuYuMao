@@ -1,6 +1,8 @@
 package com.hezi.juyumao.ui.settings
 
+import androidx.compose.animation.core.spring
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.material.icons.Icons
@@ -17,6 +19,7 @@ import top.yukonga.miuix.kmp.basic.*
 import top.yukonga.miuix.kmp.icon.MiuixIcons
 import top.yukonga.miuix.kmp.icon.extended.*
 import top.yukonga.miuix.kmp.overlay.OverlayDialog
+import top.yukonga.miuix.kmp.utils.SinkFeedback
 import top.yukonga.miuix.kmp.theme.MiuixTheme
 
 @Composable
@@ -36,23 +39,13 @@ fun SettingsScreen(
         ThemeMode.SYSTEM -> "跟随系统"
     }
 
-    LazyColumn(
-        modifier = Modifier.fillMaxSize(),
-        contentPadding = PaddingValues(bottom = 16.dp),
-    ) {
-        item {
-            Spacer(modifier = Modifier.height(48.dp))
+    Column(modifier = Modifier.fillMaxSize()) {
+        TopAppBar(title = "设置")
 
-            Text(
-                text = "设置",
-                style = MiuixTheme.textStyles.title1,
-                color = MiuixTheme.colorScheme.onBackground,
-                modifier = Modifier.padding(horizontal = 16.dp),
-            )
-
-            Spacer(modifier = Modifier.height(24.dp))
-        }
-
+        LazyColumn(
+            modifier = Modifier.fillMaxSize(),
+            contentPadding = PaddingValues(bottom = 16.dp),
+        ) {
         // Theme section
         item {
             SettingsSection(title = "外观") {
@@ -79,7 +72,11 @@ fun SettingsScreen(
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .clickable { viewModel.setSmbAutoConnect(!smbAutoConnect) }
+                        .clickable(
+                            interactionSource = remember { MutableInteractionSource() },
+                            indication = SinkFeedback(sinkAmount = 0.85f, animationSpec = spring(dampingRatio = 0.99f, stiffness = 986.96f)),
+                            onClick = { viewModel.setSmbAutoConnect(!smbAutoConnect) },
+                        )
                         .padding(horizontal = 16.dp, vertical = 14.dp),
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.spacedBy(16.dp),
@@ -152,7 +149,11 @@ fun SettingsScreen(
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .clickable { viewModel.setGaplessPlayback(!gaplessPlayback) }
+                        .clickable(
+                            interactionSource = remember { MutableInteractionSource() },
+                            indication = SinkFeedback(sinkAmount = 0.85f, animationSpec = spring(dampingRatio = 0.99f, stiffness = 986.96f)),
+                            onClick = { viewModel.setGaplessPlayback(!gaplessPlayback) },
+                        )
                         .padding(horizontal = 16.dp, vertical = 14.dp),
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.spacedBy(16.dp),
@@ -201,7 +202,11 @@ fun SettingsScreen(
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .clickable { viewModel.setSpectrumVisualizer(!spectrumVisualizer) }
+                        .clickable(
+                            interactionSource = remember { MutableInteractionSource() },
+                            indication = SinkFeedback(sinkAmount = 0.85f, animationSpec = spring(dampingRatio = 0.99f, stiffness = 986.96f)),
+                            onClick = { viewModel.setSpectrumVisualizer(!spectrumVisualizer) },
+                        )
                         .padding(horizontal = 16.dp, vertical = 14.dp),
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.spacedBy(16.dp),
@@ -291,7 +296,11 @@ fun SettingsScreen(
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .clickable { viewModel.setLyricsFontBold(!lyricsFontBold) }
+                        .clickable(
+                            interactionSource = remember { MutableInteractionSource() },
+                            indication = SinkFeedback(sinkAmount = 0.85f, animationSpec = spring(dampingRatio = 0.99f, stiffness = 986.96f)),
+                            onClick = { viewModel.setLyricsFontBold(!lyricsFontBold) },
+                        )
                         .padding(horizontal = 16.dp, vertical = 14.dp),
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.spacedBy(16.dp),
@@ -334,6 +343,7 @@ fun SettingsScreen(
             }
         }
     }
+    }
 
     // Theme selector dialog
     if (showThemeDialog) {
@@ -351,10 +361,14 @@ fun SettingsScreen(
                         Row(
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .clickable {
-                                    viewModel.setThemeMode(mode)
-                                    showThemeDialog = false
-                                }
+                                .clickable(
+                                    interactionSource = remember { MutableInteractionSource() },
+                                    indication = SinkFeedback(sinkAmount = 0.85f, animationSpec = spring(dampingRatio = 0.99f, stiffness = 986.96f)),
+                                    onClick = {
+                                        viewModel.setThemeMode(mode)
+                                        showThemeDialog = false
+                                    },
+                                )
                                 .padding(vertical = 12.dp),
                             verticalAlignment = Alignment.CenterVertically,
                             horizontalArrangement = Arrangement.spacedBy(12.dp),
@@ -417,7 +431,11 @@ private fun SettingsItem(
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .clickable(onClick = onClick)
+            .clickable(
+                interactionSource = remember { MutableInteractionSource() },
+                indication = SinkFeedback(sinkAmount = 0.85f, animationSpec = spring(dampingRatio = 0.99f, stiffness = 986.96f)),
+                onClick = onClick,
+            )
             .padding(horizontal = 16.dp, vertical = 14.dp),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(16.dp),

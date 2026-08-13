@@ -1,6 +1,8 @@
 package com.hezi.juyumao.ui.sleep
 
+import androidx.compose.animation.core.spring
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import top.yukonga.miuix.kmp.basic.*
@@ -8,6 +10,7 @@ import top.yukonga.miuix.kmp.icon.MiuixIcons
 import top.yukonga.miuix.kmp.icon.extended.*
 import top.yukonga.miuix.kmp.overlay.*
 import top.yukonga.miuix.kmp.theme.MiuixTheme
+import top.yukonga.miuix.kmp.utils.SinkFeedback
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -87,7 +90,13 @@ fun SleepTimerSheet(
                         modifier = Modifier
                             .fillMaxWidth()
                             .padding(vertical = 4.dp)
-                            .clickable { viewModel.setTimer(option.minutes) },
+                            .clickable(
+                                interactionSource = remember { MutableInteractionSource() },
+                                indication = SinkFeedback(
+                                    sinkAmount = 0.85f,
+                                    animationSpec = spring(dampingRatio = 0.99f, stiffness = 986.96f),
+                                ),
+                            ) { viewModel.setTimer(option.minutes) },
                         colors = CardDefaults.defaultColors(
                             color = MiuixTheme.colorScheme.surfaceVariant,
                         ),

@@ -1,6 +1,8 @@
 package com.hezi.juyumao.ui.smb
 
+import androidx.compose.animation.core.spring
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -18,6 +20,7 @@ import top.yukonga.miuix.kmp.basic.*
 import top.yukonga.miuix.kmp.icon.MiuixIcons
 import top.yukonga.miuix.kmp.icon.extended.*
 import top.yukonga.miuix.kmp.theme.MiuixTheme
+import top.yukonga.miuix.kmp.utils.SinkFeedback
 
 @Composable
 fun SmbConnectScreen(
@@ -127,7 +130,13 @@ fun SmbConnectScreen(
                         color = MiuixTheme.colorScheme.primary)
                 }
                 items(uiState.scannedHosts) { host ->
-                    Card(modifier = Modifier.fillMaxWidth().clickable {
+                    Card(modifier = Modifier.fillMaxWidth().clickable(
+                        interactionSource = remember { MutableInteractionSource() },
+                        indication = SinkFeedback(
+                            sinkAmount = 0.85f,
+                            animationSpec = spring(dampingRatio = 0.99f, stiffness = 986.96f),
+                        ),
+                    ) {
                         ip = host.ip; port = "445"
                     },
                         colors = CardDefaults.defaultColors(color = MiuixTheme.colorScheme.surfaceVariant),
@@ -154,7 +163,13 @@ fun SmbConnectScreen(
             if (uiState.discoveredServers.isNotEmpty()) {
                 item { Text("mDNS 发现的设备", style = MiuixTheme.textStyles.subtitle, color = MiuixTheme.colorScheme.primary) }
                 items(uiState.discoveredServers) { server ->
-                    Card(modifier = Modifier.fillMaxWidth().clickable {
+                    Card(modifier = Modifier.fillMaxWidth().clickable(
+                        interactionSource = remember { MutableInteractionSource() },
+                        indication = SinkFeedback(
+                            sinkAmount = 0.85f,
+                            animationSpec = spring(dampingRatio = 0.99f, stiffness = 986.96f),
+                        ),
+                    ) {
                         ip = server.host; port = server.port.toString()
                     },
                         colors = CardDefaults.defaultColors(color = MiuixTheme.colorScheme.surfaceVariant),

@@ -10,6 +10,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import top.yukonga.miuix.kmp.basic.Icon
 import top.yukonga.miuix.kmp.icon.MiuixIcons
 import top.yukonga.miuix.kmp.icon.extended.*
+import top.yukonga.miuix.kmp.squircle.squircleClip
 import top.yukonga.miuix.kmp.theme.MiuixTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -56,7 +57,7 @@ fun AlbumArtPager(
                 if (isRound && isPlaying) rotationZ = rotation
             }
             .shadow(24.dp, shape)
-            .clip(shape)
+            .then(if (isRound) Modifier.clip(shape) else Modifier.squircleClip(cornerRadius = 16.dp))
             .background(MiuixTheme.colorScheme.surfaceVariant),
         contentAlignment = Alignment.Center,
     ) {

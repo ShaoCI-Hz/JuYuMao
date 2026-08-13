@@ -4,24 +4,23 @@ import android.Manifest
 import android.os.Build
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
-import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
 import top.yukonga.miuix.kmp.basic.*
 import top.yukonga.miuix.kmp.icon.MiuixIcons
 import top.yukonga.miuix.kmp.icon.extended.*
+import top.yukonga.miuix.kmp.squircle.squircleBackground
+import top.yukonga.miuix.kmp.squircle.squircleClip
 import top.yukonga.miuix.kmp.theme.MiuixTheme
 import androidx.compose.runtime.*
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
@@ -57,17 +56,17 @@ fun HomeScreen(
         ActivityResultContracts.RequestPermission()
     ) { granted -> if (granted) viewModel.scanLocalMusic() }
 
-    LazyColumn(
-        modifier = Modifier.fillMaxSize(),
-        contentPadding = PaddingValues(bottom = 16.dp),
-    ) {
-        // Header + 统计卡片
-        item {
-            Spacer(modifier = Modifier.height(48.dp))
-            Text("局域猫播放器", style = MiuixTheme.textStyles.title1,
-                color = MiuixTheme.colorScheme.onBackground, modifier = Modifier.padding(horizontal = 16.dp))
-            Spacer(modifier = Modifier.height(24.dp))
-            Row(modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp),
+    Column(modifier = Modifier.fillMaxSize()) {
+        TopAppBar(title = "局域猫播放器")
+
+        LazyColumn(
+            modifier = Modifier.fillMaxSize(),
+            contentPadding = PaddingValues(bottom = 16.dp),
+        ) {
+            // Header + 统计卡片
+            item {
+                Spacer(modifier = Modifier.height(24.dp))
+                Row(modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp),
                 horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                 StatCard(MiuixIcons.Music, "${uiState.songCount}", "歌曲", Modifier.weight(1f)) // 原 MusicNote
                 StatCard(MiuixIcons.Album, "${uiState.albumCount}", "专辑", Modifier.weight(1f))
@@ -216,6 +215,7 @@ fun HomeScreen(
             }
         }
     }
+    }
 
     if (showSleepTimer) {
         com.hezi.juyumao.ui.sleep.SleepTimerSheet(
@@ -234,11 +234,11 @@ private fun RecentSongCard(song: SongEntity, onClick: () -> Unit) {
             verticalArrangement = Arrangement.spacedBy(8.dp)) {
             if (!song.albumArtUri.isNullOrEmpty()) {
                 AsyncImage(model = File(song.albumArtUri), contentDescription = null,
-                    modifier = Modifier.size(80.dp).clip(RoundedCornerShape(8.dp)),
+                    modifier = Modifier.size(80.dp).squircleClip(cornerRadius = 8.dp),
                     contentScale = ContentScale.Crop)
             } else {
                 Box(modifier = Modifier.size(80.dp)
-                    .background(MiuixTheme.colorScheme.primary.copy(0.1f), RoundedCornerShape(8.dp)),
+                    .squircleBackground(color = MiuixTheme.colorScheme.primary.copy(0.1f), cornerRadius = 8.dp),
                     contentAlignment = Alignment.Center) {
                     Icon(MiuixIcons.Music, null, // 原 MusicNote
                         tint = MiuixTheme.colorScheme.primary.copy(0.5f), modifier = Modifier.size(32.dp))

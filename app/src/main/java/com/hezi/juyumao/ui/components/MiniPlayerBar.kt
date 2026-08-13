@@ -6,18 +6,20 @@ import androidx.compose.animation.fadeOut
 import androidx.compose.animation.togetherWith
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.spring
-import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import top.yukonga.miuix.kmp.icon.MiuixIcons
 import top.yukonga.miuix.kmp.icon.extended.*
+import top.yukonga.miuix.kmp.squircle.squircleBackground
+import top.yukonga.miuix.kmp.squircle.squircleClip
 import top.yukonga.miuix.kmp.theme.MiuixTheme
+import top.yukonga.miuix.kmp.utils.SinkFeedback
 import top.yukonga.miuix.kmp.basic.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.style.TextOverflow
@@ -55,12 +57,19 @@ fun MiniPlayerBar(
                 shape = RoundedCornerShape(16.dp),
                 ambientColor = androidx.compose.ui.graphics.Color.Black.copy(alpha = 0.2f),
             )
-            .background(
+            .squircleBackground(
                 color = MiuixTheme.colorScheme.surfaceVariant,
-                shape = RoundedCornerShape(16.dp),
+                cornerRadius = 16.dp,
             )
-            .clip(RoundedCornerShape(16.dp))
-            .clickable(onClick = onPlayerClick)
+            .squircleClip(cornerRadius = 16.dp)
+            .clickable(
+                interactionSource = remember { MutableInteractionSource() },
+                indication = SinkFeedback(
+                    sinkAmount = 0.85f,
+                    animationSpec = spring(dampingRatio = 0.99f, stiffness = 986.96f),
+                ),
+                onClick = onPlayerClick,
+            )
             .padding(horizontal = 12.dp, vertical = 8.dp),
     ) {
         Column {
@@ -84,16 +93,16 @@ fun MiniPlayerBar(
                             contentDescription = null,
                             modifier = Modifier
                                 .size(40.dp)
-                                .clip(RoundedCornerShape(8.dp)),
+                                .squircleClip(cornerRadius = 8.dp),
                             contentScale = ContentScale.Crop,
                         )
                     } else {
                         Box(
                             modifier = Modifier
                                 .size(40.dp)
-                                .background(
+                                .squircleBackground(
                                     color = MiuixTheme.colorScheme.primary.copy(alpha = 0.2f),
-                                    shape = RoundedCornerShape(8.dp),
+                                    cornerRadius = 8.dp,
                                 ),
                             contentAlignment = Alignment.Center,
                         ) {
@@ -157,7 +166,7 @@ fun MiniPlayerBar(
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(2.dp)
-                    .clip(RoundedCornerShape(1.dp)),
+                    .squircleClip(cornerRadius = 1.dp),
                 colors = ProgressIndicatorDefaults.progressIndicatorColors(
                     foregroundColor = MiuixTheme.colorScheme.primary,
                     backgroundColor = MiuixTheme.colorScheme.primary.copy(alpha = 0.15f),

@@ -1,7 +1,9 @@
 package com.hezi.juyumao.ui.browse
 
+import androidx.compose.animation.core.spring
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -9,7 +11,10 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import top.yukonga.miuix.kmp.basic.*
 import top.yukonga.miuix.kmp.icon.MiuixIcons
 import top.yukonga.miuix.kmp.icon.extended.*
+import top.yukonga.miuix.kmp.squircle.squircleBackground
+import top.yukonga.miuix.kmp.squircle.squircleClip
 import top.yukonga.miuix.kmp.theme.MiuixTheme
+import top.yukonga.miuix.kmp.utils.SinkFeedback
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -57,14 +62,7 @@ fun BrowseScreen(
     val favoriteCount by remember { derivedStateOf { favorites.size } }
 
     Column(modifier = Modifier.fillMaxSize()) {
-        Spacer(modifier = Modifier.height(48.dp))
-
-        Text(
-            text = "浏览",
-            style = MiuixTheme.textStyles.title1,
-            color = MiuixTheme.colorScheme.onBackground,
-            modifier = Modifier.padding(horizontal = 16.dp),
-        )
+        TopAppBar(title = "浏览")
 
         Spacer(modifier = Modifier.height(16.dp))
 
@@ -198,7 +196,11 @@ private fun SongListItem(
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .clickable(onClick = onClick)
+            .clickable(
+                interactionSource = remember { MutableInteractionSource() },
+                indication = SinkFeedback(sinkAmount = 0.85f, animationSpec = spring(dampingRatio = 0.99f, stiffness = 986.96f)),
+                onClick = onClick,
+            )
             .padding(horizontal = 16.dp, vertical = 10.dp),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(12.dp),
@@ -210,16 +212,16 @@ private fun SongListItem(
                 contentDescription = null,
                 modifier = Modifier
                     .size(48.dp)
-                    .clip(RoundedCornerShape(8.dp)),
+                    .squircleClip(cornerRadius = 8.dp),
                 contentScale = androidx.compose.ui.layout.ContentScale.Crop,
             )
         } else {
             Box(
                 modifier = Modifier
                     .size(48.dp)
-                    .background(
+                    .squircleBackground(
                         color = MiuixTheme.colorScheme.primary.copy(alpha = 0.15f),
-                        shape = RoundedCornerShape(8.dp),
+                        cornerRadius = 8.dp,
                     ),
                 contentAlignment = Alignment.Center,
             ) {
@@ -264,9 +266,9 @@ private fun SongListItem(
                 }
                 Box(
                     modifier = Modifier
-                        .background(
+                        .squircleBackground(
                             color = tagColor.copy(alpha = 0.15f),
-                            shape = RoundedCornerShape(4.dp),
+                            cornerRadius = 4.dp,
                         )
                         .padding(horizontal = 4.dp, vertical = 1.dp),
                 ) {
@@ -328,9 +330,9 @@ private fun formatDuration(ms: Long): String {
 private fun HiResBadge(text: String) {
     Box(
         modifier = Modifier
-            .background(
+            .squircleBackground(
                 color = com.hezi.juyumao.ui.theme.LocalExtendedColors.current.hiResGold.copy(alpha = 0.15f),
-                shape = RoundedCornerShape(4.dp),
+                cornerRadius = 4.dp,
             )
             .padding(horizontal = 4.dp, vertical = 1.dp),
     ) {
@@ -393,7 +395,11 @@ private fun DimensionBrowse(
                     Row(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .clickable { onSelectDimension(name) }
+                            .clickable(
+                                interactionSource = remember { MutableInteractionSource() },
+                                indication = SinkFeedback(sinkAmount = 0.85f, animationSpec = spring(dampingRatio = 0.99f, stiffness = 986.96f)),
+                                onClick = { onSelectDimension(name) },
+                            )
                             .padding(horizontal = 16.dp, vertical = 14.dp),
                         verticalAlignment = Alignment.CenterVertically,
                         horizontalArrangement = Arrangement.spacedBy(12.dp),
@@ -419,25 +425,16 @@ private fun DimensionBrowse(
     } else {
         // 维度歌曲列表
         Column(modifier = Modifier.fillMaxSize()) {
-            Row(
-                modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp),
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(8.dp),
-            ) {
-                IconButton(onClick = onBackToList) {
-                    Icon(MiuixIcons.Back, "返回")
-                }
-                Text(
-                    text = dimensionName,
-                    style = MiuixTheme.textStyles.title4,
-                    color = MiuixTheme.colorScheme.onBackground,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis,
-                    modifier = Modifier.weight(1f),
-                )
-                Text("${dimensionSongs.size} 首", style = MiuixTheme.textStyles.footnote1,
-                    color = MiuixTheme.colorScheme.onSurfaceSecondary)
-            }
+            SmallTopAppBar(
+                title = dimensionName,
+                subtitle = "${dimensionSongs.size} 首",
+                navigationIcon = {
+                    IconButton(onClick = onBackToList) {
+                        Icon(MiuixIcons.Back, "返回")
+                    }
+                },
+                defaultWindowInsetsPadding = false,
+            )
             if (dimensionSongs.isEmpty()) {
                 Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                     Text("暂无歌曲", style = MiuixTheme.textStyles.body1,
@@ -449,7 +446,11 @@ private fun DimensionBrowse(
                         Row(
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .clickable { onSongClick(song.id) }
+                                .clickable(
+                                    interactionSource = remember { MutableInteractionSource() },
+                                    indication = SinkFeedback(sinkAmount = 0.85f, animationSpec = spring(dampingRatio = 0.99f, stiffness = 986.96f)),
+                                    onClick = { onSongClick(song.id) },
+                                )
                                 .padding(horizontal = 16.dp, vertical = 10.dp),
                             verticalAlignment = Alignment.CenterVertically,
                             horizontalArrangement = Arrangement.spacedBy(12.dp),
@@ -458,7 +459,7 @@ private fun DimensionBrowse(
                                 coil.compose.AsyncImage(
                                     model = java.io.File(song.albumArtUri),
                                     contentDescription = null,
-                                    modifier = Modifier.size(40.dp).clip(RoundedCornerShape(6.dp)),
+                                    modifier = Modifier.size(40.dp).squircleClip(cornerRadius = 6.dp),
                                     contentScale = androidx.compose.ui.layout.ContentScale.Crop,
                                 )
                             } else {
@@ -493,7 +494,11 @@ private fun MiuixFilterChip(selected: Boolean, onClick: () -> Unit, label: Strin
         modifier = Modifier
             .clip(RoundedCornerShape(50))
             .background(if (selected) MiuixTheme.colorScheme.primaryContainer else MiuixTheme.colorScheme.surfaceVariant)
-            .clickable(onClick = onClick)
+            .clickable(
+                interactionSource = remember { MutableInteractionSource() },
+                indication = SinkFeedback(sinkAmount = 0.85f, animationSpec = spring(dampingRatio = 0.99f, stiffness = 986.96f)),
+                onClick = onClick,
+            )
             .padding(horizontal = 14.dp, vertical = 8.dp),
     ) {
         Text(

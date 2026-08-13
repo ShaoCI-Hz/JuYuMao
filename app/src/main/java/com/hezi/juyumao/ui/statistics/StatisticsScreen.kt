@@ -1,19 +1,23 @@
 package com.hezi.juyumao.ui.statistics
 
-import androidx.compose.foundation.background
+import androidx.compose.animation.core.spring
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.shape.RoundedCornerShape
+import top.yukonga.miuix.kmp.basic.Icon
+import top.yukonga.miuix.kmp.basic.SmallTopAppBar
 import top.yukonga.miuix.kmp.basic.*
 import top.yukonga.miuix.kmp.icon.MiuixIcons
 import top.yukonga.miuix.kmp.icon.extended.*
+import top.yukonga.miuix.kmp.squircle.squircleBackground
+import top.yukonga.miuix.kmp.squircle.squircleClip
 import top.yukonga.miuix.kmp.theme.MiuixTheme
+import top.yukonga.miuix.kmp.utils.SinkFeedback
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -32,18 +36,17 @@ fun StatisticsScreen(
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
 
     Column(modifier = Modifier.fillMaxSize()) {
-        Spacer(modifier = Modifier.height(48.dp))
-        Row(
-            modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp),
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            IconButton(onClick = onBack) { Icon(MiuixIcons.Back, "返回") }
-            Text("听歌报告", style = MiuixTheme.textStyles.title1,
-                color = MiuixTheme.colorScheme.onBackground, modifier = Modifier.weight(1f))
-            IconButton(onClick = { viewModel.refresh() }) {
-                Icon(MiuixIcons.Refresh, "刷新")
-            }
-        }
+        SmallTopAppBar(
+            title = "听歌报告",
+            navigationIcon = {
+                IconButton(onClick = onBack) { Icon(MiuixIcons.Back, "返回") }
+            },
+            actions = {
+                IconButton(onClick = { viewModel.refresh() }) {
+                    Icon(MiuixIcons.Refresh, "刷新")
+                }
+            },
+        )
 
         if (uiState.isLoading) {
             Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
@@ -86,14 +89,20 @@ fun StatisticsScreen(
                         Row(
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .clickable { onSongClick(song.id) }
+                                .clickable(
+                                    interactionSource = remember { MutableInteractionSource() },
+                                    indication = SinkFeedback(
+                                        sinkAmount = 0.85f,
+                                        animationSpec = spring(dampingRatio = 0.99f, stiffness = 986.96f),
+                                    ),
+                                ) { onSongClick(song.id) }
                                 .padding(horizontal = 16.dp, vertical = 8.dp),
                             verticalAlignment = Alignment.CenterVertically,
                             horizontalArrangement = Arrangement.spacedBy(12.dp),
                         ) {
                             if (!song.albumArtUri.isNullOrEmpty()) {
                                 AsyncImage(model = File(song.albumArtUri), contentDescription = null,
-                                    modifier = Modifier.size(40.dp).clip(RoundedCornerShape(6.dp)),
+                                    modifier = Modifier.size(40.dp).squircleClip(cornerRadius = 6.dp),
                                     contentScale = androidx.compose.ui.layout.ContentScale.Crop)
                             } else {
                                 Icon(MiuixIcons.Music, null,
@@ -130,8 +139,10 @@ fun StatisticsScreen(
                         ) {
                             Box(
                                 modifier = Modifier.size(36.dp)
-                                    .background(MiuixTheme.colorScheme.primary.copy(alpha = 0.15f),
-                                        RoundedCornerShape(8.dp)),
+                                    .squircleBackground(
+                                        color = MiuixTheme.colorScheme.primary.copy(alpha = 0.15f),
+                                        cornerRadius = 8.dp,
+                                    ),
                                 contentAlignment = Alignment.Center,
                             ) {
                                 Icon(MiuixIcons.Contacts, null,

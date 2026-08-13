@@ -1,15 +1,17 @@
 package com.hezi.juyumao.ui.search
 
+import androidx.compose.animation.core.spring
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.ui.draw.clip
 import top.yukonga.miuix.kmp.basic.*
 import top.yukonga.miuix.kmp.icon.MiuixIcons
 import top.yukonga.miuix.kmp.icon.extended.*
+import top.yukonga.miuix.kmp.squircle.squircleClip
 import top.yukonga.miuix.kmp.theme.MiuixTheme
+import top.yukonga.miuix.kmp.utils.SinkFeedback
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -27,14 +29,7 @@ fun SearchScreen(
     val results by viewModel.searchResults.collectAsStateWithLifecycle()
 
     Column(modifier = Modifier.fillMaxSize()) {
-        Spacer(modifier = Modifier.height(48.dp))
-
-        Text(
-            text = "搜索",
-            style = MiuixTheme.textStyles.title1,
-            color = MiuixTheme.colorScheme.onBackground,
-            modifier = Modifier.padding(horizontal = 16.dp),
-        )
+        TopAppBar(title = "搜索")
 
         Spacer(modifier = Modifier.height(16.dp))
 
@@ -89,7 +84,11 @@ fun SearchScreen(
                     Row(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .clickable { onSongClick(song.id) }
+                            .clickable(
+                                interactionSource = remember { MutableInteractionSource() },
+                                indication = SinkFeedback(sinkAmount = 0.85f, animationSpec = spring(dampingRatio = 0.99f, stiffness = 986.96f)),
+                                onClick = { onSongClick(song.id) },
+                            )
                             .padding(horizontal = 16.dp, vertical = 10.dp),
                         verticalAlignment = Alignment.CenterVertically,
                         horizontalArrangement = Arrangement.spacedBy(12.dp),
@@ -98,7 +97,7 @@ fun SearchScreen(
                             coil.compose.AsyncImage(
                                 model = java.io.File(song.albumArtUri),
                                 contentDescription = null,
-                                modifier = Modifier.size(36.dp).clip(RoundedCornerShape(6.dp)),
+                                modifier = Modifier.size(36.dp).squircleClip(cornerRadius = 6.dp),
                                 contentScale = androidx.compose.ui.layout.ContentScale.Crop,
                             )
                         } else {

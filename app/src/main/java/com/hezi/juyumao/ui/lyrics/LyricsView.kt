@@ -3,12 +3,14 @@ package com.hezi.juyumao.ui.lyrics
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.*
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.lazy.rememberLazyListState
 import top.yukonga.miuix.kmp.basic.Text
 import top.yukonga.miuix.kmp.theme.MiuixTheme
+import top.yukonga.miuix.kmp.utils.SinkFeedback
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -162,7 +164,14 @@ fun LyricsView(
                         this.scaleX = scale
                         this.scaleY = scale
                     }
-                    .clickable(enabled = onLineClick != null && line.timeMs > 0) {
+                    .clickable(
+                        interactionSource = remember { MutableInteractionSource() },
+                        indication = SinkFeedback(
+                            sinkAmount = 0.85f,
+                            animationSpec = spring(dampingRatio = 0.99f, stiffness = 986.96f),
+                        ),
+                        enabled = onLineClick != null && line.timeMs > 0,
+                    ) {
                         onLineClick?.invoke(line.timeMs)
                     }
                     .padding(horizontal = 28.dp, vertical = if (isCurrent) 10.dp else 5.dp),

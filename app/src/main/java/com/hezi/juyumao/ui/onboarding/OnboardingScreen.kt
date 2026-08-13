@@ -16,12 +16,12 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
 import top.yukonga.miuix.kmp.basic.*
 import top.yukonga.miuix.kmp.icon.MiuixIcons
 import top.yukonga.miuix.kmp.icon.extended.*
+import top.yukonga.miuix.kmp.squircle.squircleBackground
 import top.yukonga.miuix.kmp.theme.MiuixTheme
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -267,9 +267,9 @@ private fun FeatureCard(icon: androidx.compose.ui.graphics.vector.ImageVector, t
             Box(
                 modifier = Modifier
                     .size(44.dp)
-                    .background(
+                    .squircleBackground(
                         color = com.hezi.juyumao.ui.theme.LocalExtendedColors.current.hiResGold.copy(alpha = 0.15f),
-                        shape = RoundedCornerShape(10.dp),
+                        cornerRadius = 10.dp,
                     ),
                 contentAlignment = Alignment.Center,
             ) {
@@ -374,9 +374,9 @@ private fun OnboardingPage4(
                     Row(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .background(
+                            .squircleBackground(
                                 color = Color.White.copy(alpha = 0.06f),
-                                shape = RoundedCornerShape(10.dp),
+                                cornerRadius = 10.dp,
                             )
                             .padding(horizontal = 12.dp, vertical = 10.dp),
                         verticalAlignment = Alignment.CenterVertically,
