@@ -3,6 +3,11 @@
 -keep class com.hierynomus.smbj.** { *; }
 -keep class org.bouncycastle.** { *; }
 
+# smbj 传递依赖 mbassador 事件总线：SMBEventBus 用反射分发事件，
+# R8 混淆后 ReflectiveHandlerInvocation 构造签名失配 → SMBClient 构造抛 RuntimeException → 全部 SMB 连接失败
+-keep class net.engio.mbassy.** { *; }
+-keep class net.engio.mbassy.bus.** { *; }
+
 # Miuix (MIUI UI 库，反射/序列化使用)
 -keep class top.yukonga.miuix.** { *; }
 

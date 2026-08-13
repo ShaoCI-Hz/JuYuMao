@@ -5,6 +5,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.hezi.juyumao.data.local.db.dao.SongDao
 import com.hezi.juyumao.data.local.db.entity.SongEntity
+import com.hezi.juyumao.data.local.lyrics.LyricsManager
 import com.hezi.juyumao.data.local.metadata.BatchCacheState
 import com.hezi.juyumao.data.local.metadata.MetadataBatchProcessor
 import com.hezi.juyumao.data.repository.MetadataRepository
@@ -15,6 +16,8 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.sync.Semaphore
+import kotlinx.coroutines.sync.withPermit
 import javax.inject.Inject
 
 @HiltViewModel
@@ -22,6 +25,7 @@ class BrowseViewModel @Inject constructor(
     private val songDao: SongDao,
     private val metadataRepository: MetadataRepository,
     private val metadataBatchProcessor: MetadataBatchProcessor,
+    private val lyricsManager: LyricsManager,
 ) : ViewModel() {
 
     val allSongs: StateFlow<List<SongEntity>> = songDao.getAllSongs()
@@ -59,7 +63,16 @@ class BrowseViewModel @Inject constructor(
     /** 批量缓存进度 */
     val batchCacheState: StateFlow<BatchCacheState> = metadataBatchProcessor.state
 
-    /** 正在提取封面的 songId 集合（避免并发重复），失败后允许重试 */
+    /** 歌词加载并发限制（曲库列表多行同时加载歌词，SMB 需下载，避免 IO 风暴） */
+    private val lyricLoadSemaphore = Semaphore(3)
+
+    /** 加载歌曲歌词并返回"避开首尾"的歌词行（供列表 10 秒随机刷新一句） */
+    suspend fun loadLyricLines(song: SongEntity): List<String> = lyricLoadSemaphore.withPermit {
+        val data = lyricsManager.getLyrics(song) ?: return@withPermit emptyList()
+        val lines = data.lines.map { it.text }.filter { it.isNotBlank() }
+        if (lines.size <= 2) return@withPermit emptyList()
+        lines.drop(1).dropLast(1)
+    }    /** 正在提取封面的 songId 集合（避免并发重复），失败后允许重试 */
     private val artworkInFlight = MutableStateFlow<Set<Long>>(emptySet())
 
     /**

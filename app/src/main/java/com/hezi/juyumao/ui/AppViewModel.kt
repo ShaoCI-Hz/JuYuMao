@@ -86,8 +86,8 @@ class AppViewModel @Inject constructor(
     init {
         // 启动时自动重连已保存的 SMB 服务器
         autoReconnectSavedServers()
-        // 启动后延迟预热本地音乐缺失的封面（解决首次进入列表/专辑卡/播放页无图）
-        preheatLocalArtworks()
+        // 监听缺封面本地歌曲并自动预热：启动已有歌 + 手动扫描新歌都会自动加载封面
+        observeMissingArtworks()
         // 播放错误转发为全局提示
         viewModelScope.launch {
             playbackStateHolder.errorMessage.collect { msg ->
@@ -108,39 +108,60 @@ class AppViewModel @Inject constructor(
     }
 
     /**
-     * 启动后台预热本地音乐封面：本地扫描只记录基本标签不提取封面（albumArtUri 为空），
-     * 封面为播放时懒提取 → 首次打开列表/专辑卡/播放页全是占位图。
-     * 启动后延迟 3 秒批量提取（并发 8，每次启动最多 300 首、最新添加优先），
-     * 提取后写回数据库，各界面 Flow 自动刷新出图。
-     * SMB 歌曲封面由重连成功后的 MetadataBatchProcessor 批量缓存覆盖（此处不重复处理）。
+     * 监听缺封面本地歌曲并自动预热：数据库出现新的 albumArtUri 为空的 LOCAL 歌
+     * （启动已有歌 / 手动扫描新歌）都会触发封面提取，写回后各界面自动出图。
+     * 相比原"启动一次性预热"：重新扫描/新增歌曲后封面同样自动加载。
      */
-    private fun preheatLocalArtworks() {
+    private fun observeMissingArtworks() {
         viewModelScope.launch {
-            // 延迟：避让启动时的自动重连与首屏加载，避免启动风暴
-            kotlinx.coroutines.delay(3000)
-            val songs = songDao.getAllSongs().first()
-            val needArt = songs
-                .filter { it.source == "LOCAL" && it.albumArtUri.isNullOrEmpty() }
-                .sortedByDescending { it.addedAt }
-                .take(300)
-            if (needArt.isEmpty()) return@launch
-            Log.d("AppVM", "预热封面 ${needArt.size} 首本地歌曲")
-            // 并发 2 串批处理：并发过高会与 UI 抢 IO/CPU 导致启动卡顿（掉帧）
-            needArt.chunked(2).forEach { batch ->
-                batch.map { song ->
-                    async(Dispatchers.IO) {
-                        try {
-                            val enriched = metadataRepository.extractAndUpdateSong(song)
-                            if (enriched.albumArtUri != song.albumArtUri) songDao.update(enriched)
-                        } catch (e: kotlinx.coroutines.CancellationException) {
-                            throw e // 协程取消必须向上传播
-                        } catch (e: Exception) {
-                            Log.w("AppVM", "预热封面失败: ${song.title}", e)
-                        }
-                    }
-                }.awaitAll()
+            var lastIds = emptySet<Long>()
+            songDao.getAllSongs().collect { songs ->
+                val missing = songs
+                    .filter { it.source == "LOCAL" && it.albumArtUri.isNullOrEmpty() }
+                    .sortedByDescending { it.addedAt }
+                    .take(300)
+                val ids = missing.map { it.id }.toSet()
+                // 仅在"新增了缺封面歌曲"时触发；预热自身 update 使集合缩小，不会重复触发
+                if (ids.isNotEmpty() && !ids.all { it in lastIds }) {
+                    lastIds = ids
+                    preheatArtworks(missing)
+                } else {
+                    lastIds = ids
+                }
             }
-            Log.d("AppVM", "封面预热完成")
+        }
+    }
+
+    /** 封面预热防重入标志（viewModelScope 默认 Main，单线程访问安全） */
+    private var preheatRunning = false
+
+    /** 预热指定缺封面歌曲（并发 2 串批；进行中则跳过本轮，待下次触发补） */
+    private fun preheatArtworks(songs: List<SongEntity>) {
+        if (preheatRunning) return
+        preheatRunning = true
+        viewModelScope.launch {
+            try {
+                // 避让启动/扫描时的 IO 风暴
+                kotlinx.coroutines.delay(2000)
+                Log.d("AppVM", "预热封面 ${songs.size} 首本地歌曲")
+                songs.chunked(2).forEach { batch ->
+                    batch.map { song ->
+                        async(Dispatchers.IO) {
+                            try {
+                                val enriched = metadataRepository.extractAndUpdateSong(song)
+                                if (enriched.albumArtUri != song.albumArtUri) songDao.update(enriched)
+                            } catch (e: kotlinx.coroutines.CancellationException) {
+                                throw e // 协程取消必须向上传播
+                            } catch (e: Exception) {
+                                Log.w("AppVM", "预热封面失败: ${song.title}", e)
+                            }
+                        }
+                    }.awaitAll()
+                }
+                Log.d("AppVM", "封面预热完成")
+            } finally {
+                preheatRunning = false
+            }
         }
     }
 

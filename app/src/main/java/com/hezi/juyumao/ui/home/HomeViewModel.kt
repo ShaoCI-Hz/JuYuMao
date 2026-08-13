@@ -16,6 +16,7 @@ import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Semaphore
 import kotlinx.coroutines.sync.withPermit
+import kotlin.random.Random
 import java.time.LocalDateTime
 import javax.inject.Inject
 
@@ -56,6 +57,10 @@ class HomeViewModel @Inject constructor(
 
     /** 全量歌曲缓存（随机推荐的数据池，随数据库变化更新） */
     private var allSongs: List<SongEntity> = emptyList()
+
+    /** 首页歌词卡：随机歌曲的随机歌词行，每 10 秒刷新一句 */
+    private val _dailyLyric = MutableStateFlow<String?>(null)
+    val dailyLyric: StateFlow<String?> = _dailyLyric
 
     private var lastWeatherFetchDay: Long = -1
 
@@ -102,6 +107,18 @@ class HomeViewModel @Inject constructor(
             while (true) {
                 kotlinx.coroutines.delay(10_000)
                 if (allSongs.isNotEmpty()) _featuredSong.value = allSongs.random()
+            }
+        }
+        // 首页歌词卡：每 10 秒随机选一首歌、随机取一句中段歌词
+        viewModelScope.launch {
+            while (true) {
+                if (allSongs.isNotEmpty()) {
+                    val lines = loadLyricLines(allSongs.random())
+                    if (lines.isNotEmpty()) {
+                        _dailyLyric.value = lines[Random.nextInt(lines.size)]
+                    }
+                }
+                kotlinx.coroutines.delay(10_000)
             }
         }
         // 异步获取天气

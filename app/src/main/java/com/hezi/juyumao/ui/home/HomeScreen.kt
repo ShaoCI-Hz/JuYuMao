@@ -30,6 +30,8 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import coil.compose.AsyncImage
 import com.hezi.juyumao.data.local.db.entity.SongEntity
+import com.hezi.juyumao.ui.components.SongDetailDialog
+import com.hezi.juyumao.ui.components.SongListItem
 import top.yukonga.miuix.kmp.basic.*
 import top.yukonga.miuix.kmp.icon.MiuixIcons
 import top.yukonga.miuix.kmp.icon.extended.*
@@ -71,6 +73,7 @@ fun HomeScreen(
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val featuredSong by viewModel.featuredSong.collectAsStateWithLifecycle()
+    val dailyLyric by viewModel.dailyLyric.collectAsStateWithLifecycle()
     var showSleepTimer by remember { mutableStateOf(false) }
 
     // 最近播放歌词每 10 秒随机刷新一句（全局 tick，各歌独立随机）
@@ -115,7 +118,7 @@ fun HomeScreen(
         ) {
             // ═══ 每日一言（紧凑单行，紧跟标题）═══
             item {
-                DailyGreetingCard(dailyCard = uiState.dailyCard)
+                DailyLyricCard(lyric = dailyLyric)
             }
 
             // ═══ 第一行：动态推荐（左）+ 本地音乐 / NAS（右）═══
@@ -218,7 +221,7 @@ fun HomeScreen(
                     if (lyricLines.isEmpty()) null
                     else lyricLines[Random.nextInt(lyricLines.size)]
                 }
-                RecentSongListItem(
+                SongListItem(
                     song = song,
                     lyricLine = lyricLine,
                     onClick = { onNavigateToPlayer(song.id) },
@@ -405,9 +408,9 @@ private fun CompactActionCard(
     }
 }
 
-/** 每日一言（紧凑单行）：问候 + 引用，无天气；紧跟标题下方 */
+/** 歌词卡（紧凑单行）：随机歌曲的随机歌词，每 10 秒刷新；紧跟标题下方 */
 @Composable
-private fun DailyGreetingCard(dailyCard: DailyCardData) {
+private fun DailyLyricCard(lyric: String?) {
     Card(
         modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 2.dp),
         colors = CardDefaults.defaultColors(color = MiuixTheme.colorScheme.primary.copy(alpha = 0.08f)),
@@ -418,198 +421,18 @@ private fun DailyGreetingCard(dailyCard: DailyCardData) {
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(8.dp),
         ) {
-            Icon(Icons.Default.AutoAwesome, null, // miuix-icons 无对应，保留 material icon
+            Icon(MiuixIcons.Music, null,
                 tint = MiuixTheme.colorScheme.primary, modifier = Modifier.size(16.dp))
-            Text("${dailyCard.greeting}，${dailyCard.dateText}",
+            Text(lyric ?: "♪ 播放音乐，歌词将在此浮现",
                 style = MiuixTheme.textStyles.footnote1,
-                color = MiuixTheme.colorScheme.primary,
-                maxLines = 1)
-            Spacer(modifier = Modifier.width(4.dp))
-            Text(dailyCard.quote,
-                style = MiuixTheme.textStyles.footnote2,
-                color = MiuixTheme.colorScheme.onSurfaceSecondary,
+                color = if (lyric != null) MiuixTheme.colorScheme.primary
+                        else MiuixTheme.colorScheme.onSurfaceSecondary.copy(alpha = 0.7f),
                 maxLines = 1, overflow = TextOverflow.Ellipsis,
                 modifier = Modifier.weight(1f))
         }
     }
 }
 
-/** 最近播放列表项：左封面 + 中歌名/歌手-专辑/音质·格式·时长/歌词 + 右加号/竖三点 */
-@Composable
-private fun RecentSongListItem(
-    song: SongEntity,
-    lyricLine: String?,
-    onClick: () -> Unit,
-    onAddToPlaylist: () -> Unit,
-    onShowDetail: () -> Unit,
-) {
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .clickable(
-                interactionSource = remember { MutableInteractionSource() },
-                indication = SinkFeedback(
-                    sinkAmount = 0.85f,
-                    animationSpec = androidx.compose.animation.core.spring(dampingRatio = 0.99f, stiffness = 986.96f),
-                ),
-                onClick = onClick,
-            )
-            .padding(horizontal = 16.dp, vertical = 8.dp),
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(12.dp),
-    ) {
-        // 左：封面缩略图（52dp）
-        if (!song.albumArtUri.isNullOrEmpty()) {
-            AsyncImage(model = File(song.albumArtUri), contentDescription = null,
-                modifier = Modifier.size(52.dp).squircleClip(cornerRadius = 8.dp),
-                contentScale = ContentScale.Crop)
-        } else {
-            Box(modifier = Modifier.size(52.dp)
-                .squircleBackground(color = MiuixTheme.colorScheme.primary.copy(0.1f), cornerRadius = 8.dp),
-                contentAlignment = Alignment.Center) {
-                Icon(MiuixIcons.Music, null,
-                    tint = MiuixTheme.colorScheme.primary.copy(0.5f), modifier = Modifier.size(24.dp))
-            }
-        }
-        // 中：歌名 + 歌手-专辑 + 音质·格式·时长 + 歌词
-        Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
-            Text(song.title, style = MiuixTheme.textStyles.body1,
-                color = MiuixTheme.colorScheme.onSurface,
-                maxLines = 1, overflow = TextOverflow.Ellipsis)
-            // 歌手 - 专辑（未知的跳过，避免"未知艺术家 - 未知专辑"）
-            val artistAlbum = buildString {
-                if (song.artist.isNotBlank() && song.artist != SongEntity.UNKNOWN_ARTIST) append(song.artist)
-                if (song.album.isNotBlank() && song.album != SongEntity.UNKNOWN_ALBUM) {
-                    if (isNotEmpty()) append(" - ")
-                    append(song.album)
-                }
-            }
-            if (artistAlbum.isNotEmpty()) {
-                Text(artistAlbum, style = MiuixTheme.textStyles.footnote1,
-                    color = MiuixTheme.colorScheme.onSurfaceSecondary,
-                    maxLines = 1, overflow = TextOverflow.Ellipsis)
-            }
-            // 第三行：音质标识 · 文件格式 · 歌曲时长
-            val info = buildList {
-                qualityLabel(song)?.let { add(it) }
-                add(song.filePath.substringAfterLast('.', "").uppercase())
-                add(com.hezi.juyumao.ui.theme.FormatUtils.formatDuration(song.duration))
-            }
-            Text(info.joinToString(" · "), style = MiuixTheme.textStyles.footnote2,
-                color = MiuixTheme.colorScheme.onSurfaceSecondary.copy(alpha = 0.8f),
-                maxLines = 1, overflow = TextOverflow.Ellipsis)
-            // 第四行：随机歌词（每 10 秒刷新一句，无歌词则不占位）
-            if (lyricLine != null) {
-                Text("♪ $lyricLine", style = MiuixTheme.textStyles.footnote2,
-                    color = MiuixTheme.colorScheme.onSurfaceSecondary.copy(alpha = 0.7f),
-                    maxLines = 1, overflow = TextOverflow.Ellipsis)
-            }
-        }
-        // 右：加号（添加到歌单）+ 竖三点（歌曲详情）
-        Column(horizontalAlignment = Alignment.End, verticalArrangement = Arrangement.spacedBy(6.dp)) {
-            SmallIconButton(MiuixIcons.Add, "添加到歌单", onAddToPlaylist)
-            SmallIconButton(Icons.Default.MoreVert, "歌曲详情", onShowDetail) // miuix-icons 无竖三点，保留 material icon
-        }
-    }
-}
-
-/** 紧凑小图标按钮（32dp，带按压反馈） */
-@Composable
-private fun SmallIconButton(icon: ImageVector, contentDescription: String?, onClick: () -> Unit) {
-    Box(
-        modifier = Modifier
-            .size(32.dp)
-            .clickable(
-                interactionSource = remember { MutableInteractionSource() },
-                indication = SinkFeedback(
-                    sinkAmount = 0.85f,
-                    animationSpec = androidx.compose.animation.core.spring(dampingRatio = 0.99f, stiffness = 986.96f),
-                ),
-                onClick = onClick,
-            ),
-        contentAlignment = Alignment.Center,
-    ) {
-        Icon(icon, contentDescription,
-            tint = MiuixTheme.colorScheme.onSurfaceSecondary, modifier = Modifier.size(20.dp))
-    }
-}
-
-/** 歌曲详情弹窗：封面 + 歌名/歌手/专辑 + 完整信息键值行 */
-@Composable
-private fun SongDetailDialog(song: SongEntity, onDismiss: () -> Unit) {
-    OverlayDialog(show = true, title = "歌曲详情", onDismissRequest = onDismiss) {
-        Column(
-            modifier = Modifier.padding(start = 24.dp, end = 24.dp, bottom = 16.dp),
-            verticalArrangement = Arrangement.spacedBy(10.dp),
-        ) {
-            // 封面 + 歌名/歌手/专辑
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(14.dp),
-            ) {
-                if (!song.albumArtUri.isNullOrEmpty()) {
-                    AsyncImage(model = File(song.albumArtUri), contentDescription = null,
-                        modifier = Modifier.size(64.dp).squircleClip(cornerRadius = 12.dp),
-                        contentScale = ContentScale.Crop)
-                } else {
-                    Box(modifier = Modifier.size(64.dp)
-                        .squircleBackground(color = MiuixTheme.colorScheme.primary.copy(0.1f), cornerRadius = 12.dp),
-                        contentAlignment = Alignment.Center) {
-                        Icon(MiuixIcons.Music, null,
-                            tint = MiuixTheme.colorScheme.primary.copy(0.5f), modifier = Modifier.size(30.dp))
-                    }
-                }
-                Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(3.dp)) {
-                    Text(song.title, style = MiuixTheme.textStyles.body1,
-                        color = MiuixTheme.colorScheme.onSurface,
-                        maxLines = 1, overflow = TextOverflow.Ellipsis)
-                    Text(song.artist, style = MiuixTheme.textStyles.footnote1,
-                        color = MiuixTheme.colorScheme.onSurfaceSecondary, maxLines = 1)
-                    Text(song.album, style = MiuixTheme.textStyles.footnote1,
-                        color = MiuixTheme.colorScheme.onSurfaceSecondary, maxLines = 1)
-                }
-            }
-            // 分隔细线
-            Box(Modifier.fillMaxWidth().height(0.5.dp)
-                .background(MiuixTheme.colorScheme.onSurfaceSecondary.copy(alpha = 0.15f)))
-            // 信息键值行
-            DetailRow("格式", song.filePath.substringAfterLast('.', "").uppercase())
-            DetailRow("音质", qualityLabel(song) ?: "标准")
-            DetailRow("时长", com.hezi.juyumao.ui.theme.FormatUtils.formatDuration(song.duration))
-            if (song.sampleRate > 0) DetailRow("采样率", "${song.sampleRate / 1000.0}kHz".replace(".0", ""))
-            if (song.bitsPerSample > 0) DetailRow("位深", "${song.bitsPerSample}bit")
-            if (song.bitrate > 0) DetailRow("码率", "${(song.bitrate / 1000).coerceAtLeast(1)}kbps")
-            if (song.fileSize > 0) DetailRow("大小", com.hezi.juyumao.ui.theme.FormatUtils.formatFileSize(song.fileSize))
-            DetailRow("来源", if (song.source == "LOCAL") "本地音乐" else "NAS")
-            DetailRow("路径", song.filePath)
-        }
-    }
-}
-
-/** 详情键值行：左标签右值 */
-@Composable
-private fun DetailRow(label: String, value: String) {
-    Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(16.dp)) {
-        Text(label, style = MiuixTheme.textStyles.footnote1,
-            color = MiuixTheme.colorScheme.onSurfaceSecondary)
-        Spacer(modifier = Modifier.weight(1f))
-        Text(value, style = MiuixTheme.textStyles.footnote1,
-            color = MiuixTheme.colorScheme.onSurface,
-            maxLines = 1, overflow = TextOverflow.Ellipsis, modifier = Modifier.weight(1f))
-    }
-}
-
-/**
- * 音质标识：无损格式（FLAC/WAV/APE/AIFF）或高规格（采样率≥44.1k 且位深≥16）→ SQ；
- * 码率 ≥ 320kbps 的有损 → HQ；其余 → null（不显示）
- */
-private fun qualityLabel(song: SongEntity): String? {
-    val ext = song.filePath.substringAfterLast('.', "").uppercase()
-    val lossless = ext in setOf("FLAC", "WAV", "APE", "AIFF")
-    if (lossless || (song.sampleRate >= 44100 && song.bitsPerSample >= 16)) return "SQ"
-    if (song.bitrate >= 320_000) return "HQ"
-    return null
-}
 
 /** 快捷操作（紧凑宫格）：小图标 + 小字，垂直居中 */
 @Composable

@@ -38,7 +38,7 @@ data class BottomNavItem(
 // 目录用 FolderFill/Folder 区分选中态。
 val bottomNavItems = listOf(
     BottomNavItem(Screen.Home, "首页", MiuixIcons.Home, MiuixIcons.Home),
-    BottomNavItem(Screen.Browse, "目录", MiuixIcons.FolderFill, MiuixIcons.Folder),
+    BottomNavItem(Screen.Browse, "曲库", MiuixIcons.FolderFill, MiuixIcons.Folder),
     BottomNavItem(Screen.Player, "播放", MiuixIcons.Play, MiuixIcons.Play),
     BottomNavItem(Screen.Settings, "设置", MiuixIcons.Settings, MiuixIcons.Settings),
 )

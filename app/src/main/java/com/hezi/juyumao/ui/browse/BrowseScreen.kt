@@ -8,24 +8,44 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
-import top.yukonga.miuix.kmp.basic.*
-import top.yukonga.miuix.kmp.icon.MiuixIcons
-import top.yukonga.miuix.kmp.icon.extended.*
-import top.yukonga.miuix.kmp.squircle.squircleBackground
-import top.yukonga.miuix.kmp.squircle.squircleClip
-import top.yukonga.miuix.kmp.theme.MiuixTheme
-import top.yukonga.miuix.kmp.utils.SinkFeedback
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.PhoneAndroid
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.hezi.juyumao.data.local.db.entity.SongEntity
+import com.hezi.juyumao.ui.components.SongDetailDialog
+import com.hezi.juyumao.ui.components.SongListItem
+import kotlin.random.Random
+import kotlinx.coroutines.delay
+import top.yukonga.miuix.kmp.basic.*
+import top.yukonga.miuix.kmp.icon.MiuixIcons
+import top.yukonga.miuix.kmp.icon.extended.*
+import top.yukonga.miuix.kmp.squircle.squircleBackground
+import top.yukonga.miuix.kmp.theme.MiuixTheme
+import top.yukonga.miuix.kmp.utils.SinkFeedback
 
+/**
+ * 曲库页（v4.2 新布局）：
+ * ┌──────────────────────────────────┐
+ * │ 曲库（紧贴状态栏，同首页标题位置）      │
+ * ├──────────────────────────────────┤
+ * │ 🔍 胶囊搜索栏                       │
+ * ├──────────────────────────────────┤
+ * │ ♪ 全部音乐   N 首            ›    │
+ * │ 📱 本地音乐   N 首            ›    │
+ * │ ☁ NAS音乐    N 首            ›    │
+ * ├──────────────────────────────────┤
+ * │  （下方空置：歌单列表，待用户自建）     │
+ * └──────────────────────────────────┘
+ * 点入口进入对应歌曲列表（SongListItem 统一格式，歌词 10s 随机刷新）。
+ */
 @Composable
 fun BrowseScreen(
     onSongClick: (Long) -> Unit = {},
@@ -33,480 +53,247 @@ fun BrowseScreen(
     viewModel: BrowseViewModel = hiltViewModel(),
 ) {
     val allSongs by viewModel.allSongs.collectAsStateWithLifecycle()
-    val favorites by viewModel.favorites.collectAsStateWithLifecycle()
-    val albumNames by viewModel.albumNames.collectAsStateWithLifecycle()
-    val artistNames by viewModel.artistNames.collectAsStateWithLifecycle()
-    val genreNames by viewModel.genreNames.collectAsStateWithLifecycle()
-    val dimensionSongs by viewModel.dimensionSongs.collectAsStateWithLifecycle()
     val batchState by viewModel.batchCacheState.collectAsStateWithLifecycle()
-    var selectedTab by remember { mutableIntStateOf(0) }
 
-    // 维度浏览状态：-1=维度列表，否则为选中维度对应的歌曲列表
-    var dimensionType by remember { mutableStateOf("album") }
-    var dimensionName by remember { mutableStateOf<String?>(null) }
+    // 列表筛选：null=入口页，"all"/"local"/"smb"=对应歌曲列表
+    var listFilter by remember { mutableStateOf<String?>(null) }
 
-    val filteredSongs by remember {
-        derivedStateOf {
-            when (selectedTab) {
-                1 -> allSongs.filter { it.source == "LOCAL" }
-                2 -> allSongs.filter { it.source == "SMB" }
-                3 -> favorites
-                4 -> dimensionSongs
-                else -> allSongs
-            }
+    // 歌词每 10 秒随机刷新一句（全局 tick，各歌独立随机）
+    var lyricTick by remember { mutableIntStateOf(0) }
+    LaunchedEffect(Unit) {
+        while (true) {
+            delay(10_000)
+            lyricTick++
         }
     }
 
-    val localCount by remember { derivedStateOf { allSongs.count { it.source == "LOCAL" } } }
-    val smbCount by remember { derivedStateOf { allSongs.count { it.source == "SMB" } } }
-    val favoriteCount by remember { derivedStateOf { favorites.size } }
+    // 列表行操作弹窗状态
+    var addToPlaylistSong by remember { mutableStateOf<SongEntity?>(null) }
+    var detailSong by remember { mutableStateOf<SongEntity?>(null) }
 
-    Column(modifier = Modifier.fillMaxSize()) {
-        TopAppBar(
-            title = "浏览",
-            actions = {
-                // 搜索入口（悬浮底栏已无搜索 tab，移至目录页顶栏）
+    val localCount = allSongs.count { it.source == "LOCAL" }
+    val smbCount = allSongs.count { it.source == "SMB" }
+
+    if (listFilter == null) {
+        // ═══ 入口页 ═══
+        Column(modifier = Modifier.fillMaxSize()) {
+            // 标题（同首页"局域猫播放器"位置：statusBarsPadding + 4dp 顶部）
+            Row(
+                modifier = Modifier
+                    .statusBarsPadding()
+                    .fillMaxWidth()
+                    .padding(start = 16.dp, end = 4.dp, top = 4.dp, bottom = 4.dp),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Text("曲库", style = MiuixTheme.textStyles.title3,
+                    color = MiuixTheme.colorScheme.onBackground)
                 IconButton(onClick = onNavigateToSearch) {
                     Icon(MiuixIcons.Search, "搜索")
                 }
-            },
-        )
+            }
 
-        Spacer(modifier = Modifier.height(16.dp))
+            Spacer(modifier = Modifier.height(8.dp))
 
-        // Tabs（Miuix TabRow 可横向滚动，避免窄屏挤压）
-        val tabLabels = listOf(
-            "全部 ${allSongs.size}",
-            "本地 $localCount",
-            "NAS $smbCount",
-            "我喜欢 $favoriteCount",
-            "维度",
-        )
-        TabRow(
-            tabs = tabLabels,
-            selectedTabIndex = selectedTab,
-            onTabSelected = { selectedTab = it },
-            modifier = Modifier.fillMaxWidth(),
-        )
-
-        Spacer(modifier = Modifier.height(8.dp))
-
-        // 批量缓存进度条
-        if (batchState.isRunning) {
+            // 胶囊搜索栏
             Card(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(horizontal = 16.dp, vertical = 4.dp),
-                colors = CardDefaults.defaultColors(color = MiuixTheme.colorScheme.primaryContainer),
-                cornerRadius = 10.dp,
-            ) {
-                Column(modifier = Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
-                    Text(
-                        text = "正在缓存歌曲元数据... (${batchState.processed}/${batchState.total})",
-                        style = MiuixTheme.textStyles.footnote1,
-                        color = MiuixTheme.colorScheme.onPrimaryContainer,
-                    )
-                    if (batchState.currentSongTitle.isNotEmpty()) {
-                        Text(
-                            text = batchState.currentSongTitle,
-                            style = MiuixTheme.textStyles.footnote2,
-                            color = MiuixTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.7f),
-                            maxLines = 1,
-                            overflow = TextOverflow.Ellipsis,
-                        )
-                    }
-                    LinearProgressIndicator(
-                        progress = batchState.progress,
-                        modifier = Modifier.fillMaxWidth(),
-                    )
-                }
-            }
-        }
-
-        // 维度浏览（专辑/艺术家/流派）
-        if (selectedTab == 4) {
-            DimensionBrowse(
-                albumNames = albumNames,
-                artistNames = artistNames,
-                genreNames = genreNames,
-                dimensionSongs = dimensionSongs,
-                dimensionType = dimensionType,
-                dimensionName = dimensionName,
-                onTypeChange = { type ->
-                    dimensionType = type
-                    dimensionName = null
-                },
-                onSelectDimension = { name ->
-                    dimensionName = name
-                    viewModel.loadDimensionSongs(dimensionType, name)
-                },
-                onBackToList = { dimensionName = null },
-                onSongClick = onSongClick,
-            )
-        } else if (filteredSongs.isEmpty()) {
-            Box(
-                modifier = Modifier.fillMaxSize(),
-                contentAlignment = Alignment.Center,
-            ) {
-                Column(
-                    horizontalAlignment = Alignment.CenterHorizontally,
-                    verticalArrangement = Arrangement.spacedBy(12.dp),
-                ) {
-                    Icon(
-                        imageVector = MiuixIcons.Music, // 原 MusicOff，miuix-icons 无对应，改用 Music
-                        contentDescription = null,
-                        tint = MiuixTheme.colorScheme.onSurfaceSecondary,
-                        modifier = Modifier.size(64.dp),
-                    )
-                    Text(
-                        text = if (allSongs.isEmpty()) "暂无歌曲，请先扫描本地音乐"
-                               else "当前筛选无结果",
-                        style = MiuixTheme.textStyles.body1,
-                        color = MiuixTheme.colorScheme.onSurfaceSecondary,
-                    )
-                }
-            }
-        } else {
-            LazyColumn(
-                modifier = Modifier.fillMaxSize(),
-                contentPadding = PaddingValues(bottom = 160.dp),
-            ) {
-                items(
-                    items = filteredSongs,
-                    key = { it.id },
-                ) { song ->
-                    SongListItem(
-                        song = song,
-                        onClick = { onSongClick(song.id) },
-                        onEnsureArtwork = { viewModel.ensureArtwork(song) },
-                        onToggleFavorite = { viewModel.toggleFavorite(song) },
-                        isProcessing = batchState.isRunning && batchState.currentSongId == song.id,
-                    )
-                }
-            }
-        }
-    }
-}
-
-@Composable
-private fun SongListItem(
-    song: SongEntity,
-    onClick: () -> Unit,
-    onEnsureArtwork: () -> Unit = {},
-    onToggleFavorite: () -> Unit = {},
-    isProcessing: Boolean = false,
-) {
-    // 列表项显示时按需提取 NAS 封面
-    LaunchedEffect(song.id, song.albumArtUri) {
-        if (song.albumArtUri.isNullOrEmpty()) onEnsureArtwork()
-    }
-
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .clickable(
-                interactionSource = remember { MutableInteractionSource() },
-                indication = SinkFeedback(sinkAmount = 0.85f, animationSpec = spring(dampingRatio = 0.99f, stiffness = 986.96f)),
-                onClick = onClick,
-            )
-            .padding(horizontal = 16.dp, vertical = 10.dp),
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(12.dp),
-    ) {
-        // 缩略图（有封面显示封面，无封面显示音符图标）
-        if (!song.albumArtUri.isNullOrEmpty()) {
-            coil.compose.AsyncImage(
-                model = java.io.File(song.albumArtUri),
-                contentDescription = null,
-                modifier = Modifier
-                    .size(48.dp)
-                    .squircleClip(cornerRadius = 8.dp),
-                contentScale = androidx.compose.ui.layout.ContentScale.Crop,
-            )
-        } else {
-            Box(
-                modifier = Modifier
-                    .size(48.dp)
-                    .squircleBackground(
-                        color = MiuixTheme.colorScheme.primary.copy(alpha = 0.15f),
-                        cornerRadius = 8.dp,
+                    .padding(horizontal = 16.dp)
+                    .clickable(
+                        interactionSource = remember { MutableInteractionSource() },
+                        indication = SinkFeedback(
+                            sinkAmount = 0.85f,
+                            animationSpec = spring(dampingRatio = 0.99f, stiffness = 986.96f),
+                        ),
+                        onClick = onNavigateToSearch,
                     ),
-                contentAlignment = Alignment.Center,
+                colors = CardDefaults.defaultColors(color = MiuixTheme.colorScheme.surfaceVariant),
+                cornerRadius = 24.dp,
             ) {
-                Icon(
-                    imageVector = MiuixIcons.Music, // 原 MusicNote
-                    contentDescription = null,
-                    tint = MiuixTheme.colorScheme.primary,
-                    modifier = Modifier.size(24.dp),
-                )
-            }
-        }
-
-        // 歌曲信息
-        Column(modifier = Modifier.weight(1f)) {
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(6.dp),
-            ) {
-                Text(
-                    text = song.title,
-                    style = MiuixTheme.textStyles.body1,
-                    color = MiuixTheme.colorScheme.onSurface,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis,
-                    modifier = Modifier.weight(1f, fill = false),
-                )
-                // Hi-Res / DSD 徽标（金色）
-                if (song.isHiRes) {
-                    val isDsd = song.filePath.substringAfterLast('.', "").lowercase() in setOf("dsf", "dff")
-                    HiResBadge(text = if (isDsd) "DSD" else "Hi-Res")
-                }
-            }
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(6.dp),
-            ) {
-                // 来源标签
-                val (tagText, tagColor) = if (song.source == "LOCAL") {
-                    "本地" to MiuixTheme.colorScheme.primary
-                } else {
-                    "NAS" to MiuixTheme.colorScheme.primary
-                }
-                Box(
-                    modifier = Modifier
-                        .squircleBackground(
-                            color = tagColor.copy(alpha = 0.15f),
-                            cornerRadius = 4.dp,
-                        )
-                        .padding(horizontal = 4.dp, vertical = 1.dp),
+                Row(
+                    modifier = Modifier.fillMaxWidth().padding(horizontal = 14.dp, vertical = 10.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
                 ) {
-                    Text(
-                        text = tagText,
-                        style = MiuixTheme.textStyles.footnote2,
-                        color = tagColor,
-                    )
-                }
-                Text(
-                    text = "${song.artist.ifEmpty { "未知艺术家" }} · ${song.album.ifEmpty { "未知专辑" }}",
-                    style = MiuixTheme.textStyles.footnote1,
-                    color = MiuixTheme.colorScheme.onSurfaceSecondary,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis,
-                )
-            }
-        }
-
-        // 时长或处理中指示
-        if (isProcessing) {
-            Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(2.dp)) {
-                CircularProgressIndicator(modifier = Modifier.size(16.dp), strokeWidth = 2.dp)
-                Text("缓存中", style = MiuixTheme.textStyles.footnote2,
-                    color = MiuixTheme.colorScheme.onSurfaceSecondary)
-            }
-        } else {
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                Text(
-                    text = formatDuration(song.duration),
-                    style = MiuixTheme.textStyles.footnote2,
-                    color = MiuixTheme.colorScheme.onSurfaceSecondary,
-                )
-                // 收藏按钮
-                IconButton(onClick = onToggleFavorite, modifier = Modifier.size(32.dp)) {
-                    Icon(
-                        imageVector = MiuixIcons.FavoritesFill, // 原 Favorite/FavoriteBorder（未收藏时用 tint 半透明区分）
-                        contentDescription = if (song.isFavorite) "取消收藏" else "收藏",
-                        tint = if (song.isFavorite) MiuixTheme.colorScheme.primary
-                               else MiuixTheme.colorScheme.onSurfaceSecondary.copy(alpha = 0.5f),
-                        modifier = Modifier.size(18.dp),
-                    )
+                    Icon(MiuixIcons.Search, null,
+                        tint = MiuixTheme.colorScheme.onSurfaceSecondary, modifier = Modifier.size(18.dp))
+                    Text("搜索歌曲", style = MiuixTheme.textStyles.body2,
+                        color = MiuixTheme.colorScheme.onSurfaceSecondary)
                 }
             }
-        }
-    }
-}
 
-/** 毫秒 → m:ss（原私有实现已合并入 FormatUtils；此处零值回退空串保持原行为） */
-private fun formatDuration(ms: Long): String =
-    com.hezi.juyumao.ui.theme.FormatUtils.formatDuration(ms, zeroText = "")
+            Spacer(modifier = Modifier.height(12.dp))
 
-/** 金色 Hi-Res / DSD 徽标 */
-@Composable
-private fun HiResBadge(text: String) {
-    Box(
-        modifier = Modifier
-            .squircleBackground(
-                color = com.hezi.juyumao.ui.theme.LocalExtendedColors.current.hiResGold.copy(alpha = 0.15f),
-                cornerRadius = 4.dp,
+            // 三个音乐入口
+            LibraryEntryRow(
+                icon = { Icon(MiuixIcons.Music, null, tint = MiuixTheme.colorScheme.primary, modifier = Modifier.size(22.dp)) },
+                title = "全部音乐",
+                subtitle = "${allSongs.size} 首",
+                onClick = { listFilter = "all" },
             )
-            .padding(horizontal = 4.dp, vertical = 1.dp),
-    ) {
-        Text(
-            text = text,
-            style = MiuixTheme.textStyles.footnote2,
-            color = com.hezi.juyumao.ui.theme.LocalExtendedColors.current.hiResGold,
-        )
-    }
-}
-
-/** 维度浏览：专辑/艺术家/流派 三级（列表 → 详情歌曲） */
-@Composable
-private fun DimensionBrowse(
-    albumNames: List<String>,
-    artistNames: List<String>,
-    genreNames: List<String>,
-    dimensionSongs: List<SongEntity>,
-    dimensionType: String,
-    dimensionName: String?,
-    onTypeChange: (String) -> Unit,
-    onSelectDimension: (String) -> Unit,
-    onBackToList: () -> Unit,
-    onSongClick: (Long) -> Unit,
-) {
-    // 维度类型切换
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(horizontal = 16.dp, vertical = 4.dp),
-        horizontalArrangement = Arrangement.spacedBy(8.dp),
-    ) {
-        listOf("album" to "专辑", "artist" to "艺术家", "genre" to "流派").forEach { (type, label) ->
-            MiuixFilterChip(
-                selected = dimensionType == type,
-                onClick = { onTypeChange(type) },
-                label = label,
+            LibraryEntryRow(
+                icon = { Icon(Icons.Default.PhoneAndroid, null, // miuix-icons 无对应，保留 material icon
+                    tint = MiuixTheme.colorScheme.primary, modifier = Modifier.size(22.dp)) },
+                title = "本地音乐",
+                subtitle = "$localCount 首",
+                onClick = { listFilter = "local" },
             )
-        }
-    }
+            LibraryEntryRow(
+                icon = { Icon(MiuixIcons.CloudFill, null, tint = MiuixTheme.colorScheme.primary, modifier = Modifier.size(22.dp)) },
+                title = "NAS音乐",
+                subtitle = "$smbCount 首",
+                onClick = { listFilter = "smb" },
+            )
 
-    Spacer(modifier = Modifier.height(8.dp))
-
-    if (dimensionName == null) {
-        // 维度名称列表
-        val names = when (dimensionType) {
-            "artist" -> artistNames
-            "genre" -> genreNames
-            else -> albumNames
-        }
-        if (names.isEmpty()) {
-            Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                Text("暂无数据", style = MiuixTheme.textStyles.body1,
-                    color = MiuixTheme.colorScheme.onSurfaceSecondary)
-            }
-        } else {
-            LazyColumn(modifier = Modifier.fillMaxSize(), contentPadding = PaddingValues(bottom = 160.dp)) {
-                items(names, key = { it }) { name ->
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .clickable(
-                                interactionSource = remember { MutableInteractionSource() },
-                                indication = SinkFeedback(sinkAmount = 0.85f, animationSpec = spring(dampingRatio = 0.99f, stiffness = 986.96f)),
-                                onClick = { onSelectDimension(name) },
-                            )
-                            .padding(horizontal = 16.dp, vertical = 14.dp),
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(12.dp),
-                    ) {
-                        Icon(
-                            imageVector = when (dimensionType) {
-                                "artist" -> MiuixIcons.Contacts // 原 Person
-                                "genre" -> MiuixIcons.Music // 原 MusicNote
-                                else -> MiuixIcons.Album
-                            },
-                            contentDescription = null,
-                            tint = MiuixTheme.colorScheme.primary,
-                            modifier = Modifier.size(24.dp),
-                        )
-                        Text(name, style = MiuixTheme.textStyles.body1,
-                            color = MiuixTheme.colorScheme.onSurface, modifier = Modifier.weight(1f))
-                        Icon(MiuixIcons.ChevronForward, null, // 原 KeyboardArrowRight
-                            tint = MiuixTheme.colorScheme.onSurfaceSecondary, modifier = Modifier.size(20.dp))
-                    }
-                }
-            }
+            // 下方空置：歌单列表（待用户自建歌单后填充）
+            Spacer(modifier = Modifier.weight(1f))
+            Text("歌单功能即将上线", style = MiuixTheme.textStyles.footnote1,
+                color = MiuixTheme.colorScheme.onSurfaceSecondary.copy(alpha = 0.6f),
+                modifier = Modifier.align(Alignment.CenterHorizontally).padding(bottom = 120.dp))
         }
     } else {
-        // 维度歌曲列表
+        // ═══ 歌曲列表页 ═══
+        val songs = when (listFilter) {
+            "local" -> allSongs.filter { it.source == "LOCAL" }
+            "smb" -> allSongs.filter { it.source == "SMB" }
+            else -> allSongs
+        }
+        val title = when (listFilter) {
+            "local" -> "本地音乐"
+            "smb" -> "NAS音乐"
+            else -> "全部音乐"
+        }
         Column(modifier = Modifier.fillMaxSize()) {
-            SmallTopAppBar(
-                title = dimensionName,
-                subtitle = "${dimensionSongs.size} 首",
-                navigationIcon = {
-                    IconButton(onClick = onBackToList) {
-                        Icon(MiuixIcons.Back, "返回")
+            // 列表页顶栏（返回 + 标题，同样紧贴状态栏）
+            Row(
+                modifier = Modifier
+                    .statusBarsPadding()
+                    .fillMaxWidth()
+                    .padding(start = 4.dp, end = 4.dp, top = 4.dp, bottom = 4.dp),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                IconButton(onClick = { listFilter = null }) { Icon(MiuixIcons.Back, "返回") }
+                Text(title, style = MiuixTheme.textStyles.title3,
+                    color = MiuixTheme.colorScheme.onBackground)
+                Spacer(modifier = Modifier.size(48.dp))
+            }
+
+            // 批量缓存进度条（NAS 重连后元数据缓存中显示）
+            if (batchState.isRunning) {
+                Card(
+                    modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 4.dp),
+                    colors = CardDefaults.defaultColors(color = MiuixTheme.colorScheme.primaryContainer),
+                    cornerRadius = 10.dp,
+                ) {
+                    Column(modifier = Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                        Text("正在缓存歌曲元数据... (${batchState.processed}/${batchState.total})",
+                            style = MiuixTheme.textStyles.footnote1,
+                            color = MiuixTheme.colorScheme.onPrimaryContainer)
+                        LinearProgressIndicator(progress = batchState.progress, modifier = Modifier.fillMaxWidth())
                     }
-                },
-            )
-            if (dimensionSongs.isEmpty()) {
+                }
+            }
+
+            if (songs.isEmpty()) {
                 Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                    Text("暂无歌曲", style = MiuixTheme.textStyles.body1,
+                    Text(if (allSongs.isEmpty()) "暂无歌曲，请先扫描本地音乐" else "暂无歌曲",
+                        style = MiuixTheme.textStyles.body1,
                         color = MiuixTheme.colorScheme.onSurfaceSecondary)
                 }
             } else {
-                LazyColumn(modifier = Modifier.fillMaxSize(), contentPadding = PaddingValues(bottom = 160.dp)) {
-                    items(dimensionSongs, key = { it.id }) { song ->
-                        Row(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .clickable(
-                                    interactionSource = remember { MutableInteractionSource() },
-                                    indication = SinkFeedback(sinkAmount = 0.85f, animationSpec = spring(dampingRatio = 0.99f, stiffness = 986.96f)),
-                                    onClick = { onSongClick(song.id) },
-                                )
-                                .padding(horizontal = 16.dp, vertical = 10.dp),
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.spacedBy(12.dp),
-                        ) {
-                            if (!song.albumArtUri.isNullOrEmpty()) {
-                                coil.compose.AsyncImage(
-                                    model = java.io.File(song.albumArtUri),
-                                    contentDescription = null,
-                                    modifier = Modifier.size(40.dp).squircleClip(cornerRadius = 6.dp),
-                                    contentScale = androidx.compose.ui.layout.ContentScale.Crop,
-                                )
-                            } else {
-                                Icon(MiuixIcons.Music, null, // 原 MusicNote
-                                    tint = MiuixTheme.colorScheme.primary, modifier = Modifier.size(24.dp))
-                            }
-                            Column(modifier = Modifier.weight(1f)) {
-                                Text(song.title, style = MiuixTheme.textStyles.body1,
-                                    color = MiuixTheme.colorScheme.onSurface, maxLines = 1,
-                                    overflow = TextOverflow.Ellipsis)
-                                Text(song.artist, style = MiuixTheme.textStyles.footnote1,
-                                    color = MiuixTheme.colorScheme.onSurfaceSecondary, maxLines = 1,
-                                    overflow = TextOverflow.Ellipsis)
-                            }
-                            Text(
-                                text = formatDuration(song.duration),
-                                style = MiuixTheme.textStyles.footnote2,
-                                color = MiuixTheme.colorScheme.onSurfaceSecondary,
-                            )
+                LazyColumn(
+                    modifier = Modifier.fillMaxSize(),
+                    contentPadding = PaddingValues(bottom = 120.dp, top = 4.dp),
+                ) {
+                    items(songs, key = { it.id }) { song ->
+                        // 封面按需补提取（NAS 歌未预热时）
+                        LaunchedEffect(song.id, song.albumArtUri) {
+                            if (song.albumArtUri.isNullOrEmpty()) viewModel.ensureArtwork(song)
                         }
+                        // 歌词行：加载一次（key=song.id），每 10s tick 随机换一句
+                        val lyricLines by produceState<List<String>>(emptyList(), song.id) {
+                            value = viewModel.loadLyricLines(song)
+                        }
+                        val lyricLine = remember(lyricLines, lyricTick) {
+                            if (lyricLines.isEmpty()) null
+                            else lyricLines[Random.nextInt(lyricLines.size)]
+                        }
+                        SongListItem(
+                            song = song,
+                            lyricLine = lyricLine,
+                            onClick = { onSongClick(song.id) },
+                            onAddToPlaylist = { addToPlaylistSong = song },
+                            onShowDetail = { detailSong = song },
+                        )
                     }
                 }
             }
         }
     }
+
+    // 列表行：添加到歌单弹窗
+    addToPlaylistSong?.let { song ->
+        com.hezi.juyumao.ui.playlist.AddToPlaylistDialog(
+            song = song,
+            onDismiss = { addToPlaylistSong = null },
+        )
+    }
+    // 列表行：歌曲详情弹窗
+    detailSong?.let { song ->
+        SongDetailDialog(
+            song = song,
+            onDismiss = { detailSong = null },
+        )
+    }
 }
 
-/** Miuix 风格的筛选 Chip（替代 M3 FilterChip） */
+/** 曲库入口行：图标 + 标题 + 数量 + 右箭头 */
 @Composable
-private fun MiuixFilterChip(selected: Boolean, onClick: () -> Unit, label: String) {
-    Box(
+private fun LibraryEntryRow(
+    icon: @Composable () -> Unit,
+    title: String,
+    subtitle: String,
+    onClick: () -> Unit,
+) {
+    Card(
         modifier = Modifier
-            .clip(RoundedCornerShape(50))
-            .background(if (selected) MiuixTheme.colorScheme.primaryContainer else MiuixTheme.colorScheme.surfaceVariant)
+            .fillMaxWidth()
+            .padding(horizontal = 16.dp, vertical = 4.dp)
             .clickable(
                 interactionSource = remember { MutableInteractionSource() },
-                indication = SinkFeedback(sinkAmount = 0.85f, animationSpec = spring(dampingRatio = 0.99f, stiffness = 986.96f)),
+                indication = SinkFeedback(
+                    sinkAmount = 0.85f,
+                    animationSpec = spring(dampingRatio = 0.99f, stiffness = 986.96f),
+                ),
                 onClick = onClick,
-            )
-            .padding(horizontal = 14.dp, vertical = 8.dp),
+            ),
+        colors = CardDefaults.defaultColors(color = MiuixTheme.colorScheme.surfaceVariant),
+        cornerRadius = 14.dp,
     ) {
-        Text(
-            text = label,
-            style = MiuixTheme.textStyles.body2,
-            color = if (selected) MiuixTheme.colorScheme.onPrimaryContainer else MiuixTheme.colorScheme.onSurfaceSecondary,
-        )
+        Row(
+            modifier = Modifier.fillMaxWidth().padding(horizontal = 14.dp, vertical = 12.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(14.dp),
+        ) {
+            // 图标底
+            Box(
+                modifier = Modifier.size(40.dp)
+                    .squircleBackground(color = MiuixTheme.colorScheme.primary.copy(0.1f), cornerRadius = 10.dp),
+                contentAlignment = Alignment.Center,
+            ) {
+                icon()
+            }
+            Column(modifier = Modifier.weight(1f)) {
+                Text(title, style = MiuixTheme.textStyles.body1,
+                    color = MiuixTheme.colorScheme.onSurface, maxLines = 1)
+                Spacer(modifier = Modifier.height(2.dp))
+                Text(subtitle, style = MiuixTheme.textStyles.footnote1,
+                    color = MiuixTheme.colorScheme.onSurfaceSecondary, maxLines = 1)
+            }
+            Icon(MiuixIcons.ChevronForward, null,
+                tint = MiuixTheme.colorScheme.onSurfaceSecondary, modifier = Modifier.size(20.dp))
+        }
     }
 }
