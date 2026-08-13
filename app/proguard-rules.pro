@@ -35,6 +35,9 @@
 
 # smbj/jcifs 引用的 GSS（Kerberos）类在 Android 平台不存在，抑制 R8 缺类警告
 -dontwarn org.ietf.jgss.**
+# jcifs-ng 可选功能（Kerberos/JAAS 认证、HTTP NTLM 过滤器）在 Android 平台不存在且运行时不触达
+-dontwarn javax.security.auth.**
+-dontwarn javax.servlet.**
 
 # Kotlin Coroutines
 -keepnames class kotlinx.coroutines.** { *; }
