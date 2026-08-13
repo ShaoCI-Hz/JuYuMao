@@ -12,10 +12,10 @@ import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.QueueMusic
 import androidx.compose.material.icons.filled.*
-import androidx.compose.material3.FilledTonalButton
 import top.yukonga.miuix.kmp.basic.*
+import top.yukonga.miuix.kmp.icon.MiuixIcons
+import top.yukonga.miuix.kmp.icon.extended.*
 import top.yukonga.miuix.kmp.theme.MiuixTheme
 import androidx.compose.runtime.*
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -69,10 +69,10 @@ fun HomeScreen(
             Spacer(modifier = Modifier.height(24.dp))
             Row(modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp),
                 horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                StatCard(Icons.Default.MusicNote, "${uiState.songCount}", "歌曲", Modifier.weight(1f))
-                StatCard(Icons.Default.Album, "${uiState.albumCount}", "专辑", Modifier.weight(1f))
-                StatCard(Icons.Default.Person, "${uiState.artistCount}", "艺术家", Modifier.weight(1f))
-                StatCard(Icons.Default.PlayCircle, "${uiState.playCount}", "播放", Modifier.weight(1f))
+                StatCard(MiuixIcons.Music, "${uiState.songCount}", "歌曲", Modifier.weight(1f)) // 原 MusicNote
+                StatCard(MiuixIcons.Album, "${uiState.albumCount}", "专辑", Modifier.weight(1f))
+                StatCard(MiuixIcons.Contacts, "${uiState.artistCount}", "艺术家", Modifier.weight(1f)) // 原 Person
+                StatCard(MiuixIcons.Play, "${uiState.playCount}", "播放", Modifier.weight(1f)) // 原 PlayCircle
             }
         }
 
@@ -85,7 +85,7 @@ fun HomeScreen(
                 Row(modifier = Modifier.fillMaxWidth().padding(16.dp),
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                    Icon(Icons.Default.PhoneAndroid, null, tint = MiuixTheme.colorScheme.primary, modifier = Modifier.size(28.dp))
+                    Icon(Icons.Default.PhoneAndroid, null, tint = MiuixTheme.colorScheme.primary, modifier = Modifier.size(28.dp)) // miuix-icons 无对应，保留 material icon
                     Column(modifier = Modifier.weight(1f)) {
                         Text("本地音乐", style = MiuixTheme.textStyles.title4, color = MiuixTheme.colorScheme.onSurface)
                         Text(
@@ -97,7 +97,13 @@ fun HomeScreen(
                     if (uiState.isScanning) {
                         CircularProgressIndicator(Modifier.size(24.dp), strokeWidth = 2.dp)
                     } else {
-                        FilledTonalButton(onClick = { permissionLauncher.launch(audioPermission) }) { Text("扫描") }
+                        Button(
+                            onClick = { permissionLauncher.launch(audioPermission) },
+                            colors = ButtonDefaults.buttonColors(
+                                color = MiuixTheme.colorScheme.secondaryContainer,
+                                contentColor = MiuixTheme.colorScheme.onSecondaryContainer,
+                            ),
+                        ) { Text("扫描") }
                     }
                 }
             }
@@ -112,7 +118,7 @@ fun HomeScreen(
                 Row(modifier = Modifier.fillMaxWidth().padding(16.dp),
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                    Icon(Icons.Default.Cloud, null, tint = MiuixTheme.colorScheme.primary, modifier = Modifier.size(28.dp))
+                    Icon(MiuixIcons.CloudFill, null, tint = MiuixTheme.colorScheme.primary, modifier = Modifier.size(28.dp)) // 原 Cloud
                     Column(modifier = Modifier.weight(1f)) {
                         Text("NAS 连接", style = MiuixTheme.textStyles.title4, color = MiuixTheme.colorScheme.onSurface)
                         Text(
@@ -122,7 +128,13 @@ fun HomeScreen(
                                     else MiuixTheme.colorScheme.onSurfaceSecondary,
                         )
                     }
-                    FilledTonalButton(onClick = onNavigateToSmb) {
+                    Button(
+                        onClick = onNavigateToSmb,
+                        colors = ButtonDefaults.buttonColors(
+                            color = MiuixTheme.colorScheme.secondaryContainer,
+                            contentColor = MiuixTheme.colorScheme.onSecondaryContainer,
+                        ),
+                    ) {
                         Text(if (uiState.nasConnected) "管理" else "连接")
                     }
                 }
@@ -137,16 +149,16 @@ fun HomeScreen(
             Spacer(modifier = Modifier.height(12.dp))
             Row(modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp),
                 horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                QuickActionCard(Icons.Default.Equalizer, "均衡器", onNavigateToEqualizer, Modifier.weight(1f))
-                QuickActionCard(Icons.Default.Timer, "定时关闭", { showSleepTimer = true }, Modifier.weight(1f))
-                QuickActionCard(Icons.AutoMirrored.Filled.QueueMusic, "播放队列", onNavigateToQueue, Modifier.weight(1f))
+                QuickActionCard(MiuixIcons.Tune, "均衡器", onNavigateToEqualizer, Modifier.weight(1f)) // 原 Equalizer
+                QuickActionCard(MiuixIcons.Timer, "定时关闭", { showSleepTimer = true }, Modifier.weight(1f))
+                QuickActionCard(MiuixIcons.Playlist, "播放队列", onNavigateToQueue, Modifier.weight(1f)) // 原 QueueMusic
             }
             Spacer(modifier = Modifier.height(12.dp))
             Row(modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp),
                 horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                QuickActionCard(Icons.AutoMirrored.Filled.QueueMusic, "歌单", onNavigateToPlaylist, Modifier.weight(1f))
-                QuickActionCard(Icons.Default.BarChart, "听歌报告", onNavigateToStatistics, Modifier.weight(1f))
-                QuickActionCard(Icons.Default.Storage, "缓存管理", { }, Modifier.weight(1f))
+                QuickActionCard(MiuixIcons.Playlist, "歌单", onNavigateToPlaylist, Modifier.weight(1f)) // 原 QueueMusic
+                QuickActionCard(Icons.Default.BarChart, "听歌报告", onNavigateToStatistics, Modifier.weight(1f)) // miuix-icons 无对应，保留 material icon
+                QuickActionCard(MiuixIcons.Folder, "缓存管理", { }, Modifier.weight(1f)) // 原 Storage
             }
         }
 
@@ -163,7 +175,7 @@ fun HomeScreen(
                         verticalAlignment = Alignment.CenterVertically) {
                         Row(verticalAlignment = Alignment.CenterVertically,
                             horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                            Icon(Icons.Default.AutoAwesome, null,
+                            Icon(Icons.Default.AutoAwesome, null, // miuix-icons 无对应，保留 material icon
                                 tint = MiuixTheme.colorScheme.primary, modifier = Modifier.size(20.dp))
                             Text("${dailyCard.greeting}，${dailyCard.dateText}",
                                 style = MiuixTheme.textStyles.subtitle, color = MiuixTheme.colorScheme.primary)
@@ -228,7 +240,7 @@ private fun RecentSongCard(song: SongEntity, onClick: () -> Unit) {
                 Box(modifier = Modifier.size(80.dp)
                     .background(MiuixTheme.colorScheme.primary.copy(0.1f), RoundedCornerShape(8.dp)),
                     contentAlignment = Alignment.Center) {
-                    Icon(Icons.Default.MusicNote, null,
+                    Icon(MiuixIcons.Music, null, // 原 MusicNote
                         tint = MiuixTheme.colorScheme.primary.copy(0.5f), modifier = Modifier.size(32.dp))
                 }
             }

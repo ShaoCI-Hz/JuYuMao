@@ -7,9 +7,9 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.MusicNote
-import androidx.compose.material3.Icon
+import top.yukonga.miuix.kmp.basic.Icon
+import top.yukonga.miuix.kmp.icon.MiuixIcons
+import top.yukonga.miuix.kmp.icon.extended.*
 import top.yukonga.miuix.kmp.theme.MiuixTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -80,7 +80,7 @@ fun AlbumArtPager(
                 contentAlignment = Alignment.Center,
             ) {
                 Icon(
-                    Icons.Default.MusicNote, null,
+                    MiuixIcons.Music, null,
                     modifier = Modifier.size(80.dp),
                     tint = Color.White.copy(alpha = 0.5f),
                 )

@@ -6,12 +6,9 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.ui.draw.clip
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Favorite
-import androidx.compose.material.icons.filled.FavoriteBorder
-import androidx.compose.material.icons.filled.MusicNote
-import androidx.compose.material.icons.filled.Search
 import top.yukonga.miuix.kmp.basic.*
+import top.yukonga.miuix.kmp.icon.MiuixIcons
+import top.yukonga.miuix.kmp.icon.extended.*
 import top.yukonga.miuix.kmp.theme.MiuixTheme
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -51,7 +48,7 @@ fun SearchScreen(
             label = "搜索歌曲、艺术家、专辑...",
             leadingIcon = {
                 Icon(
-                    imageVector = Icons.Default.Search,
+                    imageVector = MiuixIcons.Search,
                     contentDescription = null,
                 )
             },
@@ -106,7 +103,7 @@ fun SearchScreen(
                             )
                         } else {
                             Icon(
-                                imageVector = Icons.Default.MusicNote,
+                                imageVector = MiuixIcons.Music,
                                 contentDescription = null,
                                 tint = MiuixTheme.colorScheme.primary,
                                 modifier = Modifier.size(24.dp),
@@ -134,7 +131,8 @@ fun SearchScreen(
                             modifier = Modifier.size(32.dp),
                         ) {
                             Icon(
-                                imageVector = if (song.isFavorite) Icons.Default.Favorite else Icons.Default.FavoriteBorder,
+                                // miuix-icons 无空心版 Favorites，未收藏态用半透明区分
+                                imageVector = MiuixIcons.FavoritesFill,
                                 contentDescription = if (song.isFavorite) "取消收藏" else "收藏",
                                 tint = if (song.isFavorite) MiuixTheme.colorScheme.primary
                                        else MiuixTheme.colorScheme.onSurfaceSecondary,

@@ -5,11 +5,9 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.filled.Delete
-import androidx.compose.material.icons.filled.MusicNote
 import top.yukonga.miuix.kmp.basic.*
+import top.yukonga.miuix.kmp.icon.MiuixIcons
+import top.yukonga.miuix.kmp.icon.extended.*
 import top.yukonga.miuix.kmp.theme.MiuixTheme
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -40,7 +38,7 @@ fun QueueScreen(
         ) {
             IconButton(onClick = onBack) {
                 Icon(
-                    imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                    imageVector = MiuixIcons.Back,
                     contentDescription = "返回",
                 )
             }
@@ -50,7 +48,7 @@ fun QueueScreen(
             )
             IconButton(onClick = { viewModel.clearQueue() }) {
                 Icon(
-                    imageVector = Icons.Default.Delete,
+                    imageVector = MiuixIcons.Delete,
                     contentDescription = "清空",
                 )
             }
@@ -84,7 +82,7 @@ fun QueueScreen(
                         horizontalArrangement = Arrangement.spacedBy(12.dp),
                     ) {
                         Icon(
-                            imageVector = Icons.Default.MusicNote,
+                            imageVector = MiuixIcons.Music,
                             contentDescription = null,
                             tint = if (isCurrent) MiuixTheme.colorScheme.primary
                                    else MiuixTheme.colorScheme.onSurfaceSecondary,

@@ -6,11 +6,8 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.automirrored.filled.QueueMusic
-import androidx.compose.material.icons.filled.*
-import androidx.compose.material3.FilledTonalButton
+import top.yukonga.miuix.kmp.icon.MiuixIcons
+import top.yukonga.miuix.kmp.icon.extended.*
 import top.yukonga.miuix.kmp.theme.MiuixTheme
 import top.yukonga.miuix.kmp.basic.*
 import top.yukonga.miuix.kmp.overlay.*
@@ -63,7 +60,7 @@ fun PlaylistScreen(
                 modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp),
                 verticalAlignment = Alignment.CenterVertically,
             ) {
-                IconButton(onClick = onBack) { Icon(Icons.AutoMirrored.Filled.ArrowBack, "返回") }
+                IconButton(onClick = onBack) { Icon(MiuixIcons.Back, "返回") }
                 Text(
                     text = "歌单",
                     style = MiuixTheme.textStyles.title1,
@@ -71,7 +68,7 @@ fun PlaylistScreen(
                     modifier = Modifier.weight(1f),
                 )
                 IconButton(onClick = { showCreateDialog = true }) {
-                    Icon(Icons.Default.Add, "新建歌单")
+                    Icon(MiuixIcons.Add, "新建歌单")
                 }
             }
             Spacer(modifier = Modifier.height(16.dp))
@@ -80,7 +77,7 @@ fun PlaylistScreen(
                 Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                     Column(horizontalAlignment = Alignment.CenterHorizontally,
                         verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                        Icon(Icons.AutoMirrored.Filled.QueueMusic, null,
+                        Icon(MiuixIcons.Playlist, null,
                             tint = MiuixTheme.colorScheme.onSurfaceSecondary, modifier = Modifier.size(56.dp))
                         Text("还没有歌单，点击右上角 + 新建", style = MiuixTheme.textStyles.body1,
                             color = MiuixTheme.colorScheme.onSurfaceSecondary)
@@ -104,7 +101,7 @@ fun PlaylistScreen(
                                         RoundedCornerShape(8.dp)),
                                 contentAlignment = Alignment.Center,
                             ) {
-                                Icon(Icons.AutoMirrored.Filled.QueueMusic, null,
+                                Icon(MiuixIcons.Playlist, null,
                                     tint = MiuixTheme.colorScheme.primary, modifier = Modifier.size(24.dp))
                             }
                             Column(modifier = Modifier.weight(1f)) {
@@ -115,10 +112,10 @@ fun PlaylistScreen(
                                     color = MiuixTheme.colorScheme.onSurfaceSecondary)
                             }
                             IconButton(onClick = { renameTarget = item.playlist }) {
-                                Icon(Icons.Default.Edit, "重命名", tint = MiuixTheme.colorScheme.onSurfaceSecondary)
+                                Icon(MiuixIcons.Edit, "重命名", tint = MiuixTheme.colorScheme.onSurfaceSecondary)
                             }
                             IconButton(onClick = { deleteTarget = item.playlist }) {
-                                Icon(Icons.Default.Delete, "删除", tint = MiuixTheme.colorScheme.error)
+                                Icon(MiuixIcons.Delete, "删除", tint = MiuixTheme.colorScheme.error)
                             }
                         }
                     }
@@ -200,7 +197,7 @@ private fun PlaylistDetail(
             modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp),
             verticalAlignment = Alignment.CenterVertically,
         ) {
-            IconButton(onClick = onBack) { Icon(Icons.AutoMirrored.Filled.ArrowBack, "返回") }
+            IconButton(onClick = onBack) { Icon(MiuixIcons.Back, "返回") }
             Column(modifier = Modifier.weight(1f)) {
                 Text(playlist.name, style = MiuixTheme.textStyles.title2,
                     color = MiuixTheme.colorScheme.onBackground, maxLines = 1,
@@ -209,18 +206,22 @@ private fun PlaylistDetail(
                     color = MiuixTheme.colorScheme.onSurfaceSecondary)
             }
             IconButton(onClick = { showRename = true }) {
-                Icon(Icons.Default.Edit, "重命名")
+                Icon(MiuixIcons.Edit, "重命名")
             }
         }
 
         // 整单播放按钮
         Row(modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 8.dp)) {
-            FilledTonalButton(
+            Button(
                 onClick = onPlayAll,
                 enabled = songs.isNotEmpty(),
                 modifier = Modifier.fillMaxWidth(),
+                colors = ButtonDefaults.buttonColors(
+                    color = MiuixTheme.colorScheme.secondaryContainer,
+                    contentColor = MiuixTheme.colorScheme.onSecondaryContainer,
+                ),
             ) {
-                Icon(Icons.Default.PlayArrow, null)
+                Icon(MiuixIcons.Play, null)
                 Spacer(Modifier.width(8.dp))
                 Text("播放全部")
             }
@@ -247,7 +248,7 @@ private fun PlaylistDetail(
                                 modifier = Modifier.size(40.dp).clip(RoundedCornerShape(6.dp)),
                                 contentScale = ContentScale.Crop)
                         } else {
-                            Icon(Icons.Default.MusicNote, null, tint = MiuixTheme.colorScheme.primary,
+                            Icon(MiuixIcons.Music, null, tint = MiuixTheme.colorScheme.primary,
                                 modifier = Modifier.size(24.dp))
                         }
                         Column(modifier = Modifier.weight(1f)) {
@@ -259,7 +260,7 @@ private fun PlaylistDetail(
                                 overflow = TextOverflow.Ellipsis)
                         }
                         IconButton(onClick = { onRemoveSong(song.id) }) {
-                            Icon(Icons.Default.RemoveCircleOutline, "移除", tint = MiuixTheme.colorScheme.onSurfaceSecondary)
+                            Icon(MiuixIcons.Remove, "移除", tint = MiuixTheme.colorScheme.onSurfaceSecondary)
                         }
                     }
                 }
@@ -349,7 +350,7 @@ fun AddToPlaylistDialog(
                         verticalAlignment = Alignment.CenterVertically,
                         horizontalArrangement = Arrangement.spacedBy(8.dp),
                     ) {
-                        Icon(Icons.AutoMirrored.Filled.QueueMusic, null,
+                        Icon(MiuixIcons.Playlist, null,
                             tint = MiuixTheme.colorScheme.primary, modifier = Modifier.size(20.dp))
                         Text(item.playlist.name, style = MiuixTheme.textStyles.body1,
                             color = MiuixTheme.colorScheme.onSurface)

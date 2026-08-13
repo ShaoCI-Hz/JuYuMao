@@ -1,15 +1,12 @@
 package com.hezi.juyumao.ui.navigation
 
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Folder
-import androidx.compose.material.icons.filled.Home
-import androidx.compose.material.icons.filled.Search
-import androidx.compose.material.icons.filled.Settings
-import androidx.compose.material.icons.outlined.Folder
-import androidx.compose.material.icons.outlined.Home
-import androidx.compose.material.icons.outlined.Search
-import androidx.compose.material.icons.outlined.Settings
 import androidx.compose.ui.graphics.vector.ImageVector
+import top.yukonga.miuix.kmp.icon.MiuixIcons
+import top.yukonga.miuix.kmp.icon.extended.Folder
+import top.yukonga.miuix.kmp.icon.extended.FolderFill
+import top.yukonga.miuix.kmp.icon.extended.Home
+import top.yukonga.miuix.kmp.icon.extended.Search
+import top.yukonga.miuix.kmp.icon.extended.Settings
 
 sealed class Screen(val route: String) {
     data object Home : Screen("home")
@@ -36,9 +33,11 @@ data class BottomNavItem(
     val unselectedIcon: ImageVector,
 )
 
+// 底栏图标换 MiuixIcons（MIUI 线性图标）；miuix 无双态图标，Home/Search/Settings 选中未选共用，
+// 浏览用 FolderFill/Folder 区分选中态。
 val bottomNavItems = listOf(
-    BottomNavItem(Screen.Home, "首页", Icons.Filled.Home, Icons.Outlined.Home),
-    BottomNavItem(Screen.Browse, "浏览", Icons.Filled.Folder, Icons.Outlined.Folder),
-    BottomNavItem(Screen.Search, "搜索", Icons.Filled.Search, Icons.Outlined.Search),
-    BottomNavItem(Screen.Settings, "设置", Icons.Filled.Settings, Icons.Outlined.Settings),
+    BottomNavItem(Screen.Home, "首页", MiuixIcons.Home, MiuixIcons.Home),
+    BottomNavItem(Screen.Browse, "浏览", MiuixIcons.FolderFill, MiuixIcons.Folder),
+    BottomNavItem(Screen.Search, "搜索", MiuixIcons.Search, MiuixIcons.Search),
+    BottomNavItem(Screen.Settings, "设置", MiuixIcons.Settings, MiuixIcons.Settings),
 )

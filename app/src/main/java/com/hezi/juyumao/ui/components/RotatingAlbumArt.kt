@@ -5,9 +5,9 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.MusicNote
-import androidx.compose.material3.Icon
+import top.yukonga.miuix.kmp.basic.Icon
+import top.yukonga.miuix.kmp.icon.MiuixIcons
+import top.yukonga.miuix.kmp.icon.extended.*
 import top.yukonga.miuix.kmp.theme.MiuixTheme
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -97,7 +97,7 @@ fun RotatingAlbumArt(
             )
         } else {
             Icon(
-                imageVector = Icons.Default.MusicNote,
+                imageVector = MiuixIcons.Music,
                 contentDescription = "专辑封面",
                 tint = MiuixTheme.colorScheme.primary.copy(alpha = 0.5f),
                 modifier = Modifier.size(size * 0.4f),

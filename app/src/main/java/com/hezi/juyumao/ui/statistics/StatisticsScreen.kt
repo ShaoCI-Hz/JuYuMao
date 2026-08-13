@@ -6,10 +6,9 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.filled.*
 import top.yukonga.miuix.kmp.basic.*
+import top.yukonga.miuix.kmp.icon.MiuixIcons
+import top.yukonga.miuix.kmp.icon.extended.*
 import top.yukonga.miuix.kmp.theme.MiuixTheme
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -38,11 +37,11 @@ fun StatisticsScreen(
             modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp),
             verticalAlignment = Alignment.CenterVertically,
         ) {
-            IconButton(onClick = onBack) { Icon(Icons.AutoMirrored.Filled.ArrowBack, "返回") }
+            IconButton(onClick = onBack) { Icon(MiuixIcons.Back, "返回") }
             Text("听歌报告", style = MiuixTheme.textStyles.title1,
                 color = MiuixTheme.colorScheme.onBackground, modifier = Modifier.weight(1f))
             IconButton(onClick = { viewModel.refresh() }) {
-                Icon(Icons.Default.Refresh, "刷新")
+                Icon(MiuixIcons.Refresh, "刷新")
             }
         }
 
@@ -97,7 +96,7 @@ fun StatisticsScreen(
                                     modifier = Modifier.size(40.dp).clip(RoundedCornerShape(6.dp)),
                                     contentScale = androidx.compose.ui.layout.ContentScale.Crop)
                             } else {
-                                Icon(Icons.Default.MusicNote, null,
+                                Icon(MiuixIcons.Music, null,
                                     tint = MiuixTheme.colorScheme.primary, modifier = Modifier.size(24.dp))
                             }
                             Column(modifier = Modifier.weight(1f)) {
@@ -135,7 +134,7 @@ fun StatisticsScreen(
                                         RoundedCornerShape(8.dp)),
                                 contentAlignment = Alignment.Center,
                             ) {
-                                Icon(Icons.Default.Person, null,
+                                Icon(MiuixIcons.Contacts, null,
                                     tint = MiuixTheme.colorScheme.primary, modifier = Modifier.size(20.dp))
                             }
                             Text(artist, style = MiuixTheme.textStyles.body1,

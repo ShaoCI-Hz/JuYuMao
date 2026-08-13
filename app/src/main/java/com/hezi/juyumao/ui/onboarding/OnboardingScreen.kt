@@ -19,9 +19,9 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
-import androidx.compose.material3.ButtonDefaults
-import androidx.compose.material3.OutlinedButton
 import top.yukonga.miuix.kmp.basic.*
+import top.yukonga.miuix.kmp.icon.MiuixIcons
+import top.yukonga.miuix.kmp.icon.extended.*
 import top.yukonga.miuix.kmp.theme.MiuixTheme
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -183,7 +183,7 @@ private fun OnboardingPage1() {
                 contentAlignment = Alignment.Center,
             ) {
                 Icon(
-                    Icons.Default.MusicNote,
+                    MiuixIcons.Music,
                     contentDescription = null,
                     tint = com.hezi.juyumao.ui.theme.LocalExtendedColors.current.hiResGold,
                     modifier = Modifier.size(56.dp),
@@ -235,7 +235,7 @@ private fun OnboardingPage2() {
             modifier = Modifier.padding(bottom = 24.dp),
         )
         AnimatedEntrance(delayMs = 100) {
-            FeatureCard(Icons.Default.Cloud, "NAS 直连串流", "SMB 协议直连，免拷贝在线播放")
+            FeatureCard(MiuixIcons.CloudFill, "NAS 直连串流", "SMB 协议直连，免拷贝在线播放")
         }
         Spacer(modifier = Modifier.height(12.dp))
         AnimatedEntrance(delayMs = 250) {
@@ -247,7 +247,7 @@ private fun OnboardingPage2() {
         }
         Spacer(modifier = Modifier.height(12.dp))
         AnimatedEntrance(delayMs = 400) {
-            FeatureCard(Icons.Default.Lyrics, "沉浸歌词与均衡器", "逐行歌词 + 专业均衡器与音效")
+            FeatureCard(MiuixIcons.NotesFill, "沉浸歌词与均衡器", "逐行歌词 + 专业均衡器与音效")
         }
     }
 }
@@ -383,7 +383,7 @@ private fun OnboardingPage4(
                         horizontalArrangement = Arrangement.spacedBy(10.dp),
                     ) {
                         Icon(
-                            if (granted) Icons.Default.CheckCircle else Icons.Default.RadioButtonUnchecked,
+                            if (granted) MiuixIcons.Ok else Icons.Default.RadioButtonUnchecked,
                             null,
                             tint = if (granted)
                                 com.hezi.juyumao.ui.theme.LocalExtendedColors.current.hiResGold
@@ -410,12 +410,15 @@ private fun OnboardingPage4(
 
         // 申请权限按钮
         AnimatedEntrance(delayMs = 250) {
-            OutlinedButton(
+            Button(
                 onClick = onRequestPermissions,
                 modifier = Modifier.fillMaxWidth(),
-                colors = ButtonDefaults.outlinedButtonColors(contentColor = Color.White),
+                colors = ButtonDefaults.buttonColors(
+                    color = Color.White.copy(alpha = 0.08f),
+                    contentColor = Color.White,
+                ),
             ) {
-                Icon(Icons.Default.Security, null, modifier = Modifier.size(18.dp))
+                Icon(MiuixIcons.Lock, null, modifier = Modifier.size(18.dp))
                 Spacer(Modifier.width(8.dp))
                 Text("授权权限（可跳过）")
             }
@@ -424,12 +427,15 @@ private fun OnboardingPage4(
 
         // 连接 NAS（次级）
         AnimatedEntrance(delayMs = 350) {
-            OutlinedButton(
+            Button(
                 onClick = onConnectNas,
                 modifier = Modifier.fillMaxWidth(),
-                colors = ButtonDefaults.outlinedButtonColors(contentColor = com.hezi.juyumao.ui.theme.LocalExtendedColors.current.hiResGold),
+                colors = ButtonDefaults.buttonColors(
+                    color = Color.White.copy(alpha = 0.08f),
+                    contentColor = com.hezi.juyumao.ui.theme.LocalExtendedColors.current.hiResGold,
+                ),
             ) {
-                Icon(Icons.Default.Cloud, null, modifier = Modifier.size(18.dp))
+                Icon(MiuixIcons.CloudFill, null, modifier = Modifier.size(18.dp))
                 Spacer(Modifier.width(8.dp))
                 Text("连接 NAS")
             }

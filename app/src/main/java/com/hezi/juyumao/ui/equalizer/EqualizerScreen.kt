@@ -6,11 +6,10 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material3.FilterChip
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -22,6 +21,8 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import top.yukonga.miuix.kmp.basic.*
+import top.yukonga.miuix.kmp.icon.MiuixIcons
+import top.yukonga.miuix.kmp.icon.extended.*
 import top.yukonga.miuix.kmp.theme.MiuixTheme
 
 @Composable
@@ -50,7 +51,7 @@ fun EqualizerScreen(
             verticalAlignment = Alignment.CenterVertically,
         ) {
             IconButton(onClick = onBack) {
-                Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "返回")
+                Icon(MiuixIcons.Back, contentDescription = "返回")
             }
             Text(
                 text = "均衡器",
@@ -114,19 +115,19 @@ fun EqualizerScreen(
                 horizontalArrangement = Arrangement.spacedBy(8.dp),
             ) {
                 items(state.presets) { preset ->
-                    FilterChip(
+                    MiuixFilterChip(
                         selected = currentPreset == preset.index.toInt(),
                         onClick = {
                             viewModel.usePreset(preset.index)
                         },
-                        label = { Text(preset.name) },
+                        label = preset.name,
                     )
                 }
                 item {
-                    FilterChip(
+                    MiuixFilterChip(
                         selected = currentPreset == -1,
                         onClick = { viewModel.usePreset(-1) },
-                        label = { Text("自定义") },
+                        label = "自定义",
                     )
                 }
             }
@@ -324,4 +325,22 @@ fun EqualizerScreen(
 private fun formatFrequency(milliHz: Int): String {
     val hz = milliHz / 1000
     return if (hz >= 1000) "${hz / 1000} kHz" else "$hz Hz"
+}
+
+/** Miuix 风格的筛选 Chip（替代 M3 FilterChip） */
+@Composable
+private fun MiuixFilterChip(selected: Boolean, onClick: () -> Unit, label: String) {
+    Box(
+        modifier = Modifier
+            .clip(RoundedCornerShape(50))
+            .background(if (selected) MiuixTheme.colorScheme.primaryContainer else MiuixTheme.colorScheme.surfaceVariant)
+            .clickable(onClick = onClick)
+            .padding(horizontal = 14.dp, vertical = 8.dp),
+    ) {
+        Text(
+            text = label,
+            style = MiuixTheme.textStyles.body2,
+            color = if (selected) MiuixTheme.colorScheme.onPrimaryContainer else MiuixTheme.colorScheme.onSurfaceSecondary,
+        )
+    }
 }

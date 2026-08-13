@@ -10,10 +10,8 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.MusicNote
-import androidx.compose.material.icons.filled.Pause
-import androidx.compose.material.icons.filled.PlayArrow
+import top.yukonga.miuix.kmp.icon.MiuixIcons
+import top.yukonga.miuix.kmp.icon.extended.*
 import top.yukonga.miuix.kmp.theme.MiuixTheme
 import top.yukonga.miuix.kmp.basic.*
 import androidx.compose.runtime.*
@@ -100,7 +98,7 @@ fun MiniPlayerBar(
                             contentAlignment = Alignment.Center,
                         ) {
                             Icon(
-                                imageVector = Icons.Default.MusicNote,
+                                imageVector = MiuixIcons.Music,
                                 contentDescription = null,
                                 tint = MiuixTheme.colorScheme.primary,
                                 modifier = Modifier.size(20.dp),
@@ -144,7 +142,7 @@ fun MiniPlayerBar(
                     modifier = Modifier.size(40.dp),
                 ) {
                     Icon(
-                        imageVector = if (isPlaying) Icons.Default.Pause else Icons.Default.PlayArrow,
+                        imageVector = if (isPlaying) MiuixIcons.Pause else MiuixIcons.Play,
                         contentDescription = if (isPlaying) "暂停" else "播放",
                         tint = MiuixTheme.colorScheme.primary,
                         modifier = Modifier.size(28.dp),

@@ -1,11 +1,10 @@
 package com.hezi.juyumao.ui.player.components
 
 import androidx.compose.foundation.layout.*
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.QueueMusic
-import androidx.compose.material.icons.filled.*
-import androidx.compose.material3.Icon
-import androidx.compose.material3.Text
+import top.yukonga.miuix.kmp.basic.Icon
+import top.yukonga.miuix.kmp.basic.Text
+import top.yukonga.miuix.kmp.icon.MiuixIcons
+import top.yukonga.miuix.kmp.icon.extended.*
 import top.yukonga.miuix.kmp.theme.MiuixTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
@@ -31,24 +30,24 @@ fun BottomFunctionBar(
         horizontalArrangement = Arrangement.SpaceEvenly,
     ) {
         BottomFuncButton(
-            icon = Icons.Default.Lyrics,
+            icon = MiuixIcons.NotesFill,
             label = "歌词",
             isActive = showLyrics,
             onClick = onLyricsClick,
         )
         BottomFuncButton(
-            icon = Icons.AutoMirrored.Filled.QueueMusic,
+            icon = MiuixIcons.Playlist,
             label = "队列",
             onClick = onQueueClick,
         )
         BottomFuncButton(
-            icon = if (isFavorite) Icons.Default.Favorite else Icons.Default.FavoriteBorder,
+            icon = MiuixIcons.FavoritesFill, // miuix-icons 无空心版，收藏态由 isActive 高亮区分
             label = "收藏",
             isActive = isFavorite,
             onClick = onFavoriteClick,
         )
         BottomFuncButton(
-            icon = Icons.Default.MoreVert,
+            icon = MiuixIcons.MoreCircle,
             label = "更多",
             onClick = onMoreClick,
         )

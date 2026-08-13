@@ -5,7 +5,9 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
-import androidx.compose.material3.Icon
+import top.yukonga.miuix.kmp.basic.Icon
+import top.yukonga.miuix.kmp.icon.MiuixIcons
+import top.yukonga.miuix.kmp.icon.extended.*
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -57,7 +59,7 @@ fun FullControlRow(
                 contentAlignment = Alignment.Center,
             ) {
                 Icon(
-                    imageVector = if (isPlaying) Icons.Default.Pause else Icons.Default.PlayArrow,
+                    imageVector = if (isPlaying) MiuixIcons.Pause else MiuixIcons.Play,
                     contentDescription = if (isPlaying) "暂停" else "播放",
                     tint = Color.Black, // 白色圆钮内的高对比前景色
                     modifier = Modifier.size(32.dp),
@@ -113,7 +115,7 @@ fun ImmersiveControlRow(
                 contentAlignment = Alignment.Center,
             ) {
                 Icon(
-                    imageVector = if (isPlaying) Icons.Default.Pause else Icons.Default.PlayArrow,
+                    imageVector = if (isPlaying) MiuixIcons.Pause else MiuixIcons.Play,
                     contentDescription = null,
                     tint = Color.Black, // 白色圆钮内的高对比前景色
                     modifier = Modifier.size(36.dp),

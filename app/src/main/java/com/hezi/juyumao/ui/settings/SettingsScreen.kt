@@ -4,7 +4,6 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowForwardIos
 import androidx.compose.material.icons.filled.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -15,6 +14,8 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.hezi.juyumao.ui.theme.ThemeMode
 import top.yukonga.miuix.kmp.basic.*
+import top.yukonga.miuix.kmp.icon.MiuixIcons
+import top.yukonga.miuix.kmp.icon.extended.*
 import top.yukonga.miuix.kmp.overlay.OverlayDialog
 import top.yukonga.miuix.kmp.theme.MiuixTheme
 
@@ -56,7 +57,7 @@ fun SettingsScreen(
         item {
             SettingsSection(title = "外观") {
                 SettingsItem(
-                    icon = Icons.Default.DarkMode,
+                    icon = MiuixIcons.Theme,
                     title = "主题模式",
                     subtitle = themeLabel,
                     onClick = { showThemeDialog = true },
@@ -68,7 +69,7 @@ fun SettingsScreen(
         item {
             SettingsSection(title = "NAS 连接") {
                 SettingsItem(
-                    icon = Icons.Default.Cloud,
+                    icon = MiuixIcons.CloudFill,
                     title = "SMB 服务器管理",
                     subtitle = "管理 NAS 连接",
                     onClick = onNavigateToSmb,
@@ -83,7 +84,7 @@ fun SettingsScreen(
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.spacedBy(16.dp),
                 ) {
-                    Icon(Icons.Default.Sync, null, tint = MiuixTheme.colorScheme.onSurface, modifier = Modifier.size(24.dp))
+                    Icon(MiuixIcons.Refresh, null, tint = MiuixTheme.colorScheme.onSurface, modifier = Modifier.size(24.dp))
                     Column(modifier = Modifier.weight(1f)) {
                         Text("自动连接", style = MiuixTheme.textStyles.body1,
                             color = MiuixTheme.colorScheme.onSurface)
@@ -100,7 +101,7 @@ fun SettingsScreen(
             val cacheThreads by viewModel.cacheThreads.collectAsStateWithLifecycle()
             SettingsSection(title = "存储") {
                 SettingsItem(
-                    icon = Icons.Default.Storage,
+                    icon = MiuixIcons.Folder,
                     title = "缓存管理",
                     subtitle = "管理 NAS 下载、封面、歌词缓存",
                     onClick = onNavigateToCache,
@@ -111,7 +112,7 @@ fun SettingsScreen(
                         .padding(horizontal = 16.dp, vertical = 8.dp),
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
-                    Icon(Icons.Default.Speed, null, tint = MiuixTheme.colorScheme.onSurface, modifier = Modifier.size(24.dp))
+                    Icon(Icons.Default.Speed, null, tint = MiuixTheme.colorScheme.onSurface, modifier = Modifier.size(24.dp)) // miuix-icons 无对应
                     Spacer(Modifier.width(16.dp))
                     Text("缓存线程数", style = MiuixTheme.textStyles.body1,
                         color = MiuixTheme.colorScheme.onSurface, modifier = Modifier.weight(1f))
@@ -142,7 +143,7 @@ fun SettingsScreen(
             val spectrumVisualizer by viewModel.spectrumVisualizer.collectAsStateWithLifecycle()
             SettingsSection(title = "音频") {
                 SettingsItem(
-                    icon = Icons.Default.Equalizer,
+                    icon = MiuixIcons.Tune,
                     title = "均衡器",
                     subtitle = "调节音频效果",
                     onClick = onNavigateToEqualizer,
@@ -156,7 +157,7 @@ fun SettingsScreen(
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.spacedBy(16.dp),
                 ) {
-                    Icon(Icons.Default.HighQuality, null, tint = MiuixTheme.colorScheme.onSurface, modifier = Modifier.size(24.dp))
+                    Icon(Icons.Default.HighQuality, null, tint = MiuixTheme.colorScheme.onSurface, modifier = Modifier.size(24.dp)) // miuix-icons 无对应
                     Column(modifier = Modifier.weight(1f)) {
                         Text("无缝播放", style = MiuixTheme.textStyles.body1,
                             color = MiuixTheme.colorScheme.onSurface)
@@ -172,7 +173,7 @@ fun SettingsScreen(
                         .padding(horizontal = 16.dp, vertical = 8.dp),
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
-                    Icon(Icons.Default.GraphicEq, null, tint = MiuixTheme.colorScheme.onSurface, modifier = Modifier.size(24.dp))
+                    Icon(MiuixIcons.Tune, null, tint = MiuixTheme.colorScheme.onSurface, modifier = Modifier.size(24.dp))
                     Spacer(Modifier.width(16.dp))
                     Text("交叉淡化", style = MiuixTheme.textStyles.body1,
                         color = MiuixTheme.colorScheme.onSurface, modifier = Modifier.weight(1f))
@@ -205,7 +206,7 @@ fun SettingsScreen(
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.spacedBy(16.dp),
                 ) {
-                    Icon(Icons.Default.Equalizer, null, tint = MiuixTheme.colorScheme.onSurface, modifier = Modifier.size(24.dp))
+                    Icon(MiuixIcons.Tune, null, tint = MiuixTheme.colorScheme.onSurface, modifier = Modifier.size(24.dp))
                     Column(modifier = Modifier.weight(1f)) {
                         Text("频谱可视化", style = MiuixTheme.textStyles.body1,
                             color = MiuixTheme.colorScheme.onSurface)
@@ -221,7 +222,7 @@ fun SettingsScreen(
                         .padding(horizontal = 16.dp, vertical = 8.dp),
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
-                    Icon(Icons.Default.Memory, null, tint = MiuixTheme.colorScheme.onSurface, modifier = Modifier.size(24.dp))
+                    Icon(Icons.Default.Memory, null, tint = MiuixTheme.colorScheme.onSurface, modifier = Modifier.size(24.dp)) // miuix-icons 无对应
                     Spacer(Modifier.width(16.dp))
                     Text("音频缓冲大小", style = MiuixTheme.textStyles.body1,
                         color = MiuixTheme.colorScheme.onSurface, modifier = Modifier.weight(1f))
@@ -259,7 +260,7 @@ fun SettingsScreen(
             val lyricsFontBold by viewModel.lyricsFontBold.collectAsStateWithLifecycle()
             SettingsSection(title = "歌词") {
                 SettingsItem(
-                    icon = Icons.Default.Lyrics,
+                    icon = MiuixIcons.NotesFill,
                     title = "歌词字体大小",
                     subtitle = "${lyricsFontSize.toInt()} sp",
                     onClick = { },
@@ -295,7 +296,7 @@ fun SettingsScreen(
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.spacedBy(16.dp),
                 ) {
-                    Icon(Icons.Default.FormatBold, null, tint = MiuixTheme.colorScheme.onSurface, modifier = Modifier.size(24.dp))
+                    Icon(Icons.Default.FormatBold, null, tint = MiuixTheme.colorScheme.onSurface, modifier = Modifier.size(24.dp)) // miuix-icons 无对应
                     Text("歌词加粗", style = MiuixTheme.textStyles.body1,
                         color = MiuixTheme.colorScheme.onSurface, modifier = Modifier.weight(1f))
                     Switch(checked = lyricsFontBold, onCheckedChange = { viewModel.setLyricsFontBold(it) })
@@ -307,13 +308,13 @@ fun SettingsScreen(
         item {
             SettingsSection(title = "关于") {
                 SettingsItem(
-                    icon = Icons.Default.Info,
+                    icon = MiuixIcons.Info,
                     title = "版本",
                     subtitle = com.hezi.juyumao.BuildConfig.VERSION_NAME,
                     onClick = { },
                 )
                 SettingsItem(
-                    icon = Icons.Default.Code,
+                    icon = Icons.Default.Code, // miuix-icons 无对应
                     title = "开源许可",
                     subtitle = "",
                     onClick = { },
@@ -325,7 +326,7 @@ fun SettingsScreen(
         item {
             SettingsSection(title = "引导") {
                 SettingsItem(
-                    icon = Icons.Default.TipsAndUpdates,
+                    icon = MiuixIcons.Info,
                     title = "重新查看引导",
                     subtitle = "再次展示首次使用引导",
                     onClick = { appViewModel.resetOnboarding() },
@@ -442,7 +443,7 @@ private fun SettingsItem(
             }
         }
         Icon(
-            imageVector = Icons.AutoMirrored.Filled.ArrowForwardIos,
+            imageVector = MiuixIcons.ChevronForward,
             contentDescription = null,
             tint = MiuixTheme.colorScheme.onSurfaceVariantSummary,
             modifier = Modifier.size(16.dp),
@@ -493,7 +494,7 @@ private fun AudioOutputInfo() {
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(16.dp),
     ) {
-        Icon(Icons.Default.GraphicEq, null, tint = MiuixTheme.colorScheme.onSurface, modifier = Modifier.size(24.dp))
+        Icon(MiuixIcons.Tune, null, tint = MiuixTheme.colorScheme.onSurface, modifier = Modifier.size(24.dp))
         Column(modifier = Modifier.weight(1f)) {
             Text(
                 text = "当前输出",

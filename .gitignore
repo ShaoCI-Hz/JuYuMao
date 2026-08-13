@@ -14,3 +14,4 @@ local.properties
 # Reasonix 本地运行时数据与权限记录，不入库
 /.reasonix
 /reasonix.toml
+*.apk

@@ -6,12 +6,9 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
-import androidx.compose.material.icons.filled.*
-import androidx.compose.material3.FilterChip
 import top.yukonga.miuix.kmp.basic.*
+import top.yukonga.miuix.kmp.icon.MiuixIcons
+import top.yukonga.miuix.kmp.icon.extended.*
 import top.yukonga.miuix.kmp.theme.MiuixTheme
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -150,7 +147,7 @@ fun BrowseScreen(
                     verticalArrangement = Arrangement.spacedBy(12.dp),
                 ) {
                     Icon(
-                        imageVector = Icons.Default.MusicOff,
+                        imageVector = MiuixIcons.Music, // 原 MusicOff，miuix-icons 无对应，改用 Music
                         contentDescription = null,
                         tint = MiuixTheme.colorScheme.onSurfaceSecondary,
                         modifier = Modifier.size(64.dp),
@@ -227,7 +224,7 @@ private fun SongListItem(
                 contentAlignment = Alignment.Center,
             ) {
                 Icon(
-                    imageVector = Icons.Default.MusicNote,
+                    imageVector = MiuixIcons.Music, // 原 MusicNote
                     contentDescription = null,
                     tint = MiuixTheme.colorScheme.primary,
                     modifier = Modifier.size(24.dp),
@@ -306,10 +303,10 @@ private fun SongListItem(
                 // 收藏按钮
                 IconButton(onClick = onToggleFavorite, modifier = Modifier.size(32.dp)) {
                     Icon(
-                        imageVector = if (song.isFavorite) Icons.Default.Favorite else Icons.Default.FavoriteBorder,
+                        imageVector = MiuixIcons.FavoritesFill, // 原 Favorite/FavoriteBorder（未收藏时用 tint 半透明区分）
                         contentDescription = if (song.isFavorite) "取消收藏" else "收藏",
                         tint = if (song.isFavorite) MiuixTheme.colorScheme.primary
-                               else MiuixTheme.colorScheme.onSurfaceSecondary,
+                               else MiuixTheme.colorScheme.onSurfaceSecondary.copy(alpha = 0.5f),
                         modifier = Modifier.size(18.dp),
                     )
                 }
@@ -368,10 +365,10 @@ private fun DimensionBrowse(
         horizontalArrangement = Arrangement.spacedBy(8.dp),
     ) {
         listOf("album" to "专辑", "artist" to "艺术家", "genre" to "流派").forEach { (type, label) ->
-            FilterChip(
+            MiuixFilterChip(
                 selected = dimensionType == type,
                 onClick = { onTypeChange(type) },
-                label = { Text(label) },
+                label = label,
             )
         }
     }
@@ -403,9 +400,9 @@ private fun DimensionBrowse(
                     ) {
                         Icon(
                             imageVector = when (dimensionType) {
-                                "artist" -> Icons.Default.Person
-                                "genre" -> Icons.Default.MusicNote
-                                else -> Icons.Default.Album
+                                "artist" -> MiuixIcons.Contacts // 原 Person
+                                "genre" -> MiuixIcons.Music // 原 MusicNote
+                                else -> MiuixIcons.Album
                             },
                             contentDescription = null,
                             tint = MiuixTheme.colorScheme.primary,
@@ -413,7 +410,7 @@ private fun DimensionBrowse(
                         )
                         Text(name, style = MiuixTheme.textStyles.body1,
                             color = MiuixTheme.colorScheme.onSurface, modifier = Modifier.weight(1f))
-                        Icon(Icons.AutoMirrored.Filled.KeyboardArrowRight, null,
+                        Icon(MiuixIcons.ChevronForward, null, // 原 KeyboardArrowRight
                             tint = MiuixTheme.colorScheme.onSurfaceSecondary, modifier = Modifier.size(20.dp))
                     }
                 }
@@ -428,7 +425,7 @@ private fun DimensionBrowse(
                 horizontalArrangement = Arrangement.spacedBy(8.dp),
             ) {
                 IconButton(onClick = onBackToList) {
-                    Icon(Icons.AutoMirrored.Filled.ArrowBack, "返回")
+                    Icon(MiuixIcons.Back, "返回")
                 }
                 Text(
                     text = dimensionName,
@@ -465,7 +462,7 @@ private fun DimensionBrowse(
                                     contentScale = androidx.compose.ui.layout.ContentScale.Crop,
                                 )
                             } else {
-                                Icon(Icons.Default.MusicNote, null,
+                                Icon(MiuixIcons.Music, null, // 原 MusicNote
                                     tint = MiuixTheme.colorScheme.primary, modifier = Modifier.size(24.dp))
                             }
                             Column(modifier = Modifier.weight(1f)) {
@@ -486,5 +483,23 @@ private fun DimensionBrowse(
                 }
             }
         }
+    }
+}
+
+/** Miuix 风格的筛选 Chip（替代 M3 FilterChip） */
+@Composable
+private fun MiuixFilterChip(selected: Boolean, onClick: () -> Unit, label: String) {
+    Box(
+        modifier = Modifier
+            .clip(RoundedCornerShape(50))
+            .background(if (selected) MiuixTheme.colorScheme.primaryContainer else MiuixTheme.colorScheme.surfaceVariant)
+            .clickable(onClick = onClick)
+            .padding(horizontal = 14.dp, vertical = 8.dp),
+    ) {
+        Text(
+            text = label,
+            style = MiuixTheme.textStyles.body2,
+            color = if (selected) MiuixTheme.colorScheme.onPrimaryContainer else MiuixTheme.colorScheme.onSurfaceSecondary,
+        )
     }
 }

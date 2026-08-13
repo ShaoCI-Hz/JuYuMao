@@ -4,11 +4,8 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.*
-import androidx.compose.material3.OutlinedButton
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -18,6 +15,8 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.hezi.juyumao.data.local.cache.CacheManager
 import top.yukonga.miuix.kmp.basic.*
+import top.yukonga.miuix.kmp.icon.MiuixIcons
+import top.yukonga.miuix.kmp.icon.extended.*
 import top.yukonga.miuix.kmp.overlay.OverlayDialog
 import top.yukonga.miuix.kmp.theme.MiuixTheme
 
@@ -34,7 +33,7 @@ fun CacheScreen(
         Row(modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp),
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically) {
-            IconButton(onClick = onBack) { Icon(Icons.AutoMirrored.Filled.ArrowBack, "返回") }
+            IconButton(onClick = onBack) { Icon(MiuixIcons.Back, "返回") }
             Text("缓存管理", style = MiuixTheme.textStyles.title3)
             Spacer(Modifier.size(48.dp))
         }
@@ -62,15 +61,19 @@ fun CacheScreen(
             // 清理按钮
             item {
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    OutlinedButton(onClick = { viewModel.refreshSizes() }, modifier = Modifier.weight(1f),
-                        shape = RoundedCornerShape(8.dp)) {
-                        Icon(Icons.Default.Refresh, null, modifier = Modifier.size(18.dp))
+                    Button(onClick = { viewModel.refreshSizes() }, modifier = Modifier.weight(1f),
+                        cornerRadius = 8.dp,
+                        colors = ButtonDefaults.buttonColors(
+                            color = MiuixTheme.colorScheme.surfaceVariant,
+                            contentColor = MiuixTheme.colorScheme.primary,
+                        )) {
+                        Icon(MiuixIcons.Refresh, null, modifier = Modifier.size(18.dp))
                         Spacer(Modifier.width(4.dp))
                         Text("刷新")
                     }
                     Button(onClick = { showClearDialog = true }, modifier = Modifier.weight(1f),
                         cornerRadius = 8.dp) {
-                        Icon(Icons.Default.DeleteSweep, null, modifier = Modifier.size(18.dp))
+                        Icon(Icons.Default.DeleteSweep, null, modifier = Modifier.size(18.dp)) // miuix-icons 无对应，语义近似
                         Spacer(Modifier.width(4.dp))
                         Text("清除缓存")
                     }
@@ -99,7 +102,7 @@ fun CacheScreen(
                     Card(colors = CardDefaults.defaultColors(color = MiuixTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)),
                         cornerRadius = 12.dp) {
                         Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                            Icon(Icons.Default.Download, null, tint = MiuixTheme.colorScheme.onSurfaceVariantSummary)
+                            Icon(MiuixIcons.Download, null, tint = MiuixTheme.colorScheme.onSurfaceVariantSummary)
                             Text("暂无下载的歌曲。在浏览页长按 NAS 歌曲可下载到本地缓存，离线播放。",
                                 style = MiuixTheme.textStyles.footnote1,
                                 color = MiuixTheme.colorScheme.onSurfaceVariantSummary)
@@ -112,7 +115,7 @@ fun CacheScreen(
                         cornerRadius = 12.dp) {
                         Row(modifier = Modifier.padding(16.dp), verticalAlignment = Alignment.CenterVertically,
                             horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                            Icon(Icons.Default.AudioFile, null, tint = MiuixTheme.colorScheme.primary)
+                            Icon(Icons.Default.AudioFile, null, tint = MiuixTheme.colorScheme.primary) // miuix-icons 无对应，语义近似
                             Column(modifier = Modifier.weight(1f)) {
                                 Text(cachedSong.fileName, style = MiuixTheme.textStyles.body1,
                                     fontWeight = FontWeight.Medium, maxLines = 1)
@@ -121,7 +124,7 @@ fun CacheScreen(
                                     color = MiuixTheme.colorScheme.onSurfaceVariantSummary)
                             }
                             IconButton(onClick = { viewModel.deleteNasSong(cachedSong.songId) }) {
-                                Icon(Icons.Default.Delete, "删除", tint = MiuixTheme.colorScheme.error)
+                                Icon(MiuixIcons.Delete, "删除", tint = MiuixTheme.colorScheme.error)
                             }
                         }
                     }

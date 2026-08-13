@@ -4,12 +4,8 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.*
-import androidx.compose.material3.FilledTonalButton
-import androidx.compose.material3.OutlinedButton
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -19,6 +15,8 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import com.hezi.juyumao.data.remote.smb.SmbConnectionState
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import top.yukonga.miuix.kmp.basic.*
+import top.yukonga.miuix.kmp.icon.MiuixIcons
+import top.yukonga.miuix.kmp.icon.extended.*
 import top.yukonga.miuix.kmp.theme.MiuixTheme
 
 @Composable
@@ -51,7 +49,7 @@ fun SmbConnectScreen(
         Row(modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp),
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically) {
-            IconButton(onClick = onBack) { Icon(Icons.AutoMirrored.Filled.ArrowBack, "返回") }
+            IconButton(onClick = onBack) { Icon(MiuixIcons.Back, "返回") }
             Text("NAS 连接", style = MiuixTheme.textStyles.title3)
             Spacer(Modifier.size(48.dp))
         }
@@ -68,7 +66,7 @@ fun SmbConnectScreen(
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.spacedBy(10.dp),
                 ) {
-                    Icon(Icons.Default.TipsAndUpdates, null,
+                    Icon(MiuixIcons.Info, null,
                         tint = MiuixTheme.colorScheme.primary, modifier = Modifier.size(20.dp))
                     Text(
                         "填写 NAS 的 IP 地址、用户名与密码即可连接，可随时在设置中管理",
@@ -89,14 +87,18 @@ fun SmbConnectScreen(
                     cornerRadius = 14.dp) {
                     Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
                         Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                            Icon(Icons.Default.WifiFind, null, tint = MiuixTheme.colorScheme.primary)
+                            Icon(Icons.Default.WifiFind, null, tint = MiuixTheme.colorScheme.primary) // miuix-icons 无对应
                             Text("自动发现", style = MiuixTheme.textStyles.title4)
                         }
                         Text("扫描局域网内的 SMB/NAS 设备", style = MiuixTheme.textStyles.footnote1,
                             color = MiuixTheme.colorScheme.onSurfaceVariantSummary)
                         Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                            OutlinedButton(onClick = { viewModel.discover() }, modifier = Modifier.weight(1f),
-                                shape = RoundedCornerShape(8.dp), enabled = !uiState.isScanning) {
+                            Button(onClick = { viewModel.discover() }, modifier = Modifier.weight(1f),
+                                colors = ButtonDefaults.buttonColors(
+                                    color = MiuixTheme.colorScheme.surfaceVariant,
+                                    contentColor = MiuixTheme.colorScheme.primary,
+                                ),
+                                cornerRadius = 8.dp, enabled = !uiState.isScanning) {
                                 Text("mDNS 发现")
                             }
                             Button(onClick = { viewModel.scanNetwork() }, modifier = Modifier.weight(1f),
@@ -132,13 +134,17 @@ fun SmbConnectScreen(
                         cornerRadius = 12.dp) {
                         Row(modifier = Modifier.padding(16.dp), verticalAlignment = Alignment.CenterVertically,
                             horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                            Icon(Icons.Default.Dns, null, tint = MiuixTheme.colorScheme.primary)
+                            Icon(MiuixIcons.MoreCircle, null, tint = MiuixTheme.colorScheme.primary)
                             Column(modifier = Modifier.weight(1f)) {
                                 Text(host.hostname, style = MiuixTheme.textStyles.body1, fontWeight = FontWeight.Medium)
                                 Text(host.ip, style = MiuixTheme.textStyles.footnote1,
                                     color = MiuixTheme.colorScheme.onSurfaceVariantSummary)
                             }
-                            FilledTonalButton(onClick = { ip = host.ip; port = "445" }) { Text("选用") }
+                            Button(onClick = { ip = host.ip; port = "445" },
+                                    colors = ButtonDefaults.buttonColors(
+                                        color = MiuixTheme.colorScheme.secondaryContainer,
+                                        contentColor = MiuixTheme.colorScheme.onSecondaryContainer,
+                                    )) { Text("选用") }
                         }
                     }
                 }
@@ -155,13 +161,17 @@ fun SmbConnectScreen(
                         cornerRadius = 12.dp) {
                         Row(modifier = Modifier.padding(16.dp), verticalAlignment = Alignment.CenterVertically,
                             horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                            Icon(Icons.Default.Dns, null, tint = MiuixTheme.colorScheme.primary)
+                            Icon(MiuixIcons.MoreCircle, null, tint = MiuixTheme.colorScheme.primary)
                             Column(modifier = Modifier.weight(1f)) {
                                 Text(server.name, style = MiuixTheme.textStyles.body1, fontWeight = FontWeight.Medium)
                                 Text("${server.host}:${server.port}", style = MiuixTheme.textStyles.footnote1,
                                     color = MiuixTheme.colorScheme.onSurfaceVariantSummary)
                             }
-                            FilledTonalButton(onClick = { ip = server.host; port = server.port.toString() }) { Text("选用") }
+                            Button(onClick = { ip = server.host; port = server.port.toString() },
+                                    colors = ButtonDefaults.buttonColors(
+                                        color = MiuixTheme.colorScheme.secondaryContainer,
+                                        contentColor = MiuixTheme.colorScheme.onSecondaryContainer,
+                                    )) { Text("选用") }
                         }
                     }
                 }
@@ -175,15 +185,19 @@ fun SmbConnectScreen(
                         cornerRadius = 12.dp) {
                         Row(modifier = Modifier.padding(16.dp), verticalAlignment = Alignment.CenterVertically,
                             horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                            Icon(Icons.Default.Storage, null, tint = MiuixTheme.colorScheme.primary)
+                            Icon(MiuixIcons.Folder, null, tint = MiuixTheme.colorScheme.primary)
                             Column(modifier = Modifier.weight(1f)) {
                                 Text("${server.ip}:${server.port}", style = MiuixTheme.textStyles.body1, fontWeight = FontWeight.Medium)
                                 Text("共享: ${server.shareName.ifEmpty { "未设置" }}", style = MiuixTheme.textStyles.footnote1,
                                     color = MiuixTheme.colorScheme.onSurfaceVariantSummary)
                             }
-                            FilledTonalButton(onClick = { viewModel.connectToSaved(server) }) { Text("连接") }
+                            Button(onClick = { viewModel.connectToSaved(server) },
+                                    colors = ButtonDefaults.buttonColors(
+                                        color = MiuixTheme.colorScheme.secondaryContainer,
+                                        contentColor = MiuixTheme.colorScheme.onSecondaryContainer,
+                                    )) { Text("连接") }
                             IconButton(onClick = { viewModel.deleteServer(server) }) {
-                                Icon(Icons.Default.Delete, "删除", tint = MiuixTheme.colorScheme.error)
+                                Icon(MiuixIcons.Delete, "删除", tint = MiuixTheme.colorScheme.error)
                             }
                         }
                     }
@@ -211,14 +225,18 @@ fun SmbConnectScreen(
                             Text("发现以下可用共享，请选择：", style = MiuixTheme.textStyles.title4,
                                 color = MiuixTheme.colorScheme.onPrimaryContainer)
                             uiState.availableShares.forEach { share ->
-                                OutlinedButton(onClick = {
+                                Button(onClick = {
                                     shareName = share.name
                                     viewModel.connect(
                                         uiState.currentServerIp, uiState.currentServerPort,
                                         username, password, share.name, domain
                                     )
-                                }, modifier = Modifier.fillMaxWidth()) {
-                                    Icon(Icons.Default.Folder, null, modifier = Modifier.size(18.dp))
+                                }, modifier = Modifier.fillMaxWidth(),
+                                    colors = ButtonDefaults.buttonColors(
+                                        color = MiuixTheme.colorScheme.surfaceVariant,
+                                        contentColor = MiuixTheme.colorScheme.primary,
+                                    )) {
+                                    Icon(MiuixIcons.Folder, null, modifier = Modifier.size(18.dp))
                                     Spacer(Modifier.width(8.dp))
                                     Text(share.name)
                                 }
@@ -266,7 +284,7 @@ fun SmbConnectScreen(
                                 viewModel.discoverShares(ip, port.toIntOrNull() ?: 445, username, password, domain)
                             }
                         }, enabled = ip.isNotEmpty()) {
-                            Icon(Icons.Default.Search, "搜索共享")
+                            Icon(MiuixIcons.Search, "搜索共享")
                         }
                     })
             }
@@ -290,7 +308,7 @@ fun SmbConnectScreen(
                     else androidx.compose.ui.text.input.PasswordVisualTransformation(),
                     trailingIcon = {
                         IconButton(onClick = { showPassword = !showPassword }) {
-                            Icon(if (showPassword) Icons.Default.VisibilityOff else Icons.Default.Visibility, null)
+                            Icon(if (showPassword) MiuixIcons.Hide else MiuixIcons.Show, null)
                         }
                     })
             }
@@ -304,7 +322,7 @@ fun SmbConnectScreen(
                         contentColor = MiuixTheme.colorScheme.onBackground,
                     ),
                 ) {
-                    Icon(if (showAdvanced) Icons.Default.ExpandLess else Icons.Default.ExpandMore, null)
+                    Icon(if (showAdvanced) MiuixIcons.ExpandLess else MiuixIcons.ExpandMore, null)
                     Spacer(Modifier.width(4.dp))
                     Text(if (showAdvanced) "隐藏高级选项" else "高级选项（域、工作组）")
                 }
@@ -320,13 +338,17 @@ fun SmbConnectScreen(
             // ═══ 操作按钮 ═══
             item {
                 Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    OutlinedButton(
+                    Button(
                         onClick = { viewModel.discoverShares(ip, port.toIntOrNull() ?: 445, username, password, domain) },
                         modifier = Modifier.weight(1f),
-                        shape = RoundedCornerShape(8.dp),
+                        colors = ButtonDefaults.buttonColors(
+                            color = MiuixTheme.colorScheme.surfaceVariant,
+                            contentColor = MiuixTheme.colorScheme.primary,
+                        ),
+                        cornerRadius = 8.dp,
                         enabled = ip.isNotEmpty() && !uiState.isDiscoveringShares,
                     ) {
-                        Icon(Icons.Default.Search, null, modifier = Modifier.size(18.dp))
+                        Icon(MiuixIcons.Search, null, modifier = Modifier.size(18.dp))
                         Spacer(Modifier.width(4.dp))
                         Text("搜索共享")
                     }
@@ -370,7 +392,7 @@ fun SmbConnectScreen(
                         Column(modifier = Modifier.padding(12.dp)) {
                             Row(verticalAlignment = Alignment.CenterVertically,
                                 horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                                Icon(Icons.Default.Error, null, tint = MiuixTheme.colorScheme.error)
+                                Icon(MiuixIcons.Help, null, tint = MiuixTheme.colorScheme.error)
                                 Text("连接失败", style = MiuixTheme.textStyles.subtitle,
                                     color = MiuixTheme.colorScheme.error)
                             }
@@ -404,7 +426,7 @@ fun SmbConnectScreen(
                         cornerRadius = 14.dp) {
                         Row(modifier = Modifier.padding(16.dp), verticalAlignment = Alignment.CenterVertically,
                             horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                            Icon(Icons.Default.CheckCircle, null, tint = MiuixTheme.colorScheme.primary)
+                            Icon(MiuixIcons.Ok, null, tint = MiuixTheme.colorScheme.primary)
                             Column(modifier = Modifier.weight(1f)) {
                                 Text("已连接: ${uiState.connectedServerName}", style = MiuixTheme.textStyles.subtitle,
                                     color = MiuixTheme.colorScheme.onPrimaryContainer)
@@ -447,7 +469,7 @@ fun SmbConnectScreen(
                         Row(modifier = Modifier.padding(16.dp), verticalAlignment = Alignment.CenterVertically,
                             horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                             Icon(
-                                if (uiState.scannedSongCount > 0) Icons.Default.CheckCircle else Icons.Default.Info,
+                                if (uiState.scannedSongCount > 0) MiuixIcons.Ok else MiuixIcons.Info,
                                 null, tint = if (uiState.scannedSongCount > 0) MiuixTheme.colorScheme.primary
                                 else MiuixTheme.colorScheme.onSurfaceVariantSummary
                             )

@@ -1,11 +1,9 @@
 package com.hezi.juyumao.ui.player.components
 
 import androidx.compose.foundation.layout.*
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.filled.Visibility
-import androidx.compose.material.icons.filled.VisibilityOff
 import top.yukonga.miuix.kmp.basic.*
+import top.yukonga.miuix.kmp.icon.MiuixIcons
+import top.yukonga.miuix.kmp.icon.extended.*
 import top.yukonga.miuix.kmp.theme.MiuixTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
@@ -33,7 +31,7 @@ fun PlayerTopBar(
     ) {
         IconButton(onClick = onBack) {
             Icon(
-                Icons.AutoMirrored.Filled.ArrowBack, "返回",
+                MiuixIcons.Back, "返回",
                 tint = Color.White.copy(alpha = 0.9f),
             )
         }
@@ -51,7 +49,7 @@ fun PlayerTopBar(
         // 沉浸模式切换
         IconButton(onClick = onImmersiveToggle) {
             Icon(
-                if (isImmersive) Icons.Default.Visibility else Icons.Default.VisibilityOff,
+                if (isImmersive) MiuixIcons.Show else MiuixIcons.Hide,
                 "沉浸模式",
                 tint = Color.White.copy(alpha = 0.7f),
             )
