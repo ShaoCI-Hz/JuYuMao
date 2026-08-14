@@ -4,6 +4,7 @@ import android.content.Context
 import com.hezi.juyumao.data.local.db.JuYuMaoDatabase
 import com.hezi.juyumao.data.local.db.dao.PlaylistDao
 import com.hezi.juyumao.data.local.db.dao.ServerDao
+import com.hezi.juyumao.data.local.db.dao.SmartPlaylistDao
 import com.hezi.juyumao.data.local.db.dao.SongDao
 import com.hezi.juyumao.data.local.datastore.SettingsDataStore
 import dagger.Module
@@ -39,6 +40,12 @@ object AppModule {
     @Singleton
     fun providePlaylistDao(database: JuYuMaoDatabase): PlaylistDao {
         return database.playlistDao()
+    }
+
+    @Provides
+    @Singleton
+    fun provideSmartPlaylistDao(database: JuYuMaoDatabase): SmartPlaylistDao {
+        return database.smartPlaylistDao()
     }
 
     @Provides

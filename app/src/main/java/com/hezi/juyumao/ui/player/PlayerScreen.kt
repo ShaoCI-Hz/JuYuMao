@@ -4,8 +4,11 @@ import androidx.compose.animation.*
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.gestures.detectHorizontalDragGestures
+import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.ui.input.pointer.pointerInput
 import top.yukonga.miuix.kmp.basic.*
 import top.yukonga.miuix.kmp.overlay.*
 import top.yukonga.miuix.kmp.theme.MiuixTheme
@@ -15,6 +18,8 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.graphics.toArgb
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -44,6 +49,28 @@ fun PlayerScreen(
     var repeatMode by remember { mutableIntStateOf(0) }
     var showLyrics by remember { mutableStateOf(false) }
     var showAddToPlaylist by remember { mutableStateOf(false) }
+    var showMoreSheet by remember { mutableStateOf(false) }
+    var detailSong by remember { mutableStateOf<com.hezi.juyumao.data.local.db.entity.SongEntity?>(null) }
+    var showEditTags by remember { mutableStateOf(false) }
+    val editMessage by viewModel.editMessage.collectAsStateWithLifecycle()
+
+    val context = LocalContext.current
+    val accentColor = MiuixTheme.colorScheme.primary.toArgb()
+
+    /** 生成并分享歌词海报（更多菜单 → 歌词海报） */
+    fun shareLyricPoster(accent: Int) {
+        val song = currentSong ?: return
+        val file = com.hezi.juyumao.ui.lyrics.LyricPosterShare.createPoster(
+            context = context,
+            title = song.title,
+            artist = song.artist,
+            albumArtPath = song.albumArtUri,
+            lyricsData = lyrics,
+            positionMs = viewModel.position.value,
+            accent = accent,
+        )
+        if (file != null) com.hezi.juyumao.ui.lyrics.LyricPosterShare.share(context, file)
+    }
     var playbackSpeed by remember { mutableStateOf(1.0f) }
     var showSpeedMenu by remember { mutableStateOf(false) }
 
@@ -83,11 +110,29 @@ fun PlayerScreen(
                 isImmersive = isImmersive,
             )
 
-            // 封面/歌词上下滑动切换（带入场放大动画）
+            // 封面/歌词上下滑动切换（带入场放大动画）+ 手势（P0-6：水平滑动切歌、双击暂停）
             Box(
                 modifier = Modifier
                     .weight(1f)
                     .fillMaxWidth()
+                    .pointerInput(Unit) {
+                        detectTapGestures(onDoubleTap = { viewModel.togglePlay() })
+                    }
+                    .pointerInput(Unit) {
+                        var accumulated = 0f
+                        detectHorizontalDragGestures(
+                            onDragEnd = {
+                                val threshold = size.width / 4f
+                                if (accumulated < -threshold) viewModel.next()
+                                else if (accumulated > threshold) viewModel.previous()
+                                accumulated = 0f
+                            },
+                            onHorizontalDrag = { change, dragAmount ->
+                                change.consume()
+                                accumulated += dragAmount
+                            },
+                        )
+                    }
                     .graphicsLayer {
                         scaleX = enterScale
                         scaleY = enterScale
@@ -206,6 +251,53 @@ fun PlayerScreen(
 
             Spacer(modifier = Modifier.height(8.dp))
 
+            // A-B 循环控制（P2-12）
+            val abLoop by viewModel.abLoop.collectAsStateWithLifecycle()
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 24.dp),
+                horizontalArrangement = Arrangement.SpaceEvenly,
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                val btnColors = ButtonDefaults.textButtonColors(
+                    textColor = if (abLoop != null) MiuixTheme.colorScheme.primary
+                                else Color.White.copy(alpha = 0.6f),
+                )
+                TextButton(
+                    text = "设 A",
+                    onClick = {
+                        val pos = viewModel.position.value
+                        val end = viewModel.abLoop.value?.second ?: viewModel.duration.value
+                        if (end > pos) viewModel.setAbLoop(pos, end)
+                    },
+                    textStyle = MiuixTheme.textStyles.footnote1,
+                    colors = btnColors,
+                )
+                TextButton(
+                    text = "设 B",
+                    onClick = {
+                        val pos = viewModel.position.value
+                        val start = viewModel.abLoop.value?.first ?: 0L
+                        if (pos > start) viewModel.setAbLoop(start, pos)
+                    },
+                    textStyle = MiuixTheme.textStyles.footnote1,
+                    colors = btnColors,
+                )
+                TextButton(
+                    text = if (abLoop != null) "清除循环" else "A-B 循环",
+                    onClick = { viewModel.clearAbLoop() },
+                    enabled = abLoop != null,
+                    textStyle = MiuixTheme.textStyles.footnote1,
+                    colors = ButtonDefaults.textButtonColors(
+                        textColor = if (abLoop != null) MiuixTheme.colorScheme.primary
+                                    else Color.White.copy(alpha = 0.4f),
+                    ),
+                )
+            }
+
+            Spacer(modifier = Modifier.height(4.dp))
+
             // 控制按钮
             if (isImmersive) {
                 ImmersiveControlRow(
@@ -247,7 +339,7 @@ fun PlayerScreen(
                     onLyricsClick = { showLyrics = !showLyrics },
                     onQueueClick = onOpenQueue,
                     onFavoriteClick = { viewModel.toggleFavorite() },
-                    onMoreClick = { showAddToPlaylist = true },
+                    onMoreClick = { showMoreSheet = true },
                 )
             }
 
@@ -255,12 +347,109 @@ fun PlayerScreen(
         }
     }
 
-    // 添加到歌单弹层（更多按钮）
+    // 添加到歌单弹层（更多菜单 → 添加到歌单）
     if (showAddToPlaylist && currentSong != null) {
         com.hezi.juyumao.ui.playlist.AddToPlaylistDialog(
             song = currentSong!!,
             onDismiss = { showAddToPlaylist = false },
         )
+    }
+
+    // 更多操作聚合弹层（当前播放歌曲；播放页上下文：隐藏"播放/下一首/稍后"，附倍速）
+    if (currentSong != null) {
+        com.hezi.juyumao.ui.components.SongActionSheet(
+            song = currentSong!!,
+            show = showMoreSheet,
+            isFavorite = isFavorite,
+            onDismiss = { showMoreSheet = false },
+            onPlay = { showMoreSheet = false },
+            onPlayNext = { showMoreSheet = false },
+            onPlayLater = { showMoreSheet = false },
+            onToggleFavorite = {
+                showMoreSheet = false
+                viewModel.toggleFavorite()
+            },
+            onAddToPlaylist = {
+                showMoreSheet = false
+                showAddToPlaylist = true
+            },
+            onShowDetail = {
+                showMoreSheet = false
+                detailSong = currentSong
+            },
+            onSetSpeed = {
+                showMoreSheet = false
+                showSpeedMenu = true
+            },
+            onShareLyric = {
+                showMoreSheet = false
+                shareLyricPoster(accentColor)
+            },
+            onPlaySimilar = {
+                showMoreSheet = false
+                viewModel.playSimilar()
+            },
+            showPlayActions = false,
+        )
+    }
+
+    // 歌曲详情弹窗（更多菜单 → 歌曲详情）
+    detailSong?.let { song ->
+        com.hezi.juyumao.ui.components.SongDetailDialog(
+            song = song,
+            onDismiss = { detailSong = null },
+            onToggleFavorite = {
+                detailSong = null
+                viewModel.toggleFavorite()
+            },
+            onAddToPlaylist = {
+                detailSong = null
+                showAddToPlaylist = true
+            },
+            onSetRating = { rating ->
+                detailSong = null
+                viewModel.setRating(rating)
+            },
+            onEditTags = {
+                detailSong = null
+                showEditTags = true
+            },
+        )
+    }
+
+    // 编辑标签对话框（当前播放歌曲，仅本地）
+    if (showEditTags && currentSong != null) {
+        com.hezi.juyumao.ui.components.EditTagsDialog(
+            song = currentSong!!,
+            onDismiss = { showEditTags = false },
+            onSave = { title, artist, album, genre, year ->
+                showEditTags = false
+                viewModel.editTags(title, artist, album, genre, year)
+            },
+        )
+    }
+
+    // 编辑标签结果提示（一次性）
+    editMessage?.let { msg ->
+        top.yukonga.miuix.kmp.overlay.OverlayDialog(
+            show = true,
+            title = "提示",
+            onDismissRequest = { viewModel.consumeEditMessage() },
+        ) {
+            androidx.compose.foundation.layout.Column(
+                modifier = Modifier.padding(start = 24.dp, end = 24.dp, bottom = 16.dp),
+            ) {
+                top.yukonga.miuix.kmp.basic.Text(msg, style = MiuixTheme.textStyles.body1,
+                    color = MiuixTheme.colorScheme.onSurface)
+                Spacer(modifier = Modifier.height(16.dp))
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.End,
+                ) {
+                    top.yukonga.miuix.kmp.basic.TextButton(text = "确定", onClick = { viewModel.consumeEditMessage() })
+                }
+            }
+        }
     }
 }
 

@@ -112,6 +112,51 @@ class PlaybackQueue {
         }
     }
 
+    /** 队列内移动（拖拽/上下移排序）；移动后随机顺序重置（手动排序优先于随机） */
+    fun move(from: Int, to: Int) {
+        val songs = _songs.value.toMutableList()
+        if (from !in songs.indices || to !in songs.indices || from == to) return
+        val song = songs.removeAt(from)
+        songs.add(to, song)
+        _songs.value = songs
+        // 当前索引跟随：若移动的是当前歌，索引更新为新位置
+        if (_currentIndex.value == from) {
+            _currentIndex.value = to
+        } else if (from < _currentIndex.value && to >= _currentIndex.value) {
+            _currentIndex.value--
+        } else if (from > _currentIndex.value && to <= _currentIndex.value) {
+            _currentIndex.value++
+        }
+        _shuffleOrder.value = if (songs.isEmpty()) emptyList() else songs.indices.shuffled()
+    }
+
+    /** 下一首播放：将歌曲插入当前播放位置之后（当前歌不打断，切歌时生效） */
+    fun insertNext(song: Song) {
+        val songs = _songs.value.toMutableList()
+        val insertIndex = if (_currentIndex.value in songs.indices) _currentIndex.value + 1 else songs.size
+        songs.add(insertIndex, song)
+        _songs.value = songs
+        // 随机序列同步：插入点及之后的索引 +1；新歌索引插入到当前歌在随机序列中的下一个位置
+        val order = _shuffleOrder.value.toMutableList()
+        for (i in order.indices) {
+            if (order[i] >= insertIndex) order[i]++
+        }
+        val currentOrderPos = order.indexOf(_currentIndex.value)
+        order.add(
+            if (currentOrderPos >= 0) currentOrderPos + 1 else order.size,
+            insertIndex,
+        )
+        _shuffleOrder.value = order
+    }
+
+    /** 稍后播放：追加到队列末尾 */
+    fun appendToQueue(song: Song) {
+        val songs = _songs.value.toMutableList()
+        songs.add(song)
+        _songs.value = songs
+        _shuffleOrder.value = _shuffleOrder.value + (songs.size - 1)
+    }
+
     fun remove(index: Int) {
         val songs = _songs.value.toMutableList()
         if (index !in songs.indices) return

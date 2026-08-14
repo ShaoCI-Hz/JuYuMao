@@ -38,6 +38,8 @@ data class SongEntity(
     val hasEmbeddedLyrics: Boolean = false,
     val hasExternalLyrics: Boolean = false,
     val isFavorite: Boolean = false,
+    // 星级评分（0-5，0 = 未评分）
+    val rating: Int = 0,
 ) {
     companion object {
         const val UNKNOWN_ARTIST = "未知艺术家"

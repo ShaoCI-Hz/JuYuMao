@@ -26,12 +26,13 @@ import androidx.navigationevent.compose.rememberNavigationEventDispatcherOwner
 fun JuYuMaoApp() {
     val appViewModel: AppViewModel = hiltViewModel()
     val themeMode by appViewModel.themeMode.collectAsStateWithLifecycle()
+    val accentColor by appViewModel.accentColor.collectAsStateWithLifecycle()
     val onboardingCompleted by appViewModel.onboardingCompleted.collectAsStateWithLifecycle()
 
     // 「连接 NAS」引导：完成后直接进入 SMB 连接页
     var startAtSmb by remember { mutableStateOf(false) }
 
-    JuYuMaoTheme(themeMode = themeMode) {
+    JuYuMaoTheme(themeMode = themeMode, accentColorHex = accentColor) {
         // Miuix OverlayDialog/OverlayBottomSheet/OverlayListPopup 的 DialogEntry/PopupEntry 内部
         // 使用 NavigationBackHandler（androidx.navigationevent 预测性返回），要求读取
         // LocalNavigationEventDispatcherOwner。该 Local 通常由 NavHost 提供，但弹窗内容组合在

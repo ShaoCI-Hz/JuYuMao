@@ -6,12 +6,14 @@ import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.shape.RoundedCornerShape
 import top.yukonga.miuix.kmp.basic.Icon
 import top.yukonga.miuix.kmp.basic.SmallTopAppBar
 import top.yukonga.miuix.kmp.basic.*
 import top.yukonga.miuix.kmp.icon.MiuixIcons
 import top.yukonga.miuix.kmp.icon.extended.*
+import top.yukonga.miuix.kmp.overlay.OverlayDialog
 import top.yukonga.miuix.kmp.theme.MiuixTheme
 import top.yukonga.miuix.kmp.utils.SinkFeedback
 import androidx.compose.runtime.*
@@ -30,6 +32,9 @@ fun QueueScreen(
 ) {
     val queue by viewModel.queue.collectAsStateWithLifecycle()
     val currentIndex by viewModel.currentIndex.collectAsStateWithLifecycle()
+    val saveMessage by viewModel.saveMessage.collectAsStateWithLifecycle()
+    var showSaveDialog by remember { mutableStateOf(false) }
+    var playlistName by remember { mutableStateOf("") }
 
     Column(modifier = Modifier.fillMaxSize()) {
         SmallTopAppBar(
@@ -43,6 +48,12 @@ fun QueueScreen(
                 }
             },
             actions = {
+                IconButton(onClick = { showSaveDialog = true }) {
+                    Icon(
+                        imageVector = MiuixIcons.Add,
+                        contentDescription = "存为歌单",
+                    )
+                }
                 IconButton(onClick = { viewModel.clearQueue() }) {
                     Icon(
                         imageVector = MiuixIcons.Delete,
@@ -69,8 +80,8 @@ fun QueueScreen(
                 contentPadding = PaddingValues(16.dp),
                 verticalArrangement = Arrangement.spacedBy(8.dp),
             ) {
-                items(items = queue, key = { it.id }) { song ->
-                    val isCurrent = queue.indexOf(song) == currentIndex
+                itemsIndexed(items = queue, key = { _, song -> song.id }) { index, song ->
+                    val isCurrent = index == currentIndex
                     Row(
                         modifier = Modifier
                             .fillMaxWidth()
@@ -80,7 +91,7 @@ fun QueueScreen(
                                     sinkAmount = 0.85f,
                                     animationSpec = spring(dampingRatio = 0.99f, stiffness = 986.96f),
                                 ),
-                            ) { viewModel.playAt(queue.indexOf(song)) }
+                            ) { viewModel.playAt(index) }
                             .padding(horizontal = 12.dp, vertical = 10.dp),
                         verticalAlignment = Alignment.CenterVertically,
                         horizontalArrangement = Arrangement.spacedBy(12.dp),
@@ -109,13 +120,98 @@ fun QueueScreen(
                                 overflow = TextOverflow.Ellipsis,
                             )
                         }
-                        if (isCurrent) {
-                            Text("播放中", style = MiuixTheme.textStyles.footnote2,
-                                color = MiuixTheme.colorScheme.primary)
+                        // 右侧：播放中标识 + 上移/下移
+                        Column(
+                            horizontalAlignment = Alignment.End,
+                            verticalArrangement = Arrangement.spacedBy(2.dp),
+                        ) {
+                            if (isCurrent) {
+                                Text("播放中", style = MiuixTheme.textStyles.footnote2,
+                                    color = MiuixTheme.colorScheme.primary)
+                            }
+                            Row {
+                                MoveButton(icon = MiuixIcons.ExpandLess, enabled = index > 0) { viewModel.move(index, index - 1) }
+                                MoveButton(icon = MiuixIcons.ExpandMore, enabled = index < queue.size - 1) { viewModel.move(index, index + 1) }
+                            }
                         }
                     }
                 }
             }
         }
+    }
+
+    // 存为歌单对话框
+    if (showSaveDialog) {
+        OverlayDialog(
+            show = true,
+            title = "保存队列为歌单",
+            onDismissRequest = { showSaveDialog = false },
+        ) {
+            Column(
+                modifier = Modifier.padding(start = 24.dp, end = 24.dp, bottom = 16.dp),
+                verticalArrangement = Arrangement.spacedBy(12.dp),
+            ) {
+                TextField(
+                    value = playlistName,
+                    onValueChange = { playlistName = it },
+                    label = "歌单名称",
+                    modifier = Modifier.fillMaxWidth(),
+                )
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.End,
+                ) {
+                    TextButton(text = "取消", onClick = { showSaveDialog = false })
+                    Button(
+                        onClick = {
+                            viewModel.saveAsPlaylist(playlistName)
+                            playlistName = ""
+                            showSaveDialog = false
+                        },
+                    ) { Text("保存") }
+                }
+            }
+        }
+    }
+
+    // 保存结果提示（一次性）
+    saveMessage?.let { msg ->
+        OverlayDialog(
+            show = true,
+            title = "提示",
+            onDismissRequest = { viewModel.consumeSaveMessage() },
+        ) {
+            Column(
+                modifier = Modifier.padding(start = 24.dp, end = 24.dp, bottom = 16.dp),
+            ) {
+                Text(msg, style = MiuixTheme.textStyles.body1,
+                    color = MiuixTheme.colorScheme.onSurface)
+                Spacer(modifier = Modifier.height(16.dp))
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.End,
+                ) {
+                    TextButton(text = "确定", onClick = { viewModel.consumeSaveMessage() })
+                }
+            }
+        }
+    }
+}
+
+/** 队列行内上移/下移小按钮 */
+@Composable
+private fun MoveButton(icon: androidx.compose.ui.graphics.vector.ImageVector, enabled: Boolean, onClick: () -> Unit) {
+    IconButton(
+        onClick = onClick,
+        enabled = enabled,
+        modifier = Modifier.size(28.dp),
+    ) {
+        Icon(
+            imageVector = icon,
+            contentDescription = null,
+            tint = if (enabled) MiuixTheme.colorScheme.onSurfaceSecondary
+                   else MiuixTheme.colorScheme.onSurfaceSecondary.copy(alpha = 0.3f),
+            modifier = Modifier.size(16.dp),
+        )
     }
 }

@@ -28,6 +28,8 @@ object LrcParser {
 
     private val timePattern = Regex("""\[(\d{2}):(\d{2})[.:](\d{2,3})]""")
     private val metaPattern = Regex("""\[(\w+):(.+?)]""")
+    // 逐字时间标签：<mm:ss.xx>（QQ/网易云增强 LRC 格式）
+    private val wordTimePattern = Regex("""<(\d{2}):(\d{2})[.:](\d{2,3})>""")
 
     fun parse(lrcContent: String): LyricsData {
         val lines = mutableListOf<LyricLine>()
@@ -56,18 +58,17 @@ object LrcParser {
             val timeMatches = timePattern.findAll(trimmed).toList()
             if (timeMatches.isEmpty()) continue
 
-            val text = trimmed.substringAfterLast("]").trim()
-            if (text.isEmpty()) continue
+            val rawText = trimmed.substringAfterLast("]").trim()
+            if (rawText.isEmpty()) continue
+
+            // 逐字歌词：剥离 <时间> 标签得纯文本，另存逐字时间序列
+            val plainText = rawText.replace(wordTimePattern, "").trim()
+            if (plainText.isEmpty()) continue
+            val words = parseLineWords(rawText)
 
             for (timeMatch in timeMatches) {
-                val minutes = timeMatch.groupValues[1].toLong()
-                val seconds = timeMatch.groupValues[2].toLong()
-                val millis = timeMatch.groupValues[3].let {
-                    if (it.length == 2) it.toLong() * 10 else it.toLong()
-                }
-                val totalMs = minutes * 60_000 + seconds * 1000 + millis
-
-                lines.add(LyricLine(timeMs = totalMs, text = text))
+                val totalMs = parseTimeMs(timeMatch.groupValues)
+                lines.add(LyricLine(timeMs = totalMs, text = plainText, words = words))
             }
         }
 
@@ -77,6 +78,41 @@ object LrcParser {
             artist = artist,
             album = album,
         )
+    }
+
+    /** 解析逐字时间：<mm:ss.xx>字<mm:ss.xx>字...；无时间标签返回 null */
+    private fun parseLineWords(rawText: String): List<LyricWord>? {
+        if (!rawText.contains('<')) return null
+        val timeMatches = wordTimePattern.findAll(rawText).toList()
+        if (timeMatches.isEmpty()) return null
+        val result = mutableListOf<LyricWord>()
+        var lastPos = 0
+        for (m in timeMatches) {
+            val seg = rawText.substring(lastPos, m.range.first)
+            if (seg.isNotEmpty()) {
+                val t = parseTimeMs(m.groupValues)
+                result.add(LyricWord(timeMs = t, durationMs = 500, text = seg))
+            }
+            lastPos = m.range.last + 1
+        }
+        val tail = rawText.substring(lastPos)
+        if (tail.isNotEmpty() && result.isNotEmpty()) {
+            result.add(LyricWord(timeMs = result.last().timeMs + 500, durationMs = 500, text = tail))
+        }
+        // 计算每字时长（下一字时间差，最小 100ms）
+        for (i in 0 until result.size - 1) {
+            result[i] = result[i].copy(
+                durationMs = (result[i + 1].timeMs - result[i].timeMs).coerceAtLeast(100)
+            )
+        }
+        return result
+    }
+
+    private fun parseTimeMs(g: List<String>): Long {
+        val minutes = g[1].toLong()
+        val seconds = g[2].toLong()
+        val millis = g[3].let { if (it.length == 2) it.toLong() * 10 else it.toLong() }
+        return minutes * 60_000 + seconds * 1000 + millis
     }
 
     fun findCurrentLineIndex(lines: List<LyricLine>, positionMs: Long): Int {

@@ -55,6 +55,7 @@ fun JuYuMaoNavGraph(
                 onNavigateToQueue = { navController.navigate(Screen.Queue.route) },
                 onNavigateToPlaylist = { navController.navigate(Screen.Playlist.route) },
                 onNavigateToStatistics = { navController.navigate(Screen.Statistics.route) },
+                onNavigateToCache = { navController.navigate(Screen.Cache.route) },
                 onPlayAll = { songs -> appViewModel.playSongs(songs) },
             )
         }
@@ -122,6 +123,13 @@ fun JuYuMaoNavGraph(
             com.hezi.juyumao.ui.playlist.PlaylistScreen(
                 onBack = { navController.popBackStack() },
                 onPlayAll = { songs -> appViewModel.playSongs(songs) },
+                onOpenSmartPlaylist = { navController.navigate(Screen.SmartPlaylist.route) },
+            )
+        }
+        composable(Screen.SmartPlaylist.route) {
+            com.hezi.juyumao.ui.smartplaylist.SmartPlaylistScreen(
+                onBack = { navController.popBackStack() },
+                onSongClick = { songId -> navController.navigate(Screen.Player.createRoute(songId)) },
             )
         }
         composable(Screen.Statistics.route) {

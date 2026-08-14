@@ -122,6 +122,20 @@ fun EqualizerScreen(
                     )
                 }
             }
+            // 内置预设（固定曲线，不依赖设备）
+            Spacer(modifier = Modifier.height(8.dp))
+            LazyRow(
+                contentPadding = PaddingValues(horizontal = 16.dp),
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+            ) {
+                items(viewModel.builtinPresets) { preset ->
+                    MiuixFilterChip(
+                        selected = false,
+                        onClick = { viewModel.applyBuiltinPreset(preset.name) },
+                        label = preset.name,
+                    )
+                }
+            }
             Spacer(modifier = Modifier.height(24.dp))
         }
 

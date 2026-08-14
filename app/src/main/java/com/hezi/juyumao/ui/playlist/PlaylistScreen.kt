@@ -36,6 +36,7 @@ import java.io.File
 fun PlaylistScreen(
     onBack: () -> Unit,
     onPlayAll: (List<SongEntity>) -> Unit,
+    onOpenSmartPlaylist: () -> Unit = {},
     viewModel: PlaylistViewModel = hiltViewModel(),
 ) {
     val playlists by viewModel.playlists.collectAsStateWithLifecycle()
@@ -65,6 +66,9 @@ fun PlaylistScreen(
                     IconButton(onClick = onBack) { Icon(MiuixIcons.Back, "返回") }
                 },
                 actions = {
+                    IconButton(onClick = onOpenSmartPlaylist) {
+                        Icon(MiuixIcons.MindMap, "智能歌单")
+                    }
                     IconButton(onClick = { showCreateDialog = true }) {
                         Icon(MiuixIcons.Add, "新建歌单")
                     }

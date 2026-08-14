@@ -9,8 +9,6 @@ import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
-import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -30,6 +28,7 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import coil.compose.AsyncImage
 import com.hezi.juyumao.data.local.db.entity.SongEntity
+import com.hezi.juyumao.ui.components.EditTagsDialog
 import com.hezi.juyumao.ui.components.SongDetailDialog
 import com.hezi.juyumao.ui.components.SongListItem
 import top.yukonga.miuix.kmp.basic.*
@@ -39,7 +38,7 @@ import top.yukonga.miuix.kmp.overlay.OverlayDialog
 import top.yukonga.miuix.kmp.squircle.squircleBackground
 import top.yukonga.miuix.kmp.squircle.squircleClip
 import top.yukonga.miuix.kmp.theme.MiuixTheme
-import top.yukonga.miuix.kmp.utils.SinkFeedback
+import top.yukonga.miuix.kmp.utils.PressFeedbackType
 import kotlin.random.Random
 import kotlinx.coroutines.delay
 import java.io.File
@@ -68,6 +67,7 @@ fun HomeScreen(
     onNavigateToQueue: () -> Unit = {},
     onNavigateToPlaylist: () -> Unit = {},
     onNavigateToStatistics: () -> Unit = {},
+    onNavigateToCache: () -> Unit = {},
     onPlayAll: (List<SongEntity>) -> Unit = {},
     viewModel: HomeViewModel = hiltViewModel(),
 ) {
@@ -88,6 +88,7 @@ fun HomeScreen(
     // 最近播放行的操作弹窗状态
     var addToPlaylistSong by remember { mutableStateOf<SongEntity?>(null) }
     var detailSong by remember { mutableStateOf<SongEntity?>(null) }
+    var editTagsSong by remember { mutableStateOf<SongEntity?>(null) }
 
     val audioPermission = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
         Manifest.permission.READ_MEDIA_AUDIO
@@ -195,7 +196,7 @@ fun HomeScreen(
                     horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     QuickActionCard(MiuixIcons.Playlist, "歌单", onNavigateToPlaylist, Modifier.weight(1f)) // 原 QueueMusic
                     QuickActionCard(Icons.Default.BarChart, "听歌报告", onNavigateToStatistics, Modifier.weight(1f)) // miuix-icons 无对应，保留 material icon
-                    QuickActionCard(MiuixIcons.Folder, "缓存管理", { }, Modifier.weight(1f)) // 原 Storage
+                    QuickActionCard(MiuixIcons.Folder, "缓存管理", onNavigateToCache, Modifier.weight(1f)) // 原 Storage
                 }
             }
 
@@ -225,6 +226,10 @@ fun HomeScreen(
                     song = song,
                     lyricLine = lyricLine,
                     onClick = { onNavigateToPlayer(song.id) },
+                    onPlay = { onNavigateToPlayer(song.id) },
+                    onPlayNext = { viewModel.playNext(song) },
+                    onPlayLater = { viewModel.playLater(song) },
+                    onToggleFavorite = { viewModel.toggleFavorite(song) },
                     onAddToPlaylist = { addToPlaylistSong = song },
                     onShowDetail = { detailSong = song },
                 )
@@ -250,7 +255,49 @@ fun HomeScreen(
         SongDetailDialog(
             song = song,
             onDismiss = { detailSong = null },
+            onPlay = { detailSong = null; onNavigateToPlayer(song.id) },
+            onToggleFavorite = { detailSong = null; viewModel.toggleFavorite(song) },
+            onAddToPlaylist = { detailSong = null; addToPlaylistSong = song },
+            onPlayNext = { detailSong = null; viewModel.playNext(song) },
+            onSetRating = { rating -> detailSong = null; viewModel.setRating(song, rating) },
+            onEditTags = { detailSong = null; editTagsSong = song },
         )
+    }
+
+    // 编辑标签对话框（仅本地歌曲）
+    editTagsSong?.let { song ->
+        EditTagsDialog(
+            song = song,
+            onDismiss = { editTagsSong = null },
+            onSave = { title, artist, album, genre, year ->
+                editTagsSong = null
+                viewModel.editTags(song, title, artist, album, genre, year)
+            },
+        )
+    }
+
+    // 编辑标签结果提示（一次性）
+    val editMessage by viewModel.editMessage.collectAsStateWithLifecycle()
+    editMessage?.let { msg ->
+        OverlayDialog(
+            show = true,
+            title = "提示",
+            onDismissRequest = { viewModel.consumeEditMessage() },
+        ) {
+            Column(
+                modifier = Modifier.padding(start = 24.dp, end = 24.dp, bottom = 16.dp),
+            ) {
+                Text(msg, style = MiuixTheme.textStyles.body1,
+                    color = MiuixTheme.colorScheme.onSurface)
+                Spacer(modifier = Modifier.height(16.dp))
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.End,
+                ) {
+                    TextButton(text = "确定", onClick = { viewModel.consumeEditMessage() })
+                }
+            }
+        }
     }
 }
 
@@ -266,17 +313,11 @@ private fun FeaturedSongCard(
     modifier: Modifier = Modifier,
 ) {
     Card(
-        modifier = modifier
-            .clickable(
-                interactionSource = remember { MutableInteractionSource() },
-                indication = SinkFeedback(
-                    sinkAmount = 0.85f,
-                    animationSpec = androidx.compose.animation.core.spring(dampingRatio = 0.99f, stiffness = 986.96f),
-                ),
-                onClick = onClick,
-            ),
+        modifier = modifier,
         colors = CardDefaults.defaultColors(color = MiuixTheme.colorScheme.surfaceVariant),
         cornerRadius = 16.dp,
+        pressFeedbackType = PressFeedbackType.Sink,
+        onClick = onClick,
     ) {
         AnimatedContent(
             targetState = song,
@@ -375,16 +416,11 @@ private fun CompactActionCard(
     modifier: Modifier = Modifier,
 ) {
     Card(
-        modifier = modifier.clickable(
-            interactionSource = remember { MutableInteractionSource() },
-            indication = SinkFeedback(
-                sinkAmount = 0.85f,
-                animationSpec = androidx.compose.animation.core.spring(dampingRatio = 0.99f, stiffness = 986.96f),
-            ),
-            onClick = onClick,
-        ),
+        modifier = modifier,
         colors = CardDefaults.defaultColors(color = MiuixTheme.colorScheme.surfaceVariant),
         cornerRadius = 14.dp,
+        pressFeedbackType = PressFeedbackType.Sink,
+        onClick = onClick,
     ) {
         Row(
             modifier = Modifier
@@ -438,16 +474,11 @@ private fun DailyLyricCard(lyric: String?) {
 @Composable
 private fun QuickActionCard(icon: ImageVector, title: String, onClick: () -> Unit, modifier: Modifier = Modifier) {
     Card(
-        modifier = modifier.clickable(
-            interactionSource = remember { MutableInteractionSource() },
-            indication = SinkFeedback(
-                sinkAmount = 0.85f,
-                animationSpec = androidx.compose.animation.core.spring(dampingRatio = 0.99f, stiffness = 986.96f),
-            ),
-            onClick = onClick,
-        ),
+        modifier = modifier,
         colors = CardDefaults.defaultColors(color = MiuixTheme.colorScheme.surfaceVariant),
         cornerRadius = 12.dp,
+        pressFeedbackType = PressFeedbackType.Sink,
+        onClick = onClick,
     ) {
         Column(modifier = Modifier.fillMaxWidth().padding(vertical = 12.dp),
             horizontalAlignment = Alignment.CenterHorizontally,

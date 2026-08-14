@@ -4,10 +4,13 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.hezi.juyumao.data.local.db.entity.SongEntity
 import com.hezi.juyumao.data.local.lyrics.LyricsManager
+import com.hezi.juyumao.data.local.metadata.TagEditor
 import com.hezi.juyumao.data.remote.smb.SmbConnectionState
 import com.hezi.juyumao.data.repository.MusicRepository
 import com.hezi.juyumao.data.repository.SmbRepository
+import com.hezi.juyumao.player.PlaybackController
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
@@ -16,7 +19,9 @@ import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Semaphore
 import kotlinx.coroutines.sync.withPermit
+import kotlinx.coroutines.withContext
 import kotlin.random.Random
+import java.io.File
 import java.time.LocalDateTime
 import javax.inject.Inject
 
@@ -44,6 +49,7 @@ data class HomeUiState(
 @HiltViewModel
 class HomeViewModel @Inject constructor(
     private val musicRepository: MusicRepository,
+    private val playbackController: PlaybackController,
     smbRepository: SmbRepository,
     private val lyricsManager: LyricsManager,
 ) : ViewModel() {
@@ -139,6 +145,58 @@ class HomeViewModel @Inject constructor(
         if (lines.size <= 2) return@withPermit emptyList()
         // 避开首尾歌词（各去 1 句，保证是"中段"歌词）
         lines.drop(1).dropLast(1)
+    }
+
+    /** 下一首播放（插入队列当前+1，不打断播放） */
+    fun playNext(song: SongEntity) {
+        playbackController.playNext(song)
+    }
+
+    /** 稍后播放（追加到队列末尾） */
+    fun playLater(song: SongEntity) {
+        playbackController.addToQueue(song)
+    }
+
+    /** 切换收藏状态 */
+    fun toggleFavorite(song: SongEntity) {
+        viewModelScope.launch {
+            musicRepository.toggleFavorite(song.id, !song.isFavorite)
+        }
+    }
+
+    /** 更新星级评分 */
+    fun setRating(song: SongEntity, rating: Int) {
+        viewModelScope.launch {
+            musicRepository.updateRating(song.id, rating)
+        }
+    }
+
+    /** 编辑标签结果提示（一次性） */
+    private val _editMessage = MutableStateFlow<String?>(null)
+    val editMessage: StateFlow<String?> = _editMessage
+
+    fun consumeEditMessage() {
+        _editMessage.value = null
+    }
+
+    /** 编辑本地歌曲标签（写文件 + 更新数据库） */
+    fun editTags(song: SongEntity, title: String, artist: String, album: String, genre: String, year: Int) {
+        viewModelScope.launch {
+            if (song.source != "LOCAL") {
+                _editMessage.value = "仅本地歌曲可编辑标签"
+                return@launch
+            }
+            val result = withContext(Dispatchers.IO) {
+                TagEditor.editLocalTags(File(song.filePath), title, artist, album, genre, year)
+            }
+            result.fold(
+                onSuccess = {
+                    musicRepository.updateTags(song.id, title, artist, album, genre, year)
+                    _editMessage.value = "标签已更新"
+                },
+                onFailure = { _editMessage.value = "编辑失败: ${it.message}" },
+            )
+        }
     }
 
     fun scanLocalMusic() {

@@ -33,6 +33,7 @@ fun StatisticsScreen(
     viewModel: StatisticsViewModel = hiltViewModel(),
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+    val playHistory by viewModel.playHistory.collectAsStateWithLifecycle()
 
     Column(modifier = Modifier.fillMaxSize()) {
         SmallTopAppBar(
@@ -73,6 +74,23 @@ fun StatisticsScreen(
                                 style = MiuixTheme.textStyles.footnote1,
                                 color = MiuixTheme.colorScheme.onSurfaceSecondary,
                             )
+                            // 播放时段分布（P1-10）
+                            if (uiState.hourSlots.any { it.second > 0 }) {
+                                Spacer(modifier = Modifier.height(4.dp))
+                                Row(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    horizontalArrangement = Arrangement.SpaceBetween,
+                                ) {
+                                    uiState.hourSlots.forEach { (label, cnt) ->
+                                        Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                                            Text("$cnt", style = MiuixTheme.textStyles.title3,
+                                                color = MiuixTheme.colorScheme.primary)
+                                            Text(label, style = MiuixTheme.textStyles.footnote2,
+                                                color = MiuixTheme.colorScheme.onSurfaceSecondary)
+                                        }
+                                    }
+                                }
+                            }
                         }
                     }
                 }
@@ -166,8 +184,58 @@ fun StatisticsScreen(
                         }
                     }
                 }
+
+                // 播放历史（时间线，P2-16）
+                if (playHistory.isNotEmpty()) {
+                    item {
+                        Text("播放历史", style = MiuixTheme.textStyles.headline1,
+                            color = MiuixTheme.colorScheme.onBackground,
+                            modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp))
+                    }
+                    items(playHistory, key = { it.id }) { h ->
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .clickable(
+                                    interactionSource = remember { MutableInteractionSource() },
+                                    indication = SinkFeedback(
+                                        sinkAmount = 0.85f,
+                                        animationSpec = spring(dampingRatio = 0.99f, stiffness = 986.96f),
+                                    ),
+                                ) { onSongClick(h.songId) }
+                                .padding(horizontal = 16.dp, vertical = 8.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(12.dp),
+                        ) {
+                            Text(formatHistoryTime(h.playedAt),
+                                style = MiuixTheme.textStyles.footnote1,
+                                color = MiuixTheme.colorScheme.onSurfaceSecondary,
+                                modifier = Modifier.width(72.dp))
+                            Icon(MiuixIcons.Music, null,
+                                tint = MiuixTheme.colorScheme.primary, modifier = Modifier.size(20.dp))
+                            Column(modifier = Modifier.weight(1f)) {
+                                Text(h.title, style = MiuixTheme.textStyles.body1,
+                                    color = MiuixTheme.colorScheme.onSurface, maxLines = 1,
+                                    overflow = TextOverflow.Ellipsis)
+                                Text(h.artist, style = MiuixTheme.textStyles.footnote1,
+                                    color = MiuixTheme.colorScheme.onSurfaceSecondary, maxLines = 1,
+                                    overflow = TextOverflow.Ellipsis)
+                            }
+                        }
+                    }
+                }
             }
         }
+    }
+}
+
+/** 播放历史时间格式：MM-dd HH:mm */
+private fun formatHistoryTime(ts: Long): String {
+    return try {
+        java.text.SimpleDateFormat("MM-dd HH:mm", java.util.Locale.getDefault())
+            .format(java.util.Date(ts))
+    } catch (_: Exception) {
+        ""
     }
 }
 

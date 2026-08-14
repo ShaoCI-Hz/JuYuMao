@@ -23,6 +23,7 @@ sealed class Screen(val route: String) {
     data object Equalizer : Screen("equalizer")
     data object Cache : Screen("cache")
     data object Playlist : Screen("playlist")
+    data object SmartPlaylist : Screen("smart_playlist")
     data object Statistics : Screen("statistics")
 }
 

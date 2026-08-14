@@ -6,31 +6,65 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.glance.*
+import androidx.glance.action.ActionParameters
 import androidx.glance.action.actionStartActivity
 import androidx.glance.action.clickable
 import androidx.glance.appwidget.*
+import androidx.glance.appwidget.action.ActionCallback
+import androidx.glance.appwidget.action.actionRunCallback
 import androidx.glance.appwidget.cornerRadius
+import androidx.glance.appwidget.updateAll
 import androidx.glance.layout.*
 import androidx.glance.text.FontWeight
 import androidx.glance.text.Text
 import androidx.glance.text.TextStyle
 import androidx.glance.unit.ColorProvider
 import com.hezi.juyumao.MainActivity
+import com.hezi.juyumao.player.PlaybackController
+import com.hezi.juyumao.player.PlaybackStateHolder
+import dagger.hilt.EntryPoint
+import dagger.hilt.InstallIn
+import dagger.hilt.android.EntryPointAccessors
+import dagger.hilt.components.SingletonComponent
+
+/** Hilt EntryPoint：GlanceAppWidget 无法 @Inject，通过它访问播放状态 */
+@EntryPoint
+@InstallIn(SingletonComponent::class)
+interface PlaybackEntryPoint {
+    fun holder(): PlaybackStateHolder
+    fun controller(): PlaybackController
+}
 
 class JuYuMaoWidget : GlanceAppWidget() {
 
     override suspend fun provideGlance(context: Context, id: GlanceId) {
         provideContent {
-            WidgetContent()
+            WidgetContent(context)
         }
     }
 
     @Composable
-    private fun WidgetContent() {
+    private fun WidgetContent(context: Context) {
         val backgroundColor = ColorProvider(Color(0xFF121212))
-        val primaryColor = ColorProvider(Color(0xFF1ED760))
+        val primaryColor = ColorProvider(Color(0xFF4A80F7))
         val textColor = ColorProvider(Color.White)
         val subtextColor = ColorProvider(Color(0xFFB3B3B3))
+
+        // 读取当前播放状态（P1-13）
+        var title = "局域猫播放器"
+        var subtitle = "点击打开"
+        var isPlaying = false
+        try {
+            val entry = EntryPointAccessors.fromApplication(context, PlaybackEntryPoint::class.java)
+            val song = entry.holder().currentSong.value
+            if (song != null) {
+                title = song.title
+                subtitle = song.artist
+                val line = entry.holder().lyricsLine.value
+                if (!line.isNullOrBlank()) subtitle = "$subtitle · $line"
+            }
+            isPlaying = entry.holder().isPlaying.value
+        } catch (_: Exception) {}
 
         Box(
             modifier = GlanceModifier
@@ -44,7 +78,7 @@ class JuYuMaoWidget : GlanceAppWidget() {
                 modifier = GlanceModifier.fillMaxSize(),
                 verticalAlignment = Alignment.CenterVertically,
             ) {
-                // Album art placeholder
+                // 专辑封面占位
                 Box(
                     modifier = GlanceModifier
                         .size(48.dp)
@@ -64,12 +98,12 @@ class JuYuMaoWidget : GlanceAppWidget() {
 
                 Spacer(modifier = GlanceModifier.width(12.dp))
 
-                // Song info
+                // 歌曲信息 + 歌词
                 Column(
                     modifier = GlanceModifier.defaultWeight(),
                 ) {
                     Text(
-                        text = "局域猫播放器",
+                        text = title,
                         style = TextStyle(
                             color = textColor,
                             fontSize = 14.sp,
@@ -78,7 +112,7 @@ class JuYuMaoWidget : GlanceAppWidget() {
                         maxLines = 1,
                     )
                     Text(
-                        text = "点击打开",
+                        text = subtitle,
                         style = TextStyle(
                             color = subtextColor,
                             fontSize = 12.sp,
@@ -87,18 +121,17 @@ class JuYuMaoWidget : GlanceAppWidget() {
                     )
                 }
 
-                // Play button：当前为静态占位（未接入播放状态源），点击打开 App；
-                // 播放/暂停控制需接入播放服务状态后实现（updatePeriodMillis=0 不自动刷新）
+                // 播放/暂停按钮（P1-13）
                 Box(
                     modifier = GlanceModifier
                         .size(40.dp)
                         .background(primaryColor)
                         .cornerRadius(20.dp)
-                        .clickable(actionStartActivity<MainActivity>()),
+                        .clickable(actionRunCallback<PlayPauseAction>()),
                     contentAlignment = Alignment.Center,
                 ) {
                     Text(
-                        text = "▶",
+                        text = if (isPlaying) "⏸" else "▶",
                         style = TextStyle(
                             color = ColorProvider(Color.Black),
                             fontSize = 18.sp,
@@ -107,6 +140,18 @@ class JuYuMaoWidget : GlanceAppWidget() {
                 }
             }
         }
+    }
+}
+
+/** 播放/暂停动作（P1-13） */
+class PlayPauseAction : ActionCallback {
+    override suspend fun onAction(context: Context, glanceId: GlanceId, parameters: ActionParameters) {
+        try {
+            val entry = EntryPointAccessors.fromApplication(context, PlaybackEntryPoint::class.java)
+            entry.controller().togglePlay()
+        } catch (_: Exception) {}
+        // 刷新 widget 状态
+        try { JuYuMaoWidget().updateAll(context) } catch (_: Exception) {}
     }
 }
 

@@ -18,8 +18,11 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.text.SpanStyle
+import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.hezi.juyumao.player.audio.LyricsData
@@ -163,8 +166,27 @@ fun LyricsView(
                 label = "lyric_color",
             )
 
+            // 逐字卡拉OK 高亮：当前行且含逐字时间时，已唱字用主题色、未唱字半透明
+            val lyricPrimary = MiuixTheme.colorScheme.primary
+            val lyricSecondary = MiuixTheme.colorScheme.onSurfaceSecondary
+            val annotated = remember(line, currentPositionMs, lyricPrimary, lyricSecondary) {
+                if (isCurrent && !line.words.isNullOrEmpty()) {
+                    buildAnnotatedString {
+                        line.words.forEach { w ->
+                            val wordColor = if (currentPositionMs >= w.timeMs)
+                                lyricPrimary
+                            else
+                                lyricSecondary.copy(alpha = 0.7f)
+                            withStyle(SpanStyle(color = wordColor)) {
+                                append(w.text)
+                            }
+                        }
+                    }
+                } else null
+            }
+
             Text(
-                text = line.text,
+                text = annotated ?: androidx.compose.ui.text.AnnotatedString(line.text),
                 modifier = Modifier
                     .fillMaxWidth()
                     .graphicsLayer {

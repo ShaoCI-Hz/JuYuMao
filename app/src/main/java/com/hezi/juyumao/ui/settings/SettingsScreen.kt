@@ -19,6 +19,7 @@ import top.yukonga.miuix.kmp.basic.*
 import top.yukonga.miuix.kmp.icon.MiuixIcons
 import top.yukonga.miuix.kmp.icon.extended.*
 import top.yukonga.miuix.kmp.overlay.OverlayDialog
+import top.yukonga.miuix.kmp.squircle.squircleBackground
 import top.yukonga.miuix.kmp.utils.SinkFeedback
 import top.yukonga.miuix.kmp.theme.MiuixTheme
 
@@ -30,7 +31,9 @@ fun SettingsScreen(
     viewModel: SettingsViewModel = hiltViewModel(),
 ) {
     val themeMode by viewModel.themeMode.collectAsStateWithLifecycle()
+    val accentColor by viewModel.accentColor.collectAsStateWithLifecycle()
     var showThemeDialog by remember { mutableStateOf(false) }
+    var showAccentDialog by remember { mutableStateOf(false) }
     val appViewModel: com.hezi.juyumao.ui.AppViewModel = androidx.hilt.navigation.compose.hiltViewModel()
 
     val themeLabel = when (themeMode) {
@@ -54,6 +57,52 @@ fun SettingsScreen(
                     title = "主题模式",
                     subtitle = themeLabel,
                     onClick = { showThemeDialog = true },
+                )
+                // 强调色（P1-14）
+                val defaultAccent = MiuixTheme.colorScheme.primary
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clickable(
+                            interactionSource = remember { MutableInteractionSource() },
+                            indication = SinkFeedback(sinkAmount = 0.85f, animationSpec = spring(dampingRatio = 0.99f, stiffness = 986.96f)),
+                            onClick = { showAccentDialog = true },
+                        )
+                        .padding(horizontal = 16.dp, vertical = 14.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(16.dp),
+                ) {
+                    Icon(MiuixIcons.Theme, null, tint = MiuixTheme.colorScheme.primary, modifier = Modifier.size(24.dp))
+                    Column(modifier = Modifier.weight(1f)) {
+                        Text("强调色", style = MiuixTheme.textStyles.body1,
+                            color = MiuixTheme.colorScheme.onSurface)
+                        Text(accentLabel(accentColor), style = MiuixTheme.textStyles.footnote1,
+                            color = MiuixTheme.colorScheme.onSurfaceSecondary)
+                    }
+                    Box(
+                        modifier = Modifier.size(22.dp)
+                            .squircleBackground(
+                                color = accentColor.takeIf { it.isNotBlank() }?.let {
+                                    try { androidx.compose.ui.graphics.Color(android.graphics.Color.parseColor(it)) }
+                                    catch (_: Exception) { defaultAccent }
+                                } ?: defaultAccent,
+                                cornerRadius = 6.dp,
+                            ),
+                    )
+                }
+            }
+        }
+
+        // 强调色对话框
+        item {
+            if (showAccentDialog) {
+                AccentColorDialog(
+                    current = accentColor,
+                    onDismiss = { showAccentDialog = false },
+                    onPick = { hex ->
+                        viewModel.setAccentColor(hex)
+                        showAccentDialog = false
+                    },
                 )
             }
         }
@@ -145,6 +194,29 @@ fun SettingsScreen(
                     subtitle = "调节音频效果",
                     onClick = onNavigateToEqualizer,
                 )
+                // 响度归一化开关（P1-8）
+                val replayGain by viewModel.replayGain.collectAsStateWithLifecycle()
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clickable(
+                            interactionSource = remember { MutableInteractionSource() },
+                            indication = SinkFeedback(sinkAmount = 0.85f, animationSpec = spring(dampingRatio = 0.99f, stiffness = 986.96f)),
+                            onClick = { viewModel.setReplayGain(!replayGain) },
+                        )
+                        .padding(horizontal = 16.dp, vertical = 14.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(16.dp),
+                ) {
+                    Icon(MiuixIcons.TopDownloads, null, tint = MiuixTheme.colorScheme.onSurface, modifier = Modifier.size(24.dp))
+                    Column(modifier = Modifier.weight(1f)) {
+                        Text("响度归一化", style = MiuixTheme.textStyles.body1,
+                            color = MiuixTheme.colorScheme.onSurface)
+                        Text("按 ReplayGain 统一不同专辑的音量", style = MiuixTheme.textStyles.footnote1,
+                            color = MiuixTheme.colorScheme.onSurfaceSecondary)
+                    }
+                    Switch(checked = replayGain, onCheckedChange = { viewModel.setReplayGain(it) })
+                }
                 // 无缝播放开关
                 Row(
                     modifier = Modifier
@@ -309,6 +381,29 @@ fun SettingsScreen(
                     Text("歌词加粗", style = MiuixTheme.textStyles.body1,
                         color = MiuixTheme.colorScheme.onSurface, modifier = Modifier.weight(1f))
                     Switch(checked = lyricsFontBold, onCheckedChange = { viewModel.setLyricsFontBold(it) })
+                }
+                // 在线歌词（P1-7）
+                val onlineLyrics by viewModel.onlineLyrics.collectAsStateWithLifecycle()
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clickable(
+                            interactionSource = remember { MutableInteractionSource() },
+                            indication = SinkFeedback(sinkAmount = 0.85f, animationSpec = spring(dampingRatio = 0.99f, stiffness = 986.96f)),
+                            onClick = { viewModel.setOnlineLyrics(!onlineLyrics) },
+                        )
+                        .padding(horizontal = 16.dp, vertical = 14.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(16.dp),
+                ) {
+                    Icon(MiuixIcons.CloudFill, null, tint = MiuixTheme.colorScheme.onSurface, modifier = Modifier.size(24.dp))
+                    Column(modifier = Modifier.weight(1f)) {
+                        Text("在线歌词", style = MiuixTheme.textStyles.body1,
+                            color = MiuixTheme.colorScheme.onSurface)
+                        Text("无本地歌词时自动从网络获取", style = MiuixTheme.textStyles.footnote1,
+                            color = MiuixTheme.colorScheme.onSurfaceSecondary)
+                    }
+                    Switch(checked = onlineLyrics, onCheckedChange = { viewModel.setOnlineLyrics(it) })
                 }
             }
         }
@@ -524,6 +619,68 @@ private fun AudioOutputInfo() {
                 style = MiuixTheme.textStyles.footnote1,
                 color = MiuixTheme.colorScheme.onSurfaceVariantSummary,
             )
+        }
+    }
+}
+
+/** 预设强调色（P1-14）：默认(MIUI蓝) + 常见色 */
+private val accentPresets = listOf(
+    "默认" to "",
+    "MIUI 蓝" to "#FF3482FF",
+    "活力绿" to "#FF1ED760",
+    "珊瑚红" to "#FFFF4D4F",
+    "紫罗兰" to "#FF8E24AA",
+    "金色" to "#FFD4A017",
+    "青色" to "#FF00BFA5",
+)
+
+private fun accentLabel(hex: String): String =
+    accentPresets.firstOrNull { it.second == hex }?.first ?: "自定义"
+
+/** 强调色选择对话框 */
+@Composable
+private fun AccentColorDialog(
+    current: String,
+    onDismiss: () -> Unit,
+    onPick: (String) -> Unit,
+) {
+    OverlayDialog(show = true, title = "选择强调色", onDismissRequest = onDismiss) {
+        Column(
+            modifier = Modifier.padding(start = 24.dp, end = 24.dp, bottom = 16.dp),
+            verticalArrangement = Arrangement.spacedBy(4.dp),
+        ) {
+            accentPresets.forEach { (label, hex) ->
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clickable(
+                            interactionSource = remember { MutableInteractionSource() },
+                            indication = SinkFeedback(
+                                sinkAmount = 0.85f,
+                                animationSpec = spring(dampingRatio = 0.99f, stiffness = 986.96f),
+                            ),
+                            onClick = { onPick(hex) },
+                        )
+                        .padding(vertical = 10.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(12.dp),
+                ) {
+                    Box(
+                        modifier = Modifier.size(26.dp)
+                            .squircleBackground(
+                                color = if (hex.isBlank()) MiuixTheme.colorScheme.primary
+                                        else try { androidx.compose.ui.graphics.Color(android.graphics.Color.parseColor(hex)) }
+                                             catch (_: Exception) { MiuixTheme.colorScheme.primary },
+                                cornerRadius = 7.dp,
+                            ),
+                    )
+                    Text(label, style = MiuixTheme.textStyles.body1,
+                        color = MiuixTheme.colorScheme.onSurface, modifier = Modifier.weight(1f))
+                    if (hex == current) {
+                        Icon(MiuixIcons.Ok, null, tint = MiuixTheme.colorScheme.primary, modifier = Modifier.size(20.dp))
+                    }
+                }
+            }
         }
     }
 }

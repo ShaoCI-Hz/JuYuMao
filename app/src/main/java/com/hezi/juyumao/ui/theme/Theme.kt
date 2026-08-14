@@ -36,6 +36,7 @@ val LocalExtendedColors = compositionLocalOf { DefaultExtendedColors }
 @Composable
 fun JuYuMaoTheme(
     themeMode: ThemeMode = ThemeMode.DARK,
+    accentColorHex: String = "",
     content: @Composable () -> Unit,
 ) {
     val isDark = when (themeMode) {
@@ -55,8 +56,17 @@ fun JuYuMaoTheme(
         ThemeMode.LIGHT -> ColorSchemeMode.Light
         ThemeMode.SYSTEM -> ColorSchemeMode.System
     }
-    val themeController = remember(colorSchemeMode) {
-        ThemeController(colorSchemeMode = colorSchemeMode)
+
+    // 自定义强调色（P1-14）：非空时用 MiuixTheme(Colors) 重载覆盖 primary/primaryVariant
+    val customColor = remember(accentColorHex) {
+        if (accentColorHex.isBlank()) null
+        else try {
+            androidx.compose.ui.graphics.Color(
+                android.graphics.Color.parseColor(accentColorHex)
+            )
+        } catch (_: Exception) {
+            null
+        }
     }
 
     val extendedColors = ExtendedColors(
@@ -77,9 +87,28 @@ fun JuYuMaoTheme(
     androidx.compose.runtime.CompositionLocalProvider(
         LocalExtendedColors provides extendedColors,
     ) {
-        MiuixTheme(
-            controller = themeController,
-            content = content,
-        )
+        if (customColor != null) {
+            // Colors 的 primary 等字段 setter 是 internal，改用 public copy() 派生自定义配色
+            val colors = remember(customColor, isDark) {
+                (if (isDark) top.yukonga.miuix.kmp.theme.darkColorScheme()
+                 else top.yukonga.miuix.kmp.theme.lightColorScheme()).copy(
+                    primary = customColor,
+                    primaryVariant = customColor,
+                    onPrimary = androidx.compose.ui.graphics.Color.White,
+                )
+            }
+            MiuixTheme(
+                colors = colors,
+                content = content,
+            )
+        } else {
+            val themeController = remember(colorSchemeMode) {
+                ThemeController(colorSchemeMode = colorSchemeMode)
+            }
+            MiuixTheme(
+                controller = themeController,
+                content = content,
+            )
+        }
     }
 }

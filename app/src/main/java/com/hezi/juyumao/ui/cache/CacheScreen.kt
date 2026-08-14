@@ -4,8 +4,6 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -72,7 +70,7 @@ fun CacheScreen(
                     }
                     Button(onClick = { showClearDialog = true }, modifier = Modifier.weight(1f),
                         cornerRadius = 8.dp) {
-                        Icon(Icons.Default.DeleteSweep, null, modifier = Modifier.size(18.dp)) // miuix-icons 无对应，语义近似
+                        Icon(MiuixIcons.Delete, null, modifier = Modifier.size(18.dp))
                         Spacer(Modifier.width(4.dp))
                         Text("清除缓存")
                     }
@@ -114,7 +112,7 @@ fun CacheScreen(
                         cornerRadius = 12.dp) {
                         Row(modifier = Modifier.padding(16.dp), verticalAlignment = Alignment.CenterVertically,
                             horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                            Icon(Icons.Default.AudioFile, null, tint = MiuixTheme.colorScheme.primary) // miuix-icons 无对应，语义近似
+                            Icon(MiuixIcons.Music, null, tint = MiuixTheme.colorScheme.primary)
                             Column(modifier = Modifier.weight(1f)) {
                                 Text(cachedSong.fileName, style = MiuixTheme.textStyles.body1,
                                     maxLines = 1)

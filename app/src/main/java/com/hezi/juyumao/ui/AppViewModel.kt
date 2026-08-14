@@ -51,6 +51,10 @@ class AppViewModel @Inject constructor(
     val themeMode: StateFlow<ThemeMode> = settingsRepository.themeMode
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), ThemeMode.DARK)
 
+    /** 自定义强调色（hex，P1-14） */
+    val accentColor: StateFlow<String> = settingsRepository.accentColor
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), "")
+
     /** 首次引导是否完成（T12） */
     val onboardingCompleted: StateFlow<Boolean> = settingsRepository.onboardingCompleted
         .stateIn(viewModelScope, SharingStarted.Eagerly, false)

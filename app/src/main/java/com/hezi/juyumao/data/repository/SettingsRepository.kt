@@ -29,6 +29,9 @@ class SettingsRepository @Inject constructor(
     val playbackSpeed: Flow<Float> = settingsDataStore.playbackSpeed
     val crossfadeDuration: Flow<Int> = settingsDataStore.crossfadeDuration
     val spectrumVisualizer: Flow<Boolean> = settingsDataStore.spectrumVisualizer
+    val onlineLyrics: Flow<Boolean> = settingsDataStore.onlineLyrics
+    val replayGain: Flow<Boolean> = settingsDataStore.replayGain
+    val accentColor: Flow<String> = settingsDataStore.accentColor
     val onboardingCompleted: Flow<Boolean> = settingsDataStore.onboardingCompleted
 
     suspend fun setThemeMode(mode: ThemeMode) {
@@ -51,5 +54,8 @@ class SettingsRepository @Inject constructor(
     suspend fun setPlaybackSpeed(speed: Float) = settingsDataStore.setPlaybackSpeed(speed)
     suspend fun setCrossfadeDuration(ms: Int) = settingsDataStore.setCrossfadeDuration(ms)
     suspend fun setSpectrumVisualizer(enabled: Boolean) = settingsDataStore.setSpectrumVisualizer(enabled)
+    suspend fun setOnlineLyrics(enabled: Boolean) = settingsDataStore.setOnlineLyrics(enabled)
+    suspend fun setReplayGain(enabled: Boolean) = settingsDataStore.setReplayGain(enabled)
+    suspend fun setAccentColor(hex: String) = settingsDataStore.setAccentColor(hex)
     suspend fun setOnboardingCompleted(completed: Boolean) = settingsDataStore.setOnboardingCompleted(completed)
 }

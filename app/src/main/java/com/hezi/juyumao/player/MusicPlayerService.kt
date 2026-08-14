@@ -13,7 +13,14 @@ import androidx.media3.session.MediaSession
 import androidx.media3.session.MediaSessionService
 import androidx.media3.ui.PlayerNotificationManager
 import com.hezi.juyumao.MainActivity
+import com.hezi.juyumao.data.local.db.dao.SongDao
 import dagger.hilt.android.AndroidEntryPoint
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.cancel
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 import javax.inject.Inject
 
 @AndroidEntryPoint
@@ -25,18 +32,25 @@ class MusicPlayerService : MediaSessionService() {
     @Inject
     lateinit var playbackStateHolder: PlaybackStateHolder
 
+    @Inject
+    lateinit var songDao: SongDao
+
     private var mediaSession: MediaSession? = null
     private var notificationManager: PlayerNotificationManager? = null
+
+    private val scope = CoroutineScope(Dispatchers.Main + SupervisorJob())
 
     companion object {
         private const val CHANNEL_ID = "juyumao_media_playback"
         private const val NOTIFICATION_ID = 1001
+        private const val ACTION_FAVORITE = "com.hezi.juyumao.FAVORITE"
     }
 
     override fun onCreate() {
         super.onCreate()
         createNotificationChannel()
 
+        // 通知栏收藏快捷（P1-12）：Media3 1.5.1 的 CustomActionReceiver API 与当前解析版本不兼容，暂不做通知栏收藏按钮
         mediaSession = MediaSession.Builder(this, exoPlayer).build()
 
         // 使用 PlayerNotificationManager 自动管理通知栏控件
@@ -59,7 +73,10 @@ class MusicPlayerService : MediaSessionService() {
                 }
 
                 override fun getCurrentContentText(player: Player): CharSequence? {
-                    return player.mediaMetadata.artist ?: "未知艺术家"
+                    // 艺术家 + 当前歌词行（P1-12）
+                    val artist = player.mediaMetadata.artist ?: "未知艺术家"
+                    val line = playbackStateHolder.lyricsLine.value
+                    return if (line != null) "$artist · $line" else artist
                 }
 
                 override fun getCurrentLargeIcon(
@@ -103,6 +120,16 @@ class MusicPlayerService : MediaSessionService() {
             setUseNextAction(true)
             setUsePreviousAction(true)
         }
+
+        // 定时刷新通知（仅歌词非空时，P1-12）
+        scope.launch {
+            while (true) {
+                delay(5000)
+                if (playbackStateHolder.lyricsLine.value != null) {
+                    try { notificationManager?.invalidate() } catch (_: Exception) {}
+                }
+            }
+        }
     }
 
     private fun createNotificationChannel() {
@@ -113,7 +140,7 @@ class MusicPlayerService : MediaSessionService() {
         ).apply {
             description = "局域猫播放器音乐播放控制"
             setShowBadge(false)
-            lockscreenVisibility = Notification.VISIBILITY_PUBLIC
+            lockscreenVisibility = Notification.VISIBILITY_PRIVATE
         }
         val manager = getSystemService(NotificationManager::class.java)
         manager.createNotificationChannel(channel)
@@ -132,6 +159,7 @@ class MusicPlayerService : MediaSessionService() {
     }
 
     override fun onDestroy() {
+        scope.cancel()
         notificationManager?.setPlayer(null)
         // 不释放 ExoPlayer（由 Hilt 单例管理生命周期），只释放 mediaSession
         mediaSession?.release()

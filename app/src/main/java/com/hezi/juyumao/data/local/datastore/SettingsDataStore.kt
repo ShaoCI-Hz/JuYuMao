@@ -23,6 +23,9 @@ class SettingsDataStore(private val context: Context) {
         private val PLAYBACK_SPEED = floatPreferencesKey("playback_speed")
         private val CROSSFADE_DURATION = intPreferencesKey("crossfade_duration")
         private val SPECTRUM_VISUALIZER = booleanPreferencesKey("spectrum_visualizer")
+        private val ONLINE_LYRICS = booleanPreferencesKey("online_lyrics")
+        private val REPLAY_GAIN = booleanPreferencesKey("replay_gain")
+        private val ACCENT_COLOR = stringPreferencesKey("accent_color")
         private val ONBOARDING_COMPLETED = booleanPreferencesKey("onboarding_completed")
     }
 
@@ -37,6 +40,9 @@ class SettingsDataStore(private val context: Context) {
     val playbackSpeed: Flow<Float> = context.dataStore.data.map { it[PLAYBACK_SPEED] ?: 1.0f }
     val crossfadeDuration: Flow<Int> = context.dataStore.data.map { it[CROSSFADE_DURATION] ?: 0 }
     val spectrumVisualizer: Flow<Boolean> = context.dataStore.data.map { it[SPECTRUM_VISUALIZER] ?: true }
+    val onlineLyrics: Flow<Boolean> = context.dataStore.data.map { it[ONLINE_LYRICS] ?: true }
+    val replayGain: Flow<Boolean> = context.dataStore.data.map { it[REPLAY_GAIN] ?: false }
+    val accentColor: Flow<String> = context.dataStore.data.map { it[ACCENT_COLOR] ?: "" }
     val onboardingCompleted: Flow<Boolean> = context.dataStore.data.map { it[ONBOARDING_COMPLETED] ?: false }
 
     suspend fun setThemeMode(mode: String) {
@@ -81,6 +87,18 @@ class SettingsDataStore(private val context: Context) {
 
     suspend fun setSpectrumVisualizer(enabled: Boolean) {
         context.dataStore.edit { it[SPECTRUM_VISUALIZER] = enabled }
+    }
+
+    suspend fun setOnlineLyrics(enabled: Boolean) {
+        context.dataStore.edit { it[ONLINE_LYRICS] = enabled }
+    }
+
+    suspend fun setReplayGain(enabled: Boolean) {
+        context.dataStore.edit { it[REPLAY_GAIN] = enabled }
+    }
+
+    suspend fun setAccentColor(hex: String) {
+        context.dataStore.edit { it[ACCENT_COLOR] = hex }
     }
 
     suspend fun setOnboardingCompleted(completed: Boolean) {

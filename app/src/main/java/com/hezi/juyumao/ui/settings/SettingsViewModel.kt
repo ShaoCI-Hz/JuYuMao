@@ -23,7 +23,13 @@ class SettingsViewModel @Inject constructor(
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), 18f)
 
     val lyricsFontBold: StateFlow<Boolean> = settingsRepository.lyricsFontBold
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), false)
+    val onlineLyrics: StateFlow<Boolean> = settingsRepository.onlineLyrics
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), true)
+    val replayGain: StateFlow<Boolean> = settingsRepository.replayGain
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), false)
+    val accentColor: StateFlow<String> = settingsRepository.accentColor
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), "")
 
     val cacheThreads: StateFlow<Int> = settingsRepository.cacheThreads
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), 4)
@@ -53,6 +59,21 @@ class SettingsViewModel @Inject constructor(
 
     fun setLyricsFontBold(bold: Boolean) {
         viewModelScope.launch { settingsRepository.setLyricsFontBold(bold) }
+    }
+
+    /** 在线歌词开关（P1-7） */
+    fun setOnlineLyrics(enabled: Boolean) {
+        viewModelScope.launch { settingsRepository.setOnlineLyrics(enabled) }
+    }
+
+    /** ReplayGain 响度归一化开关（P1-8） */
+    fun setReplayGain(enabled: Boolean) {
+        viewModelScope.launch { settingsRepository.setReplayGain(enabled) }
+    }
+
+    /** 自定义强调色（P1-14） */
+    fun setAccentColor(hex: String) {
+        viewModelScope.launch { settingsRepository.setAccentColor(hex) }
     }
 
     fun setCacheThreads(threads: Int) {

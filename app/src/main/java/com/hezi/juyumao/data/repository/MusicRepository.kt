@@ -40,11 +40,29 @@ class MusicRepository @Inject constructor(
     suspend fun toggleFavorite(songId: Long, isFavorite: Boolean) =
         songDao.updateFavorite(songId, isFavorite)
 
+    /** 更新星级评分（0-5） */
+    suspend fun updateRating(songId: Long, rating: Int) = songDao.updateRating(songId, rating)
+
+    /** 仅更新标签字段（避免全字段回写覆盖并发变更） */
+    suspend fun updateTags(
+        songId: Long, title: String, artist: String, album: String, genre: String?, year: Int,
+    ) = songDao.updateTags(songId, title, artist, album, genre, year)
+
     // ── 播放统计（T10.10） ──
 
     fun getTotalPlayCount() = songDao.getTotalPlayCount()
 
+    /** 最近添加歌曲（按入库时间倒序） */
+    fun getRecentlyAdded(limit: Int) = songDao.getRecentlyAdded(limit)
+
+    /** 播放最多的歌曲（按播放次数倒序） */
     fun getTopPlayedSongs(limit: Int) = songDao.getTopPlayedSongs(limit)
+
+    /** 播放历史（时间线，倒序） */
+    fun getRecentPlayHistory(limit: Int) = songDao.getRecentPlayHistory(limit)
+
+    /** 播放时段分布（各小时播放次数） */
+    suspend fun getPlayHourDistribution() = songDao.getPlayHourDistribution()
 
     fun getSongsPlayedSince(since: Long) = songDao.getSongsPlayedSince(since)
 

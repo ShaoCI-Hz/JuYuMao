@@ -38,6 +38,14 @@ class PlaybackStateHolder @Inject constructor() {
     private val _errorMessage = MutableStateFlow<String?>(null)
     val errorMessage: StateFlow<String?> = _errorMessage
 
+    // 当前歌词行（P1-12：通知栏显示用）
+    private val _lyricsLine = MutableStateFlow<String?>(null)
+    val lyricsLine: StateFlow<String?> = _lyricsLine
+
+    fun updateLyricsLine(line: String?) {
+        _lyricsLine.value = line
+    }
+
     @Volatile private var exoPlayer: ExoPlayer? = null
     private var boundListener: Player.Listener? = null
 

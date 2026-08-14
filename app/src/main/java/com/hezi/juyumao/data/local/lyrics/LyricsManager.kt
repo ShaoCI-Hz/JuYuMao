@@ -34,6 +34,99 @@ class LyricsManager @Inject constructor(
         }
     }
 
+    // ── 在线歌词（P1-7）：lrclib.net 公开 API，本地缓存 ──
+
+    private val onlineLyricsDir: File
+        get() = File(context.cacheDir, "lyrics_online").apply { mkdirs() }
+
+    /** 读取已缓存的在线歌词 */
+    private fun readOnlineLyricsCache(songId: Long): LyricsData? {
+        val f = File(onlineLyricsDir, "$songId.lrc")
+        if (!f.exists()) return null
+        return try {
+            LrcParser.parse(f.readText())
+        } catch (_: Exception) {
+            null
+        }
+    }
+
+    /**
+     * 在线获取歌词（lrclib.net），成功缓存到本地。
+     * 返回 null 表示无结果/失败/未开启。调用方需自行判断开关。
+     */
+    suspend fun fetchOnlineLyrics(song: SongEntity): LyricsData? = withContext(Dispatchers.IO) {
+        // 先查缓存
+        readOnlineLyricsCache(song.id)?.let { return@withContext it }
+        try {
+            val track = java.net.URLEncoder.encode(song.title, "UTF-8")
+            val artist = java.net.URLEncoder.encode(song.artist, "UTF-8")
+            val url = java.net.URL(
+                "https://lrclib.net/api/search?track_name=$track&artist_name=$artist"
+            )
+            val conn = url.openConnection() as java.net.HttpURLConnection
+            try {
+                conn.connectTimeout = 8000
+                conn.readTimeout = 8000
+                conn.requestMethod = "GET"
+                // 不跟随重定向，避免恶意响应指向任意 host
+                conn.instanceFollowRedirects = false
+                if (conn.responseCode != 200) return@withContext null
+                // 限制读取上限 256KB，避免异常大响应 OOM
+                val body = conn.inputStream.use { ins ->
+                    val buffer = java.io.ByteArrayOutputStream()
+                    val buf = ByteArray(8192)
+                    var total = 0
+                    while (total < 256 * 1024) {
+                        val n = ins.read(buf)
+                        if (n < 0) break
+                        buffer.write(buf, 0, n)
+                        total += n
+                    }
+                    buffer.toString("UTF-8")
+                }
+                // 解析 JSON：取第一条 syncedLyrics
+                val synced = extractSyncedLyrics(body) ?: return@withContext null
+                val parsed = LrcParser.parse(synced)
+                if (parsed.lines.isEmpty()) return@withContext null
+                // 缓存
+                try {
+                    File(onlineLyricsDir, "${song.id}.lrc").writeText(synced)
+                } catch (_: Exception) {}
+                parsed
+            } finally {
+                conn.disconnect()
+            }
+        } catch (_: Exception) {
+            null
+        }
+    }
+
+    /** 极简 JSON 提取 syncedLyrics 字段（避免引入 JSON 库） */
+    private fun extractSyncedLyrics(json: String): String? {
+        val key = "\"syncedLyrics\":"
+        val idx = json.indexOf(key)
+        if (idx < 0) return null
+        var start = idx + key.length
+        while (start < json.length && json[start].isWhitespace()) start++
+        if (start >= json.length || json[start] != '"') return null
+        // 找字符串结束（处理转义引号）
+        val sb = StringBuilder()
+        var i = start + 1
+        while (i < json.length) {
+            val c = json[i]
+            if (c == '\\' && i + 1 < json.length) {
+                val n = json[i + 1]
+                sb.append(if (n == 'n') '\n' else n)
+                i += 2
+                continue
+            }
+            if (c == '"') break
+            sb.append(c)
+            i++
+        }
+        return if (sb.isNotEmpty()) sb.toString() else null
+    }
+
     private suspend fun getLyricsLocal(filePath: String): LyricsData? {
         findExternalLrc(filePath)?.let { return it }
         findEmbeddedLyrics(filePath)?.let { return it }

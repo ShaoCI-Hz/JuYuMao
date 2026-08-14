@@ -23,9 +23,12 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import javax.inject.Inject
 import javax.inject.Singleton
 
@@ -57,6 +60,12 @@ class PlaybackController @Inject constructor(
 
     /** 交叉淡化时长 ms（0 = 关闭） */
     @Volatile private var crossfadeMs: Int = 0
+
+    /** ReplayGain 响度归一化开关（P1-8） */
+    @Volatile private var replayGainEnabled: Boolean = false
+
+    /** ReplayGain 曲目增益缓存（songId -> gainDb） */
+    private val replayGainCache = java.util.concurrent.ConcurrentHashMap<Long, Float>()
 
     init {
         // 解码失败兜底：提示 + 自动跳过下一首（T9.5）
@@ -100,6 +109,9 @@ class PlaybackController @Inject constructor(
             try { settingsRepository.gaplessPlayback.collect { gaplessEnabled = it } } catch (_: Exception) {}
         }
         scope.launch {
+            try { settingsRepository.replayGain.collect { replayGainEnabled = it } } catch (_: Exception) {}
+        }
+        scope.launch {
             try { settingsRepository.crossfadeDuration.collect { crossfadeMs = it } } catch (_: Exception) {}
         }
         scope.launch {
@@ -116,6 +128,15 @@ class PlaybackController @Inject constructor(
                 val song = queue.currentSong() ?: return
                 scope.launch {
                     try { songDao.incrementPlayCount(song.id) } catch (_: Exception) {}
+                    // 播放历史时间线（P2-16）
+                    try {
+                        songDao.insertPlayHistory(
+                            com.hezi.juyumao.data.local.db.entity.PlayHistoryEntity(
+                                songId = song.id,
+                                source = if (song.source == SongSource.SMB) "SMB" else "LOCAL",
+                            )
+                        )
+                    } catch (_: Exception) {}
                 }
             }
         })
@@ -158,7 +179,9 @@ class PlaybackController @Inject constructor(
 
     fun play() {
         // 交叉淡化关闭时保证音量归一（避免上次淡出/取消停在中间音量）
-        if (crossfadeMs <= 0) exoPlayer.setVolume(1f)
+        if (crossfadeMs <= 0) {
+            queue.currentSong()?.let { applyVolumeFor(it) }
+        }
         exoPlayer.playWhenReady = true
         // 淡入（交叉淡化开启时）
         if (crossfadeMs > 0) {
@@ -168,8 +191,10 @@ class PlaybackController @Inject constructor(
         // isPlaying 由 ExoPlayer 的 onIsPlayingChanged 回调同步，不在此处虚报
     }
 
-    fun pause() {
-        // 淡出后暂停（交叉淡化开启时）
+    /** 当前是否正在播放（睡眠定时轮询用） */
+    fun isPlayingNow(): Boolean = exoPlayer.isPlaying
+
+    fun pause() {        // 淡出后暂停（交叉淡化开启时）
         if (crossfadeMs > 0 && exoPlayer.isPlaying) {
             fadeJob?.cancel()
             fadeJob = scope.launch {
@@ -182,8 +207,30 @@ class PlaybackController @Inject constructor(
         playbackStateHolder.updatePlaying(false)
     }
 
-    fun togglePlay() {
-        if (exoPlayer.isPlaying) pause() else play()
+    /** 睡眠定时：淡出后暂停，并恢复音量（P1-11）；返回 Job 供取消（配合取消睡眠定时） */
+    fun fadeOutAndPause(fadeMs: Long = 4000): Job? {
+        fadeJob?.cancel()
+        fadeJob = scope.launch {
+            try {
+                val from = exoPlayer.volume
+                val steps = 20
+                for (i in 1..steps) {
+                    exoPlayer.setVolume(from * (1f - i.toFloat() / steps))
+                    delay(fadeMs / steps)
+                }
+            } catch (_: kotlinx.coroutines.CancellationException) {
+                // 被取消（用户取消睡眠定时）：不恢复音量、不暂停，交给新任务处理
+                return@launch
+            } catch (_: Exception) {}
+            // 淡出完成：恢复音量并按 ReplayGain 重算
+            queue.currentSong()?.let { applyVolumeFor(it) } ?: exoPlayer.setVolume(1f)
+            exoPlayer.playWhenReady = false
+            playbackStateHolder.updatePlaying(false)
+        }
+        return fadeJob
+    }
+
+    fun togglePlay() {        if (exoPlayer.isPlaying) pause() else play()
     }
 
     fun next() {
@@ -214,6 +261,49 @@ class PlaybackController @Inject constructor(
 
     fun seekTo(positionMs: Long) {
         playbackStateHolder.seekTo(positionMs)
+    }
+
+    // ── A-B 循环（P2-12）──
+
+    private val _abLoop = MutableStateFlow<Pair<Long, Long>?>(null)
+    val abLoop: StateFlow<Pair<Long, Long>?> = _abLoop.asStateFlow()
+
+    /** 设置 A-B 循环区间（startMs < endMs 才生效） */
+    fun setAbLoop(startMs: Long, endMs: Long) {
+        if (endMs > startMs) _abLoop.value = startMs to endMs
+    }
+
+    /** 清除 A-B 循环 */
+    fun clearAbLoop() {
+        _abLoop.value = null
+    }
+
+    // ── ReplayGain 响度归一化（P1-8）──
+
+    /** 按曲目 ReplayGain 增益设置音量（-18dB..+6dB 映射，无标签或 NAS 歌用 1.0） */
+    private fun applyVolumeFor(song: Song) {
+        if (!replayGainEnabled) {
+            exoPlayer.setVolume(1f)
+            return
+        }
+        var gainDb = replayGainCache[song.id]
+        if (gainDb == null) {
+            // 缓存 miss：IO 线程读标签，避免主线程文件读取卡顿
+            gainDb = if (song.source == SongSource.LOCAL) {
+                try {
+                    kotlinx.coroutines.runBlocking {
+                        withContext(Dispatchers.IO) {
+                            com.hezi.juyumao.data.local.metadata.ReplayGainReader.readTrackGain(java.io.File(song.filePath))
+                        }
+                    }
+                } catch (_: Exception) {
+                    null
+                } ?: 0f
+            } else 0f
+            replayGainCache[song.id] = gainDb
+        }
+        val volume = (Math.pow(10.0, (gainDb / 20.0))).toFloat().coerceIn(0.1f, 1f)
+        exoPlayer.setVolume(volume)
     }
 
     fun setShuffle(enabled: Boolean) {
@@ -271,6 +361,32 @@ class PlaybackController @Inject constructor(
         // Media3 的 stop 保留队列，需显式清空，否则下次 play() 会重播残留队列
         exoPlayer.setMediaItems(emptyList())
         playbackStateHolder.updateSong(null)
+    }
+
+    /** 下一首播放：插入当前播放位置之后，不打断当前歌曲（手动/自动切歌时生效） */
+    fun playNext(song: SongEntity) {
+        val domain = song.toDomain()
+        // 队列为空时直接以该歌开播
+        if (queue.currentSong() == null) {
+            loadPlaylist(listOf(song), 0)
+            return
+        }
+        queue.insertNext(domain)
+    }
+
+    /** 稍后播放：追加到队列末尾 */
+    fun addToQueue(song: SongEntity) {
+        val domain = song.toDomain()
+        if (queue.currentSong() == null) {
+            loadPlaylist(listOf(song), 0)
+            return
+        }
+        queue.appendToQueue(domain)
+    }
+
+    /** 队列内移动（排序） */
+    fun moveQueue(from: Int, to: Int) {
+        queue.move(from, to)
     }
 
     /** 设置倍速并持久化（倍速下音高不变，Media3 内置支持） */
@@ -341,8 +457,8 @@ class PlaybackController @Inject constructor(
 
     private suspend fun playCurrent() {
         val song = queue.currentSong() ?: return
-        // 非淡入淡出路径确保音量归一（上次淡出取消可能停在中间值）
-        if (crossfadeMs <= 0) exoPlayer.setVolume(1f)
+        // 非淡入淡出路径确保音量归一（上次淡出取消可能停在中间值）；ReplayGain 开启时按曲目增益调音量（P1-8）
+        if (crossfadeMs <= 0) applyVolumeFor(song)
         // 动态缓冲：HiRes 歌曲用更大预缓冲（SMB 大文件防卡顿）
         val bufferKb = try { settingsRepository.audioBufferSize.first() } catch (_: Exception) { 256 }
         dynamicLoadControl.updateSettings(bufferKb, song.isHiRes)

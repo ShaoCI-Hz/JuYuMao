@@ -49,6 +49,14 @@ class EqualizerViewModel @Inject constructor(
         audioEffectsManager.usePreset(presetIndex)
     }
 
+    /** 内置预设列表（不依赖设备） */
+    val builtinPresets = audioEffectsManager.builtinPresets
+
+    /** 应用内置预设（固定曲线） */
+    fun applyBuiltinPreset(name: String) {
+        audioEffectsManager.applyBuiltinPreset(name)
+    }
+
     // ── 音效增强（T10.7）──
 
     fun setBassBoostEnabled(enabled: Boolean) {

@@ -25,6 +25,14 @@ data class EqualizerPreset(
     val name: String,
 )
 
+/** 内置预设：相对增益曲线（-1..1），5 个参考点按频段数线性插值；可选联动低音/虚拟环绕 */
+data class BuiltinEqualizerPreset(
+    val name: String,
+    val curve: FloatArray,
+    val bassBoost: Short = 0,   // 0-1000，联动 BassBoost 强度
+    val virtualizer: Short = 0, // 0-1000，联动 Virtualizer（3D 环绕）强度
+)
+
 data class EqualizerState(
     val enabled: Boolean = false,
     val bands: List<EqualizerBand> = emptyList(),
@@ -99,6 +107,63 @@ class AudioEffectsManager @Inject constructor() {
         try {
             equalizer?.usePreset(presetIndex)
             _state.value = _state.value.copy(currentPreset = presetIndex)
+            refreshState()
+        } catch (_: Exception) {}
+    }
+
+    // ── 内置预设（不依赖设备系统预设，固定曲线一键切换）──
+
+    /** 内置预设曲线：相对增益 -1..1，5 个参考点按频段数线性插值映射；联动低音/虚拟环绕 */
+    val builtinPresets = listOf(
+        BuiltinEqualizerPreset("标准", floatArrayOf(0f, 0f, 0f, 0f, 0f)),
+        BuiltinEqualizerPreset("摇滚", floatArrayOf(0.5f, 0.2f, -0.2f, 0.1f, 0.5f)),
+        BuiltinEqualizerPreset("爵士", floatArrayOf(0.3f, 0.1f, -0.3f, 0.1f, 0.4f)),
+        BuiltinEqualizerPreset("流行", floatArrayOf(-0.1f, 0.2f, 0.4f, 0.2f, -0.2f)),
+        BuiltinEqualizerPreset("古典", floatArrayOf(0.3f, 0.1f, -0.1f, 0.2f, 0.3f)),
+        BuiltinEqualizerPreset("低音", floatArrayOf(0.8f, 0.4f, 0f, 0f, 0f), bassBoost = 500),
+        BuiltinEqualizerPreset("超重低音", floatArrayOf(1f, 0.6f, 0f, 0f, 0f), bassBoost = 850),
+        BuiltinEqualizerPreset("人声", floatArrayOf(-0.3f, 0.1f, 0.7f, 0.7f, 0.2f)),
+        BuiltinEqualizerPreset("古风", floatArrayOf(0f, 0.2f, 0.3f, 0.5f, 0.6f)),
+        BuiltinEqualizerPreset("民谣", floatArrayOf(0.1f, 0.3f, 0.3f, 0.1f, 0.1f)),
+        BuiltinEqualizerPreset("3D 环绕", floatArrayOf(0f, 0f, 0f, 0f, 0f), virtualizer = 800),
+        BuiltinEqualizerPreset("现场", floatArrayOf(0.3f, 0f, -0.1f, 0.2f, 0.5f), virtualizer = 400),
+    )
+
+    /** 应用内置预设（覆盖各频段电平 + 联动低音/虚拟环绕，进入自定义模式） */
+    fun applyBuiltinPreset(name: String) {
+        val eq = equalizer ?: return
+        val preset = builtinPresets.find { it.name == name } ?: return
+        try {
+            val bandCount = eq.numberOfBands
+            val range = eq.getBandLevelRange()
+            val min = range[0]
+            val max = range[1]
+            val curve = preset.curve
+            for (i in 0 until bandCount) {
+                val t = if (bandCount <= 1) 0f else i.toFloat() / (bandCount - 1)
+                val pos = t * (curve.size - 1)
+                val i0 = pos.toInt().coerceIn(0, curve.size - 2)
+                val frac = pos - i0
+                val value = curve[i0] * (1 - frac) + curve[i0 + 1] * frac
+                val factor = (value + 1f) / 2f // -1..1 → 0..1
+                val level = (min + (max - min) * factor).toInt().toShort()
+                eq.setBandLevel(i.toShort(), level)
+            }
+            // 联动低音增强（预设指定强度时才覆盖）
+            if (preset.bassBoost > 0 && bassBoost != null) {
+                try {
+                    bassBoost?.setStrength(preset.bassBoost)
+                    bassBoost?.enabled = true
+                } catch (_: Exception) {}
+            }
+            // 联动虚拟环绕（3D）
+            if (preset.virtualizer > 0 && virtualizer != null) {
+                try {
+                    virtualizer?.setStrength(preset.virtualizer)
+                    virtualizer?.enabled = true
+                } catch (_: Exception) {}
+            }
+            _state.value = _state.value.copy(currentPreset = -1)
             refreshState()
         } catch (_: Exception) {}
     }

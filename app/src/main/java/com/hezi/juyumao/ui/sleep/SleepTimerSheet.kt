@@ -1,8 +1,5 @@
 package com.hezi.juyumao.ui.sleep
 
-import androidx.compose.animation.core.spring
-import androidx.compose.foundation.clickable
-import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import top.yukonga.miuix.kmp.basic.*
@@ -10,7 +7,7 @@ import top.yukonga.miuix.kmp.icon.MiuixIcons
 import top.yukonga.miuix.kmp.icon.extended.*
 import top.yukonga.miuix.kmp.overlay.*
 import top.yukonga.miuix.kmp.theme.MiuixTheme
-import top.yukonga.miuix.kmp.utils.SinkFeedback
+import top.yukonga.miuix.kmp.utils.PressFeedbackType
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -33,10 +30,12 @@ fun SleepTimerSheet(
         TimerOption("45 分钟", 45),
         TimerOption("60 分钟", 60),
         TimerOption("90 分钟", 90),
+        TimerOption("播完当前曲后停止", -1),
     )
 
     val remaining by viewModel.remainingSeconds.collectAsStateWithLifecycle()
-    val isTimerRunning = remaining > 0
+    val endOfSongMode by viewModel.endOfSongMode.collectAsStateWithLifecycle()
+    val isTimerRunning = remaining > 0 || endOfSongMode
 
     OverlayBottomSheet(
         show = true,
@@ -64,15 +63,24 @@ fun SleepTimerSheet(
             Spacer(modifier = Modifier.height(24.dp))
 
             if (isTimerRunning) {
-                // 倒计时显示
-                val minutes = remaining / 60
-                val seconds = remaining % 60
-                Text(
-                    text = String.format(java.util.Locale.US, "%02d:%02d", minutes, seconds),
-                    fontSize = 48.sp,
-                    fontWeight = FontWeight.Bold,
-                    color = MiuixTheme.colorScheme.primary,
-                )
+                // 倒计时显示（播完当前曲模式显示状态文字）
+                if (endOfSongMode) {
+                    Text(
+                        text = "播完当前曲后停止",
+                        fontSize = 32.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = MiuixTheme.colorScheme.primary,
+                    )
+                } else {
+                    val minutes = remaining / 60
+                    val seconds = remaining % 60
+                    Text(
+                        text = String.format(java.util.Locale.US, "%02d:%02d", minutes, seconds),
+                        fontSize = 48.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = MiuixTheme.colorScheme.primary,
+                    )
+                }
                 Spacer(modifier = Modifier.height(16.dp))
                 Button(
                     onClick = { viewModel.cancelTimer() },
@@ -89,18 +97,13 @@ fun SleepTimerSheet(
                     Card(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .padding(vertical = 4.dp)
-                            .clickable(
-                                interactionSource = remember { MutableInteractionSource() },
-                                indication = SinkFeedback(
-                                    sinkAmount = 0.85f,
-                                    animationSpec = spring(dampingRatio = 0.99f, stiffness = 986.96f),
-                                ),
-                            ) { viewModel.setTimer(option.minutes) },
+                            .padding(vertical = 4.dp),
                         colors = CardDefaults.defaultColors(
                             color = MiuixTheme.colorScheme.surfaceVariant,
                         ),
                         cornerRadius = 12.dp,
+                        pressFeedbackType = PressFeedbackType.Sink,
+                        onClick = { viewModel.setTimer(option.minutes) },
                     ) {
                         Text(
                             text = option.label,

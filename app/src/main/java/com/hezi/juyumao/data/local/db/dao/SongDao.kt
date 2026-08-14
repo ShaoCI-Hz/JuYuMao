@@ -1,8 +1,16 @@
 package com.hezi.juyumao.data.local.db.dao
 
 import androidx.room.*
+import com.hezi.juyumao.data.local.db.entity.PlayHistoryEntity
+import com.hezi.juyumao.data.local.db.entity.PlayHistoryWithSong
 import com.hezi.juyumao.data.local.db.entity.SongEntity
 import kotlinx.coroutines.flow.Flow
+
+/** 播放时段统计行（Room POJO） */
+data class PlayHourCount(
+    val hour: Int,
+    val cnt: Int,
+)
 
 // 转义 LIKE 查询中的通配符
 private fun String.escapeLike(): String = replace("\\", "\\\\").replace("%", "\\%").replace("_", "\\_")
@@ -11,6 +19,9 @@ private fun String.escapeLike(): String = replace("\\", "\\\\").replace("%", "\\
 interface SongDao {
     @Query("SELECT * FROM songs ORDER BY addedAt DESC")
     fun getAllSongs(): Flow<List<SongEntity>>
+
+    @Query("SELECT * FROM songs ORDER BY addedAt DESC LIMIT :limit")
+    fun getRecentlyAdded(limit: Int): Flow<List<SongEntity>>
 
     @Query("SELECT * FROM songs WHERE id = :id")
     suspend fun getById(id: Long): SongEntity?
@@ -23,7 +34,7 @@ interface SongDao {
     @Query("DELETE FROM songs WHERE smbServerId = :serverId")
     suspend fun deleteSongsByServer(serverId: Long)
 
-    @Query("SELECT * FROM songs ORDER BY lastPlayedAt DESC LIMIT 20")
+    @Query("SELECT * FROM songs ORDER BY lastPlayedAt DESC LIMIT 10")
     fun getRecentlyPlayed(): Flow<List<SongEntity>>
 
     // 搜索时先转义再用 ESCAPE '\' 匹配
@@ -49,6 +60,79 @@ interface SongDao {
 
     @Query("UPDATE songs SET isFavorite = :isFavorite WHERE id = :id")
     suspend fun updateFavorite(id: Long, isFavorite: Boolean)
+
+    /** 更新星级评分（0-5） */
+    @Query("UPDATE songs SET rating = :rating WHERE id = :id")
+    suspend fun updateRating(id: Long, rating: Int)
+
+    /** 仅更新标签字段（P1-14 修复：避免全字段回写覆盖并发变更） */
+    @Query(
+        "UPDATE songs SET title = :title, artist = :artist, album = :album, " +
+            "genre = :genre, year = :year WHERE id = :id"
+    )
+    suspend fun updateTags(id: Long, title: String, artist: String, album: String, genre: String?, year: Int)
+
+    // ── 批量操作（P0-4）──
+
+    @Query("UPDATE songs SET isFavorite = :fav WHERE id IN (:ids)")
+    suspend fun updateFavoriteBatch(ids: List<Long>, fav: Boolean)
+
+    @Query("UPDATE songs SET rating = :rating WHERE id IN (:ids)")
+    suspend fun updateRatingBatch(ids: List<Long>, rating: Int)
+
+    @Query("DELETE FROM songs WHERE id IN (:ids)")
+    suspend fun deleteByIds(ids: List<Long>)
+
+    // ── 相似歌曲（P1-9）──
+
+    /** 相似歌曲：同艺术家或同流派（排除自身），按播放次数排序 */
+    @Query(
+        "SELECT * FROM songs WHERE id != :excludeId " +
+            "AND (artist = :artist OR (:genre IS NOT NULL AND :genre != '' AND genre = :genre)) " +
+            "ORDER BY playCount DESC LIMIT :limit"
+    )
+    suspend fun getSimilarSongs(excludeId: Long, artist: String, genre: String?, limit: Int): List<SongEntity>
+
+    // ── 播放时段分布（P1-10）──
+
+    /** 各小时播放次数（用于时段分布统计） */
+    @Query(
+        "SELECT CAST(strftime('%H', playedAt / 1000.0, 'unixepoch', 'localtime') AS INTEGER) AS hour, " +
+            "COUNT(*) AS cnt FROM play_history GROUP BY hour"
+    )
+    suspend fun getPlayHourDistribution(): List<PlayHourCount>
+
+    // ── 播放历史（P2-16）──
+
+    @Insert
+    suspend fun insertPlayHistory(history: PlayHistoryEntity)
+
+    @Query(
+        "SELECT h.id, h.songId, h.playedAt, h.source, s.title, s.artist, s.albumArtUri " +
+            "FROM play_history h JOIN songs s ON h.songId = s.id " +
+            "ORDER BY h.playedAt DESC LIMIT :limit"
+    )
+    fun getRecentPlayHistory(limit: Int): Flow<List<PlayHistoryWithSong>>
+
+    // ── 智能歌单查询（P0-3）──
+
+    @Query(
+        "SELECT * FROM songs WHERE rating >= :minRating AND playCount >= :minPlayCount " +
+            "AND (:genre IS NULL OR :genre = '' OR genre = :genre) " +
+            "AND (:source IS NULL OR :source = '' OR source = :source) " +
+            "AND (:onlyFav = 0 OR isFavorite = 1) " +
+            "AND (:withinDays = 0 OR addedAt >= :cutoff) " +
+            "ORDER BY addedAt DESC"
+    )
+    suspend fun querySmartPlaylist(
+        minRating: Int,
+        minPlayCount: Int,
+        genre: String?,
+        source: String?,
+        onlyFav: Int,
+        withinDays: Int,
+        cutoff: Long,
+    ): List<SongEntity>
 
     /** 播放统计埋点：递增播放次数并更新时间戳（T10.9） */
     @Query("UPDATE songs SET playCount = playCount + 1, lastPlayedAt = :now WHERE id = :id")
