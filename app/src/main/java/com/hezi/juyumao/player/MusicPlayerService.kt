@@ -51,7 +51,15 @@ class MusicPlayerService : MediaSessionService() {
         createNotificationChannel()
 
         // 通知栏收藏快捷（P1-12）：Media3 1.5.1 的 CustomActionReceiver API 与当前解析版本不兼容，暂不做通知栏收藏按钮
-        mediaSession = MediaSession.Builder(this, exoPlayer).build()
+        // 小米媒体卡片/妙播接入：SessionActivity（点击卡片跳 App）；媒体按键由 Manifest 注册的 MediaButtonReceiver 自动路由
+        val sessionActivity = PendingIntent.getActivity(
+            this, 0,
+            Intent(this, MainActivity::class.java),
+            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE,
+        )
+        mediaSession = MediaSession.Builder(this, exoPlayer)
+            .setSessionActivity(sessionActivity)
+            .build()
 
         // 使用 PlayerNotificationManager 自动管理通知栏控件
         notificationManager = PlayerNotificationManager.Builder(

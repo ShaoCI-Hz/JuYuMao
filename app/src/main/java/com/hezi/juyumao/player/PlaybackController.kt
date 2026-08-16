@@ -411,6 +411,8 @@ class PlaybackController @Inject constructor(
                 .setTitle(domain.title)
                 .setArtist(domain.artist)
                 .setAlbumTitle(domain.album)
+                // 时长：小米媒体卡片/系统进度显示必需
+                .setDurationMs(domain.duration)
                 .also { builder ->
                     if (artPath != null) builder.setArtworkUri(Uri.parse("file://$artPath"))
                 }
@@ -469,6 +471,8 @@ class PlaybackController @Inject constructor(
             .setTitle(song.title)
             .setArtist(song.artist)
             .setAlbumTitle(song.album)
+            // 时长：小米媒体卡片/系统进度显示必需
+            .setDurationMs(song.duration)
             .also { builder ->
                 if (artPath != null) {
                     builder.setArtworkUri(Uri.parse("file://$artPath"))

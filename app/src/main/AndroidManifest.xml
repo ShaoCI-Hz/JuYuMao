@@ -52,6 +52,15 @@
             </intent-filter>
         </service>
 
+        <!-- 媒体按键（耳机/系统媒体键控制，小米媒体卡片识别需要） -->
+        <receiver
+            android:name="androidx.media3.session.MediaButtonReceiver"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.intent.action.MEDIA_BUTTON" />
+            </intent-filter>
+        </receiver>
+
         <receiver
             android:name=".ui.widget.JuYuMaoWidgetReceiver"
             android:exported="true">
