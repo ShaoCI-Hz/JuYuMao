@@ -35,6 +35,9 @@ class MusicPlayerService : MediaSessionService() {
     @Inject
     lateinit var songDao: SongDao
 
+    @Inject
+    lateinit var playbackController: PlaybackController
+
     private var mediaSession: MediaSession? = null
     private var notificationManager: PlayerNotificationManager? = null
 
@@ -59,15 +62,34 @@ class MusicPlayerService : MediaSessionService() {
         )
         mediaSession = MediaSession.Builder(this, exoPlayer)
             .setSessionActivity(sessionActivity)
+            .setCallback(object : MediaSession.Callback {
+                override fun onPlayerCommandRequest(
+                    session: MediaSession,
+                    controller: MediaSession.ControllerInfo,
+                    playerCommand: Int,
+                ): Int {
+                    // 单曲队列（mediaItemCount<=1）：通知栏/媒体键的上一首/下一首
+                    // 转发到 PlaybackController，与 App 内按钮行为一致（否则 ExoPlayer 无下一首无响应）
+                    if (playerCommand == Player.COMMAND_SEEK_TO_NEXT && exoPlayer.mediaItemCount <= 1) {
+                        playbackController.next()
+                        return androidx.media3.session.SessionResult.RESULT_SUCCESS
+                    }
+                    if (playerCommand == Player.COMMAND_SEEK_TO_PREVIOUS && exoPlayer.mediaItemCount <= 1) {
+                        playbackController.previous()
+                        return androidx.media3.session.SessionResult.RESULT_SUCCESS
+                    }
+                    return super.onPlayerCommandRequest(session, controller, playerCommand)
+                }
+            })
             .build()
 
-        // 使用 PlayerNotificationManager 自动管理通知栏控件
-        notificationManager = PlayerNotificationManager.Builder(
+        // 使用 AlwaysActionsNotificationManager：始终显示 上一首/播放暂停/下一首 三个按钮
+        // （Media3 默认单曲播放时隐藏下一首，见 getActions 覆写）
+        notificationManager = AlwaysActionsNotificationManager(
             this,
-            NOTIFICATION_ID,
             CHANNEL_ID,
-        )
-            .setMediaDescriptionAdapter(object : PlayerNotificationManager.MediaDescriptionAdapter {
+            NOTIFICATION_ID,
+            mediaDescriptionAdapter = object : PlayerNotificationManager.MediaDescriptionAdapter {
                 override fun getCurrentContentTitle(player: Player): CharSequence {
                     return player.mediaMetadata.title ?: "局域猫播放器"
                 }
@@ -107,8 +129,8 @@ class MusicPlayerService : MediaSessionService() {
                         null
                     }
                 }
-            })
-            .setNotificationListener(object : PlayerNotificationManager.NotificationListener {
+            },
+            notificationListener = object : PlayerNotificationManager.NotificationListener {
                 override fun onNotificationPosted(notificationId: Int, notification: Notification, ongoing: Boolean) {
                     if (ongoing) {
                         startForeground(notificationId, notification)
@@ -117,8 +139,8 @@ class MusicPlayerService : MediaSessionService() {
                 override fun onNotificationCancelled(notificationId: Int, dismissedByUser: Boolean) {
                     stopSelf()
                 }
-            })
-            .build()
+            },
+        )
 
         notificationManager?.apply {
             setPlayer(exoPlayer)
