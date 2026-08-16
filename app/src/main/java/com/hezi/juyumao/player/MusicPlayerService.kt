@@ -127,6 +127,10 @@ class MusicPlayerService : MediaSessionService() {
             setUseRewindAction(false)
             setUseNextAction(true)
             setUsePreviousAction(true)
+            // 关键：把 MediaSession token 关联到通知（MediaStyle.setMediaSession），
+            // 小米/系统才会把通知渲染为"音乐卡片"（大封面/进度/切歌/妙播）样式，
+            // 否则只是普通媒体通知外观（真机复现：通知在但非音乐卡片）
+            setMediaSessionToken(mediaSession!!.platformToken)
         }
 
         // 定时刷新通知（仅歌词非空时，P1-12）
