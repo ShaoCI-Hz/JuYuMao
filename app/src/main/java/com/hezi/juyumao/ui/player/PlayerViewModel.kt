@@ -208,15 +208,17 @@ class PlayerViewModel @Inject constructor(
             if (!alreadyPlayingThis) {
                 playbackController.loadPlaylist(listOf(enriched), 0)
 
-                // 频谱采集：等待 audioSessionId 就绪后绑定（并入 loadJob，随取消一起回收）
+                // 频谱采集：等待 audioSessionId 就绪后绑定（并入 loadJob，随取消一起回收）。
+                // 注意：不能用 return@launch 提前退出——否则会跳过下方的 startForegroundService，
+                // 导致通知栏媒体控制/MediaSession 永不注册（真机复现 bug）。
                 val enabled = try { settingsRepository.spectrumVisualizer.first() } catch (_: Exception) { true }
                 val player = playbackStateHolder.getExoPlayer()
                 if (player != null) {
-                    // prepare 后 audioSessionId 才有效，轮询等待
+                    var spectrumStarted = false
                     repeat(50) {
-                        if (player.audioSessionId != androidx.media3.common.C.AUDIO_SESSION_ID_UNSET) {
+                        if (!spectrumStarted && player.audioSessionId != androidx.media3.common.C.AUDIO_SESSION_ID_UNSET) {
                             spectrumAnalyzer.start(player.audioSessionId, enabled)
-                            return@launch
+                            spectrumStarted = true
                         }
                         delay(100)
                     }
