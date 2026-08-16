@@ -127,6 +127,9 @@ class MusicPlayerService : MediaSessionService() {
             setUseRewindAction(false)
             setUseNextAction(true)
             setUsePreviousAction(true)
+            // 紧凑视图（通知栏收起态）显示 上一首/播放暂停/下一首 三个按钮
+            setUseNextActionInCompactView(true)
+            setUsePreviousActionInCompactView(true)
             // 关键：把 MediaSession token 关联到通知（MediaStyle.setMediaSession），
             // 小米/系统才会把通知渲染为"音乐卡片"（大封面/进度/切歌/妙播）样式，
             // 否则只是普通媒体通知外观（真机复现：通知在但非音乐卡片）
