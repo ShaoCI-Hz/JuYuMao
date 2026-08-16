@@ -1,5 +1,10 @@
 package com.hezi.juyumao.ui.player
 
+import android.Manifest
+import android.content.pm.PackageManager
+import android.os.Build
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.*
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
@@ -9,6 +14,7 @@ import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.ui.input.pointer.pointerInput
+import androidx.core.content.ContextCompat
 import top.yukonga.miuix.kmp.basic.*
 import top.yukonga.miuix.kmp.overlay.*
 import top.yukonga.miuix.kmp.theme.MiuixTheme
@@ -56,6 +62,19 @@ fun PlayerScreen(
 
     val context = LocalContext.current
     val accentColor = MiuixTheme.colorScheme.primary.toArgb()
+
+    // 通知权限（Android 13+）：首次进入播放页未授权时请求一次，保证通知栏/系统媒体控制可用
+    val notificationPermissionLauncher = rememberLauncherForActivityResult(
+        ActivityResultContracts.RequestPermission()
+    ) { }
+    LaunchedEffect(Unit) {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU &&
+            ContextCompat.checkSelfPermission(context, Manifest.permission.POST_NOTIFICATIONS) !=
+            PackageManager.PERMISSION_GRANTED
+        ) {
+            notificationPermissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
+        }
+    }
 
     /** 生成并分享歌词海报（更多菜单 → 歌词海报） */
     fun shareLyricPoster(accent: Int) {
